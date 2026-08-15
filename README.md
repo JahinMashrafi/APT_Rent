@@ -63,17 +63,17 @@ system connecting **Tenants, Owners, and Administrators**.
 <details>
 <summary>🗄️ Database Setup</summary>
 
-- [ ] Design database schema
-- [ ] Create `User` table
-- [ ] Create `Property` table
-- [ ] Create `Appointment` table
-- [ ] Create `Contract` table
-- [ ] Create `Payment` table
-- [ ] Create `Maintenance` table
-- [ ] Define primary keys
-- [ ] Define foreign keys
-- [ ] Define relationships
-- [ ] Add constraints
+- [x] Design database schema
+- [x] Create `User` table
+- [x] Create `Property` table
+- [x] Create `Appointment` table
+- [x] Create `Contract` table
+- [x] Create `Payment` table
+- [x] Create `Maintenance` table
+- [x] Define primary keys
+- [x] Define foreign keys
+- [x] Define relationships
+- [x] Add constraints
 
 </details>
 
@@ -87,7 +87,7 @@ system connecting **Tenants, Owners, and Administrators**.
 - [x] Configure environment variables
 - [x] Connect render: postgress
 - [x] Configure Git repository
-- [ ] Configure Vercel
+- [x] Configure Vercel
 - [x] Configure Render
 
 </details>
