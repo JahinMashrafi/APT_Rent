@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Log In — APT Rent</title>
+
+  <link rel="icon" type="image/png" href="../assets/images/logo/apt-rent-logo.png" />
+  <link rel="stylesheet" href="../css/global.css" />
+  <link rel="stylesheet" href="../css/navbar.css" />
+  <link rel="stylesheet" href="../css/auth.css" />
+</head>
+<body data-auth="out">
+  <div class="page-shell">
+
+    <!-- ============ NAVBAR ============ -->
+    <header class="navbar">
+      <div class="container">
+        <a href="../index.html" class="brand">
+          <img src="../assets/images/logo/apt-rent-logo.png" alt="APT Rent logo" class="brand-logo" />
+          <span class="brand-name">APT<span> Rent</span></span>
+        </a>
+        <nav class="nav-links" id="navLinks">
+          <a href="../index.html">Home</a>
+          <a href="#" class="is-locked" title="Sign in to browse properties">
+            Properties <span class="lock-badge">Sign in</span>
+          </a>
+          <a href="#" class="is-locked" title="Sign in to view this page">
+            About <span class="lock-badge">Sign in</span>
+          </a>
+        </nav>
+        <div class="nav-actions">
+          <div class="auth-only-out" style="display:flex; gap:10px;">
+            <a href="login.html" class="btn btn-ghost">Log in</a>
+            <a href="register.html" class="btn btn-primary">Register</a>
+          </div>
+          <div class="auth-only-in user-chip">
+            <span class="avatar">A</span>
+            Account
+          </div>
+          <button class="nav-toggle" id="navToggle" aria-label="Toggle menu" aria-expanded="false">
+            <img src="../assets/icons/menu.svg" alt="" />
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- ============ AUTH LAYOUT ============ -->
+    <main class="auth-shell">
+
+      <!-- Left brand panel -->
+      <section class="auth-brand">
+        <a href="../index.html" class="brand">
+          <img src="../assets/images/logo/apt-rent-logo.png" alt="APT Rent logo" class="brand-logo" />
+          <span class="brand-name">APT<span> Rent</span></span>
+        </a>
+
+        <div class="auth-brand-copy">
+          <span class="eyebrow">Welcome back</span>
+          <h2>Pick up right where the lease left off.</h2>
+          <p>One sign-in for both sides of the rental — landlords managing units, tenants tracking rent and requests.</p>
+          <ul class="auth-brand-list">
+            <li>See live rent status and receipts</li>
+            <li>Message your landlord or tenant on record</li>
+            <li>File and follow up on maintenance requests</li>
+          </ul>
+        </div>
+
+        <p class="auth-brand-foot">APT&nbsp;RENT // SECURE SIGN-IN</p>
+      </section>
+
+      <!-- Right form panel -->
+      <section class="auth-form-panel">
+        <div class="auth-card corner-marks">
+          <header>
+            <span class="eyebrow">Account access</span>
+            <h1>Log in</h1>
+            <p>Enter your details to access your APT Rent dashboard.</p>
+          </header>
+
+          <form id="loginForm" class="form-grid" novalidate>
+
+            <div class="field" data-field="email">
+              <label for="loginEmail">Email address <span class="req">*</span></label>
+              <div class="input-shell">
+                <img src="../assets/icons/email.svg" alt="" />
+                <input type="email" id="loginEmail" name="email" placeholder="you@example.com" autocomplete="email" />
+              </div>
+              <span class="field-error"></span>
+            </div>
+
+            <div class="field" data-field="password">
+              <label for="loginPassword">Password <span class="req">*</span></label>
+              <div class="input-shell">
+                <img src="../assets/icons/lock.svg" alt="" />
+                <input type="password" id="loginPassword" name="password" placeholder="••••••••" autocomplete="current-password" />
+                <button type="button" class="toggle-visibility" aria-label="Show password">
+                  <img class="icon-show" src="../assets/icons/eye.svg" alt="" />
+                  <img class="icon-hide" src="../assets/icons/eye-off.svg" alt="" style="display:none;" />
+                </button>
+              </div>
+              <span class="field-error"></span>
+            </div>
+
+            <div class="field-checkbox" style="justify-content: space-between; align-items: center;">
+              <label style="display:flex; align-items:center; gap:8px;">
+                <input type="checkbox" id="rememberMe" name="rememberMe" />
+                Remember me
+              </label>
+              <a href="#" style="font-weight:600; color: var(--color-blueprint);">Forgot password?</a>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-block">Log in</button>
+            <p class="form-note">This is a front-end preview — submitting logs you in locally only, no server yet.</p>
+          </form>
+
+          <div class="auth-switch">
+            New to APT Rent? <a href="register.html">Create an account</a>
+          </div>
+        </div>
+      </section>
+    </main>
+
+  </div>
+
+  <script src="../js/main.js"></script>
+  <script src="../js/auth.js"></script>
+</body>
+</html>
