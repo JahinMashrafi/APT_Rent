@@ -113,15 +113,15 @@ system connecting **Tenants, Owners, and Administrators**.
 <details>
 <summary>🔐 Authentication</summary>
 
-- [ ] User registration
-- [ ] User login
-- [ ] User logout
-- [ ] Password hashing
-- [ ] JWT generation
-- [ ] JWT validation
-- [ ] Authentication middleware
-- [ ] Protected routes
-- [ ] Authentication error handling
+- [x] User registration
+- [x] User login
+- [x] User logout
+- [x] Password hashing
+- [x] JWT generation
+- [x] JWT validation
+- [x] Authentication middleware
+- [x] Protected routes
+- [x] Authentication error handling
 
 </details>
 
