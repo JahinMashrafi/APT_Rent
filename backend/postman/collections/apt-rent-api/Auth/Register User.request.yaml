@@ -1,0 +1,51 @@
+$kind: http-request
+name: Register User
+method: POST
+url: '{{baseUrl}}/api/auth/register'
+order: 2000
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "firstName": "{{firstName}}",
+      "lastName": "{{lastName}}",
+      "email": "{{registerEmail}}",
+      "phone": "{{phone}}",
+      "password": "{{password}}",
+      "is_landlord": false,
+      "is_tenant": true
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Status code is 201 for successful registration", function () {
+          pm.response.to.have.status(201);
+      });
+      pm.test("Response has success status", function () {
+          const json = pm.response.json();
+          pm.expect(json.status).to.eql("success");
+      });
+      pm.test("Response contains accessToken", function () {
+          const json = pm.response.json();
+          pm.expect(json.data).to.have.property("acessToken");
+          pm.expect(json.data.acessToken).to.be.a("string").and.not.empty;
+      });
+      pm.test("Response contains user object", function () {
+          const json = pm.response.json();
+          pm.expect(json.data).to.have.property("user");
+          pm.expect(json.data.user).to.have.property("userId");
+          pm.expect(json.data.user).to.have.property("email");
+      });
+      pm.test("User email matches registration email", function () {
+          const json = pm.response.json();
+          pm.expect(json.data.user.email).to.eql(pm.variables.get("registerEmail"));
+      });
+      if (pm.response.code === 201) {
+          const json = pm.response.json();
+          pm.environment.set("authToken", json.data.acessToken);
+          pm.environment.set("userId", json.data.user.userId);
+      }

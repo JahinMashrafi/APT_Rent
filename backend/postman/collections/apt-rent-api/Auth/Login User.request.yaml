@@ -1,0 +1,49 @@
+$kind: http-request
+name: Login User
+method: POST
+url: '{{baseUrl}}/api/auth/login'
+order: 3000
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "email": "{{loginEmail}}",
+      "password": "{{password}}"
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test("Status code is 200 for successful login", function () {
+          pm.response.to.have.status(200);
+      });
+      pm.test("Response has success true", function () {
+          const json = pm.response.json();
+          pm.expect(json.success).to.be.true;
+      });
+      pm.test("Response contains JWT token", function () {
+          const json = pm.response.json();
+          pm.expect(json).to.have.property("token");
+          pm.expect(json.token).to.be.a("string").and.not.empty;
+      });
+      pm.test("Response contains user object", function () {
+          const json = pm.response.json();
+          pm.expect(json).to.have.property("user");
+          pm.expect(json.user).to.have.property("id");
+          pm.expect(json.user).to.have.property("email");
+      });
+      pm.test("User email matches login email", function () {
+          const json = pm.response.json();
+          pm.expect(json.user.email).to.eql(pm.variables.get("loginEmail"));
+      });
+      pm.test("Response time is acceptable", function () {
+          pm.expect(pm.response.responseTime).to.be.below(3000);
+      });
+      if (pm.response.code === 200) {
+          const json = pm.response.json();
+          pm.environment.set("authToken", json.token);
+          pm.environment.set("userId", json.user.id);
+      }

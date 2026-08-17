@@ -1,0 +1,38 @@
+name: apt-rent Local
+values:
+  - key: baseUrl
+    value: 'http://localhost:5000'
+    type: default
+    enabled: true
+  - key: firstName
+    value: John
+    type: default
+    enabled: true
+  - key: lastName
+    value: Doe
+    type: default
+    enabled: true
+  - key: registerEmail
+    value: john.doe@example.com
+    type: default
+    enabled: true
+  - key: loginEmail
+    value: john.doe@example.com
+    type: default
+    enabled: true
+  - key: phone
+    value: "1234567890"
+    type: default
+    enabled: true
+  - key: password
+    value: TestPassword123!
+    type: secret
+    enabled: true
+  - key: authToken
+    value: ''
+    type: secret
+    enabled: true
+  - key: userId
+    value: ''
+    type: default
+    enabled: true
