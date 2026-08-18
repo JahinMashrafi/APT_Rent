@@ -1,0 +1,302 @@
+/* ==========================================================================
+   APT RENT — auth.css
+   Login & Register: split brand panel + form card.
+   ========================================================================== */
+
+.auth-shell {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 0.85fr 1.15fr;
+  min-height: calc(100vh - var(--nav-h));
+}
+
+/* ---- Left brand panel ---- */
+.auth-brand {
+  position: relative;
+  background: var(--color-ink);
+  color: var(--color-paper);
+  padding: 56px 48px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  overflow: hidden;
+}
+.auth-brand::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(247,245,239,0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(247,245,239,0.06) 1px, transparent 1px);
+  background-size: 38px 38px;
+  mask-image: radial-gradient(ellipse 80% 70% at 30% 30%, black 30%, transparent 85%);
+}
+
+.auth-brand .brand { position: relative; }
+.auth-brand .brand-name { color: var(--color-paper); }
+.auth-brand .brand-name span { color: var(--color-brass); }
+
+.auth-brand-copy { position: relative; max-width: 360px; }
+.auth-brand-copy .eyebrow { color: var(--color-brass); }
+.auth-brand-copy h2 {
+  color: var(--color-paper);
+  font-size: 2rem;
+  margin-top: 14px;
+  font-weight: 600;
+}
+.auth-brand-copy p {
+  margin-top: 14px;
+  color: rgba(247,245,239,0.72);
+  font-size: 0.98rem;
+  line-height: 1.6;
+}
+
+.auth-brand-list {
+  position: relative;
+  margin-top: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.auth-brand-list li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 0.9rem;
+  color: rgba(247,245,239,0.85);
+}
+.auth-brand-list li::before {
+  content: "";
+  width: 6px; height: 6px;
+  margin-top: 7px;
+  border-radius: 50%;
+  background: var(--color-brass);
+  flex-shrink: 0;
+}
+
+.auth-brand-foot {
+  position: relative;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  color: rgba(247,245,239,0.45);
+}
+
+/* ---- Right form panel ---- */
+.auth-form-panel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  background: var(--color-paper);
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 460px;
+  background: var(--color-white);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-lg);
+  padding: 40px 36px;
+  box-shadow: var(--shadow-card);
+}
+
+.auth-card.auth-card-wide { max-width: 620px; }
+
+.auth-card header { margin-bottom: 26px; }
+.auth-card header h1 {
+  font-size: 1.7rem;
+  margin-top: 6px;
+}
+.auth-card header p {
+  margin-top: 8px;
+  color: #63685e;
+  font-size: 0.94rem;
+}
+
+/* ---- Role tabs (Landlord / Tenant) ---- */
+.role-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  padding: 5px;
+  background: var(--color-paper-dim);
+  border-radius: var(--radius-pill);
+  margin-bottom: 26px;
+}
+.role-tab {
+  padding: 10px 12px;
+  text-align: center;
+  border-radius: var(--radius-pill);
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--color-blueprint);
+  transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+}
+.role-tab[aria-selected="true"] {
+  background: var(--color-ink);
+  color: var(--color-paper);
+  box-shadow: var(--shadow-soft);
+}
+
+/* ---- Form structure ---- */
+.form-grid { display: grid; gap: 18px; }
+.form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--color-ink);
+}
+.field label .req { color: var(--color-brass-dark); }
+.field label .hint {
+  font-weight: 400;
+  color: #8a8f85;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+}
+
+.input-shell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 1.5px solid var(--color-line-strong);
+  border-radius: var(--radius-sm);
+  padding: 0 12px;
+  background: var(--color-white);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.input-shell:focus-within {
+  border-color: var(--color-blueprint);
+  box-shadow: 0 0 0 3px rgba(47, 93, 138, 0.14);
+}
+.input-shell img { flex-shrink: 0; opacity: 0.75; }
+.input-shell input,
+.input-shell select {
+  flex: 1;
+  min-width: 0;
+  padding: 11px 2px;
+  font-size: 0.95rem;
+  background: transparent;
+}
+.input-shell.disabled { background: var(--color-paper-dim); }
+.input-shell.disabled input { color: #8a8f85; }
+
+.input-shell button.toggle-visibility {
+  background: none;
+  border: none;
+  padding: 4px;
+  display: flex;
+}
+
+.field-error {
+  font-size: 0.78rem;
+  color: var(--color-error);
+  min-height: 1em;
+}
+.input-shell.has-error { border-color: var(--color-error); }
+
+/* ---- File upload dropzone ---- */
+.upload-zone {
+  border: 1.5px dashed var(--color-line-strong);
+  border-radius: var(--radius-sm);
+  padding: 18px 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+  position: relative;
+}
+.upload-zone:hover { border-color: var(--color-blueprint); background: rgba(47,93,138,0.04); }
+.upload-zone input[type="file"] {
+  position: absolute; inset: 0; opacity: 0; cursor: pointer;
+}
+.upload-zone .upload-copy strong {
+  display: block;
+  font-size: 0.88rem;
+  color: var(--color-ink);
+}
+.upload-zone .upload-copy span {
+  font-size: 0.76rem;
+  color: #8a8f85;
+}
+.upload-zone .file-name {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--color-blueprint);
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ---- Occupation-dependent sub-fields ---- */
+.occupation-fields {
+  display: none;
+  gap: 14px;
+  padding: 14px;
+  background: var(--color-paper-dim);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-line);
+}
+.occupation-fields.is-active { display: grid; }
+
+/* ---- Checkbox / terms ---- */
+.field-checkbox {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 0.85rem;
+  color: #565b52;
+}
+.field-checkbox input {
+  width: 17px; height: 17px;
+  margin-top: 2px;
+  accent-color: var(--color-blueprint);
+}
+.field-checkbox a { color: var(--color-blueprint); font-weight: 600; }
+
+/* ---- Divider + switch link ---- */
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 22px 0;
+  color: #9a9e93;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.auth-divider::before, .auth-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--color-line);
+}
+
+.auth-switch {
+  margin-top: 20px;
+  text-align: center;
+  font-size: 0.9rem;
+  color: #565b52;
+}
+.auth-switch a { color: var(--color-blueprint); font-weight: 700; }
+
+.form-note {
+  margin-top: 4px;
+  font-size: 0.76rem;
+  color: #8a8f85;
+}
+
+@media (max-width: 980px) {
+  .auth-shell { grid-template-columns: 1fr; }
+  .auth-brand { display: none; }
+}
+@media (max-width: 560px) {
+  .auth-card { padding: 30px 20px; }
+  .form-row-2 { grid-template-columns: 1fr; }
+}
