@@ -128,11 +128,11 @@ system connecting **Tenants, Owners, and Administrators**.
 <details>
 <summary>🎨 Authentication UI</summary>
 
-- [ ] Login page
-- [ ] Registration page
-- [ ] Form validation
-- [ ] Authentication state
-- [ ] Protected frontend routes
+- [x] Login page
+- [x] Registration page
+- [x] Form validation
+- [x] Authentication state
+- [x] Protected frontend routes
 
 </details>
 
