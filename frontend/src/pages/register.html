@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Register — APT Rent</title>
+
+  <link rel="icon" type="image/png" href="../assets/images/logo/apt-rent-logo.png" />
+  <link rel="stylesheet" href="../css/global.css" />
+  <link rel="stylesheet" href="../css/navbar.css" />
+  <link rel="stylesheet" href="../css/auth.css" />
+</head>
+<body data-auth="out">
+  <div class="page-shell">
+
+    <!-- ============ NAVBAR ============ -->
+    <header class="navbar">
+      <div class="container">
+        <a href="../index.html" class="brand">
+          <img src="../assets/images/logo/apt-rent-logo.png" alt="APT Rent logo" class="brand-logo" />
+         
+        </a>
+        <nav class="nav-links" id="navLinks">
+          <a href="../../index.html">Home</a>
+          <a href="#" class="is-locked" title="Sign in to browse properties">
+            Properties <span class="lock-badge">Sign in</span>
+          </a>
+          <a href="#" class="is-locked" title="Sign in to view this page">
+            About <span class="lock-badge">Sign in</span>
+          </a>
+        </nav>
+        <div class="nav-actions">
+          <div class="auth-only-out" style="display:flex; gap:10px;">
+            <a href="login.html" class="btn btn-ghost">Log in</a>
+            <a href="register.html" class="btn btn-primary">Register</a>
+          </div>
+          <div class="auth-only-in user-chip">
+            <span class="avatar">A</span>
+            Account
+          </div>
+          <button class="nav-toggle" id="navToggle" aria-label="Toggle menu" aria-expanded="false">
+            <img src="../assets/icons/menu.svg" alt="" />
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- ============ AUTH LAYOUT ============ -->
+    <main class="auth-shell">
+
+      <!-- Left brand panel -->
+      <section class="auth-brand">
+        <a href="../index.html" class="brand">
+          <img src="../assets/images/logo/apt-rent-logo.png" alt="APT Rent logo" class="brand-logo" />
+          <span class="brand-name">APT<span> Rent</span></span>
+        </a>
+
+        <div class="auth-brand-copy">
+          <span class="eyebrow">Join APT Rent</span>
+          <h2>One profile, verified once, used everywhere.</h2>
+          <p>Whether you're listing a unit or looking for one, your details are recorded once and carried through every lease.</p>
+          <ul class="auth-brand-list">
+            <li>ID verification keeps both sides accountable</li>
+            <li>Landlords manage listings, leases, and rent in one view</li>
+            <li>Tenants get a documented paper trail, digitally</li>
+          </ul>
+        </div>
+
+        <p class="auth-brand-foot">APT&nbsp;RENT // NEW ACCOUNT</p>
+      </section>
+
+      <!-- Right form panel -->
+      <section class="auth-form-panel">
+        <div class="auth-card auth-card-wide corner-marks">
+          <header>
+            <span class="eyebrow">Create your account</span>
+            <h1>Register</h1>
+            <p>Tell us who you are — this becomes your verified APT Rent profile.</p>
+          </header>
+
+          <!-- Role selector: Landlord vs Tenant. Admin accounts are provisioned
+               separately and are not part of public self-registration. -->
+          <div class="role-tabs" role="tablist" aria-label="Register as">
+            <div class="role-tab" role="tab" aria-selected="true" data-role="tenant" tabindex="0">I'm a Tenant</div>
+            <div class="role-tab" role="tab" aria-selected="false" data-role="landlord" tabindex="0">I'm a Landlord</div>
+          </div>
+
+          <form id="registerForm" class="form-grid" novalidate>
+            <input type="hidden" id="selectedRole" name="role" value="tenant" />
+
+            <!-- ---- Identity ---- -->
+            <div class="form-row-2">
+              <div class="field" data-field="fullName" data-required="true">
+                <label for="fullName">Full name <span class="req">*</span></label>
+                <div class="input-shell">
+                  <img src="../assets/icons/user.svg" alt="" />
+                  <input type="text" id="fullName" name="fullName" placeholder="e.g. Farhana Akter" />
+                </div>
+                <span class="field-error"></span>
+              </div>
+
+              <div class="field" data-field="userId">
+                <label for="userId">User ID <span class="hint">auto-generated</span></label>
+                <div class="input-shell disabled">
+                  <input type="text" id="userId" name="userId" value="Assigned after registration" disabled />
+                </div>
+              </div>
+            </div>
+
+            <!-- ---- Uploads ---- -->
+            <div class="form-row-2">
+              <div class="field" data-field="profilePhoto">
+                <label for="profilePhoto">Profile picture</label>
+                <label class="upload-zone" for="profilePhoto">
+                  <img src="../assets/icons/upload.svg" alt="" />
+                  <span class="upload-copy">
+                    <strong>Upload photo</strong>
+                    <span>JPG or PNG</span>
+                  </span>
+                  <span class="file-name"></span>
+                  <input type="file" id="profilePhoto" name="profilePhoto" accept="image/*" />
+                </label>
+              </div>
+
+              <div class="field" data-field="nidPhoto">
+                <label for="nidPhoto">NID photo <span class="req">*</span></label>
+                <label class="upload-zone" for="nidPhoto">
+                  <img src="../assets/icons/upload.svg" alt="" />
+                  <span class="upload-copy">
+                    <strong>Upload NID</strong>
+                    <span>Front side, clear scan</span>
+                  </span>
+                  <span class="file-name"></span>
+                  <input type="file" id="nidPhoto" name="nidPhoto" accept="image/*" />
+                </label>
+              </div>
+            </div>
+
+            <!-- ---- Address ---- -->
+            <div class="field" data-field="address" data-required="true">
+              <label for="address">Present address <span class="req">*</span></label>
+              <div class="input-shell">
+                <input type="text" id="address" name="address" placeholder="House, road, area, city" />
+              </div>
+              <span class="field-error"></span>
+            </div>
+
+            <!-- ---- Occupation ---- -->
+            <div class="field" data-field="occupation" data-required="true">
+              <label for="occupation">Occupation <span class="req">*</span></label>
+              <div class="input-shell">
+                <select id="occupation" name="occupation">
+                  <option value="" disabled selected>Select occupation</option>
+                  <option value="student">Student</option>
+                  <option value="service">Service holder</option>
+                  <option value="business">Businessman</option>
+                </select>
+              </div>
+              <span class="field-error"></span>
+            </div>
+
+            <!-- Student sub-fields -->
+            <div class="occupation-fields" data-occupation-group="student">
+              <div class="field" data-field="institution">
+                <label for="institution">School / College / University</label>
+                <div class="input-shell">
+                  <input type="text" id="institution" name="institution" placeholder="Institution name" />
+                </div>
+              </div>
+              <div class="field" data-field="studentIdCard">
+                <label for="studentIdCard">Student ID card copy</label>
+                <label class="upload-zone" for="studentIdCard">
+                  <img src="../assets/icons/upload.svg" alt="" />
+                  <span class="upload-copy"><strong>Upload ID card</strong><span>JPG, PNG, or PDF</span></span>
+                  <span class="file-name"></span>
+                  <input type="file" id="studentIdCard" name="studentIdCard" accept="image/*,.pdf" />
+                </label>
+              </div>
+            </div>
+
+            <!-- Service holder sub-fields -->
+            <div class="occupation-fields" data-occupation-group="service">
+              <div class="field" data-field="workplace">
+                <label for="workplace">Workplace</label>
+                <div class="input-shell">
+                  <input type="text" id="workplace" name="workplace" placeholder="Company / organization name" />
+                </div>
+              </div>
+              <div class="field" data-field="workIdCard">
+                <label for="workIdCard">Work ID card</label>
+                <label class="upload-zone" for="workIdCard">
+                  <img src="../assets/icons/upload.svg" alt="" />
+                  <span class="upload-copy"><strong>Upload ID card</strong><span>JPG, PNG, or PDF</span></span>
+                  <span class="file-name"></span>
+                  <input type="file" id="workIdCard" name="workIdCard" accept="image/*,.pdf" />
+                </label>
+              </div>
+            </div>
+
+            <!-- Businessman sub-fields -->
+            <div class="occupation-fields" data-occupation-group="business">
+              <div class="field" data-field="tradeLicense">
+                <label for="tradeLicense">Trade license</label>
+                <label class="upload-zone" for="tradeLicense">
+                  <img src="../assets/icons/upload.svg" alt="" />
+                  <span class="upload-copy"><strong>Upload license</strong><span>JPG, PNG, or PDF</span></span>
+                  <span class="file-name"></span>
+                  <input type="file" id="tradeLicense" name="tradeLicense" accept="image/*,.pdf" />
+                </label>
+              </div>
+            </div>
+
+            <!-- ---- Contact ---- -->
+            <div class="form-row-2">
+              <div class="field" data-field="phone" data-required="true">
+                <label for="phone">Contact number <span class="req">*</span></label>
+                <div class="input-shell">
+                  <input type="tel" id="phone" name="phone" placeholder="+880 1XXX-XXXXXX" />
+                </div>
+                <span class="field-error"></span>
+              </div>
+
+              <div class="field" data-field="email" data-required="true">
+                <label for="registerEmail">Email address <span class="req">*</span></label>
+                <div class="input-shell">
+                  <img src="../assets/icons/email.svg" alt="" />
+                  <input type="email" id="registerEmail" name="email" placeholder="you@example.com" />
+                </div>
+                <span class="field-error"></span>
+              </div>
+            </div>
+
+            <!-- ---- Password ---- -->
+            <div class="form-row-2">
+              <div class="field" data-field="password" data-required="true">
+                <label for="registerPassword">Password <span class="req">*</span></label>
+                <div class="input-shell">
+                  <img src="../assets/icons/lock.svg" alt="" />
+                  <input type="password" id="registerPassword" name="password" placeholder="••••••••" />
+                  <button type="button" class="toggle-visibility" aria-label="Show password">
+                    <img class="icon-show" src="../assets/icons/eye.svg" alt="" />
+                    <img class="icon-hide" src="../assets/icons/eye-off.svg" alt="" style="display:none;" />
+                  </button>
+                </div>
+                <span class="field-error"></span>
+              </div>
+
+              <div class="field" data-field="confirmPassword" data-required="true">
+                <label for="registerConfirmPassword">Confirm password <span class="req">*</span></label>
+                <div class="input-shell">
+                  <img src="../assets/icons/lock.svg" alt="" />
+                  <input type="password" id="registerConfirmPassword" name="confirmPassword" placeholder="••••••••" />
+                  <button type="button" class="toggle-visibility" aria-label="Show password">
+                    <img class="icon-show" src="../assets/icons/eye.svg" alt="" />
+                    <img class="icon-hide" src="../assets/icons/eye-off.svg" alt="" style="display:none;" />
+                  </button>
+                </div>
+                <span class="field-error"></span>
+              </div>
+            </div>
+
+            <!-- ---- Review & consent ---- -->
+            <label class="field-checkbox">
+              <input type="checkbox" id="confirmAccurate" name="confirmAccurate" />
+              I confirm the details above are accurate and I am submitting them for verification review.
+            </label>
+
+            <label class="field-checkbox" id="agreeTermsWrap">
+              <input type="checkbox" id="agreeTerms" name="agreeTerms" />
+              I agree to the <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>.
+            </label>
+
+            <button type="submit" class="btn btn-primary btn-block">Create account</button>
+            <p class="form-note">Front-end preview — no files are uploaded anywhere yet; this just demonstrates the UI.</p>
+          </form>
+
+          <div class="auth-switch">
+            Already have an account? <a href="login.html">Log in</a>
+          </div>
+        </div>
+      </section>
+    </main>
+
+  </div>
+
+  <script src="../js/main.js"></script>
+  <script src="../js/auth.js"></script>
+</body>
+</html>

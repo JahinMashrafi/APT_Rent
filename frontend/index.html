@@ -1,13 +1,90 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>frontend</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>APT Rent — Renting, Without the Runaround</title>
+  <meta name="description" content="APT Rent centralizes apartment listings, digital leases, and rent payments for landlords and tenants." />
+
+  <link rel="icon" type="image/png" href="src/assets/images/logo/apt-rent-logo.png" />
+  <link rel="stylesheet" href="src/css/global.css" />
+  <link rel="stylesheet" href="src/css/navbar.css" />
+  <link rel="stylesheet" href="src/css/home.css" />
+</head>
+<body data-auth="out">
+  <div class="page-shell">
+
+    <!-- ============ NAVBAR ============ -->
+    <header class="navbar">
+      <div class="container">
+        <a href="index.html" class="brand">
+          <img src="src/assets/images/logo/apt-rent-logo.png" alt="APT Rent logo" class="brand-logo" />
+         
+        </a>
+
+        <nav class="nav-links" id="navLinks">
+          <a href="index.html">Home</a>
+          <a href="#" class="is-locked" title="Sign in to browse properties">
+            Properties <span class="lock-badge">Sign in</span>
+          </a>
+          <a href="#" class="is-locked" title="Sign in to view this page">
+            About <span class="lock-badge">Sign in</span>
+          </a>
+        </nav>
+
+        <div class="nav-actions">
+          <div class="auth-only-out" style="display:flex; gap:10px;">
+            <a href="src/pages/login.html" class="btn btn-ghost">Log in</a>
+            <a href="src/pages/register.html" class="btn btn-primary">
+              Register
+            </a>
+          </div>
+          <div class="auth-only-in user-chip">
+            <span class="avatar">A</span>
+            Account
+          </div>
+          <button class="nav-toggle" id="navToggle" aria-label="Toggle menu" aria-expanded="false">
+            <img src="src/assets/icons/menu.svg" alt="" />
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- ============ HERO ============ -->
+    <main>
+      <section class="hero">
+        <div class="hero-media" aria-hidden="true">
+          <img src="src/assets/images/backgrounds/hero-background.svg" alt="" />
+          <div class="hero-overlay"></div>
+        </div>
+        <div class="container hero-inner">
+          <span class="eyebrow">Verified listings · Digital leases · Cashless rent</span>
+          <h1><em>Find Your Next Home</em></h1>
+
+          <form class="search-tag" role="search" aria-label="Search apartments">
+            <span class="search-icon">
+              <img src="src/assets/icons/search.svg" alt="" width="16" height="16" />
+            </span>
+            <span class="search-tag-seam" aria-hidden="true"></span>
+            <input type="search" placeholder="Search by area, e.g. Gulshan, Dhanmondi..." aria-label="Search apartments by area" />
+            <button type="submit" class="btn btn-primary">Search</button>
+          </form>
+          <p class="hero-note">Sign in to unlock live listings, filters, and saved searches.</p>
+        </div>
+      </section>
+
+     
+    </main>
+
+    <!-- ============ FOOTER ============ -->
+    <footer class="site-footer">
+      <div class="container">
+        <p>APT&nbsp;RENT // EST. 2026</p>
+      </div>
+    </footer>
+
+  </div>
+
+  <script src="src/js/main.js"></script>
+</body>
 </html>
