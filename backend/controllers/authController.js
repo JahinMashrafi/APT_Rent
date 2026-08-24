@@ -75,6 +75,13 @@ const registerUser = async (req, res) => {
       is_landlord: newUser.is_landlord,
       is_admin: newUser.is_admin,
     });
+    const cookieOptions = {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000 
+    };
+    res.cookie('token', token, cookieOptions);
 
     return res.status(201).json({
       status: "success",
@@ -150,6 +157,14 @@ const loginUser = async (req, res) => {
       isadmin: user.is_admin,
     };
     const token = await jwtService.generateToken(payload);
+
+    const cookieOptions = {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000 
+    };
+    res.cookie('accessToken', token, cookieOptions);
 
     res.status(200).json({
       success: true,

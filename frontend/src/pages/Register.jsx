@@ -3,11 +3,10 @@ import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
 export default function Register() {
-  const [role, setRole] = useState('tenant'); 
+  const [role, setRole] = useState('tenant');
   const [occupation, setOccupation] = useState('');
-  const [institutionName, setInstitutionName] = useState('');
   const [formData, setFormData] = useState({
-    firstName: '', lastName: '', email: '', phone: '', password: '', address: ''
+    fullName: '', userId: '', phone: '', email: '', password: '', confirmPassword: '', address: ''
   });
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -18,251 +17,271 @@ export default function Register() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleOccupationChange = (e) => {
-    const value = e.target.value;
-    setOccupation(value);
-    if (value !== 'student') {
-      setInstitutionName('');
-    }
-  };
-
   const handleRegister = async (e) => {
     e.preventDefault();
     setError('');
 
-    const firstName = formData.firstName.trim();
-    const lastName = formData.lastName.trim();
-    const email = formData.email.trim();
-    const phone = formData.phone.trim();
-    const address = formData.address.trim();
-    const institution = institutionName.trim();
-
-    if (!firstName || !lastName || !email || !phone || !formData.password) {
+    // Basic front-end validation similar to original HTML preview
+    if (!formData.fullName || !formData.email || !formData.phone || !formData.password || !formData.confirmPassword) {
       setError('Please fill in all required fields.');
       return;
     }
 
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      setError('Please enter a valid email address.');
+    if (formData.password !== formData.confirmPassword) {
+      setError('Passwords do not match.');
       return;
     }
-
-    if (formData.password.length < 8) {
-      setError('Password must be at least 8 characters long.');
-      return;
-    }
-
-    if (occupation === 'student' && !institution) {
-      setError('Please enter your institution name.');
-      return;
-    }
-
-    const payload = {
-      firstName,
-      lastName,
-      email,
-      phone,
-      password: formData.password,
-      address,
-      occupation,
-      institutionName: institution,
-      is_tenant: role === 'tenant',
-      is_landlord: role === 'landlord',
-    };
 
     try {
       setIsSubmitting(true);
-      const response = await axios.post(
-        'http://localhost:5000/api/auth/register',
-        payload,
-        { withCredentials: true }
-      );
+      // Example payload — adapt to real API if needed
+      const payload = {
+        fullName: formData.fullName,
+        email: formData.email,
+        phone: formData.phone,
+        password: formData.password,
+        address: formData.address,
+        role
+      };
 
+      const response = await axios.post('http://localhost:5000/api/auth/register', payload, { withCredentials: true });
       if (response.data?.status === 'success') {
         navigate('/');
       } else {
         setError(response.data?.message || 'Registration failed');
       }
     } catch (err) {
-      const validationErrors = err.response?.data?.errors;
-      const firstValidationError = Array.isArray(validationErrors)
-        ? validationErrors[0]
-        : null;
-
-      if (firstValidationError?.message) {
-        setError(firstValidationError.message);
-      } else {
-        setError(err.response?.data?.message || 'Registration failed');
-      }
+      setError(err.response?.data?.message || 'Registration failed');
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-50 font-sans w-full">
-      
-      <section className="hidden lg:flex lg:w-1/3 bg-blue-900 text-white flex-col justify-between p-12">
-        <Link to="/" className="flex items-center gap-3">
-          <img src="/assets/images/logo/apt-rent-logo.png" alt="APT Rent logo" className="h-10 w-auto" />
-          <span className="text-2xl font-bold tracking-tight">APT Rent</span>
-        </Link>
-        <div className="space-y-6">
-          <h2 className="text-4xl font-semibold leading-tight">One profile, verified once, used everywhere.</h2>
-        </div>
-        <p className="text-xs font-mono tracking-widest text-blue-400">APT RENT // NEW ACCOUNT</p>
-      </section>
+    <div className="page-shell">
 
-      <section className="flex flex-1 items-center justify-center p-4 sm:p-8">
-        <div className="w-full max-w-2xl bg-white rounded-2xl shadow-xl p-6 sm:p-10 border border-gray-100">
-          
-          <header className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900">Register</h1>
-            <p className="text-gray-500 mt-2">Tell us who you are — this becomes your verified APT Rent profile.</p>
-          </header>
-
-          <div className="grid grid-cols-2 bg-gray-100 rounded-lg p-1 mb-8">
-            <button
-              type="button"
-              onClick={() => setRole('tenant')}
-              aria-pressed={role === 'tenant'}
-              className={`text-center py-2.5 rounded-md text-sm font-semibold transition-colors ${
-                role === 'tenant' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              I'm a Tenant
-            </button>
-            <button
-              type="button"
-              onClick={() => setRole('landlord')}
-              aria-pressed={role === 'landlord'}
-              className={`text-center py-2.5 rounded-md text-sm font-semibold transition-colors ${
-                role === 'landlord' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              I'm a Landlord
+      {/* NAVBAR to match HTML */}
+      <header className="navbar">
+        <div className="container">
+          <a href="/" className="brand">
+            <img src="/assets/images/logo/apt-rent-logo.png" alt="APT Rent logo" className="brand-logo" />
+            <span className="brand-name">APT<span> Rent</span></span>
+          </a>
+          <nav className="nav-links" id="navLinks">
+            <a href="/">Home</a>
+            <a href="#" className="is-locked" title="Sign in to browse properties">Properties <span className="lock-badge">Sign in</span></a>
+            <a href="#" className="is-locked" title="Sign in to view this page">About <span className="lock-badge">Sign in</span></a>
+          </nav>
+          <div className="nav-actions">
+            <div className="auth-only-out" style={{display: 'flex', gap: 10}}>
+              <a href="/login" className="btn btn-ghost">Log in</a>
+              <a href="/register" className="btn btn-primary">Register</a>
+            </div>
+            <div className="auth-only-in user-chip">
+              <span className="avatar">A</span>
+              Account
+            </div>
+            <button className="nav-toggle" id="navToggle" aria-label="Toggle menu" aria-expanded="false">
+              <img src="/assets/icons/menu.svg" alt="" />
             </button>
           </div>
+        </div>
+      </header>
 
-          <form onSubmit={handleRegister} className="space-y-6" noValidate>
-            {error && (
-              <div role="alert" className="p-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg">
-                {error}
-              </div>
-            )}
+      {/* AUTH LAYOUT */}
+      <main className="auth-shell">
+        <section className="auth-brand">
+          <a href="/" className="brand">
+            <img src="/assets/images/logo/apt-rent-logo.png" alt="APT Rent logo" className="brand-logo" />
+            <span className="brand-name">APT<span> Rent</span></span>
+          </a>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="flex flex-col gap-1.5">
-                <label htmlFor="firstName" className="text-sm font-semibold text-gray-700">First name <span className="text-red-500">*</span></label>
-                <input 
-                  id="firstName"
-                  type="text" name="firstName" value={formData.firstName} onChange={handleInputChange}
-                  autoComplete="given-name"
-                  className="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 outline-none"
-                />
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <label htmlFor="lastName" className="text-sm font-semibold text-gray-700">Last name <span className="text-red-500">*</span></label>
-                <input 
-                  id="lastName"
-                  type="text" name="lastName" value={formData.lastName} onChange={handleInputChange}
-                  autoComplete="family-name"
-                  className="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 outline-none"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="flex flex-col gap-1.5">
-                <label htmlFor="phone" className="text-sm font-semibold text-gray-700">Contact number <span className="text-red-500">*</span></label>
-                <input 
-                  id="phone"
-                  type="tel" name="phone" value={formData.phone} onChange={handleInputChange}
-                  autoComplete="tel"
-                  className="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 outline-none"
-                />
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <label htmlFor="email" className="text-sm font-semibold text-gray-700">Email address <span className="text-red-500">*</span></label>
-                <input 
-                  id="email"
-                  type="email" name="email" value={formData.email} onChange={handleInputChange}
-                  autoComplete="email"
-                  className="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 outline-none"
-                />
-              </div>
-            </div>
-
-            <div className="flex flex-col gap-1.5">
-              <label htmlFor="password" className="text-sm font-semibold text-gray-700">Password <span className="text-red-500">*</span></label>
-              <input 
-                id="password"
-                type="password" name="password" value={formData.password} onChange={handleInputChange}
-                autoComplete="new-password"
-                className="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 outline-none"
-              />
-            </div>
-
-            <div className="flex flex-col gap-1.5">
-              <label htmlFor="address" className="text-sm font-semibold text-gray-700">Address</label>
-              <input 
-                id="address"
-                type="text" name="address" value={formData.address} onChange={handleInputChange}
-                autoComplete="street-address"
-                className="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 outline-none"
-              />
-            </div>
-
-            <hr className="border-gray-200" />
-
-            <div className="flex flex-col gap-1.5">
-              <label htmlFor="occupation" className="text-sm font-semibold text-gray-700">Occupation</label>
-              <select 
-                id="occupation"
-                value={occupation} onChange={handleOccupationChange}
-                className="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 outline-none cursor-pointer"
-              >
-                <option value="">Select occupation</option>
-                <option value="student">Student</option>
-                <option value="service">Service holder</option>
-                <option value="business">Businessman</option>
-              </select>
-            </div>
-
-            {occupation === 'student' && (
-              <div className="flex flex-col gap-1.5 animate-fade-in">
-                <label htmlFor="institutionName" className="text-sm font-semibold text-gray-700">Institution Name</label>
-                <input 
-                  id="institutionName"
-                  type="text"
-                  name="institutionName"
-                  value={institutionName}
-                  onChange={(e) => setInstitutionName(e.target.value)}
-                  placeholder="University name"
-                  autoComplete="organization"
-                  className="w-full px-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 outline-none"
-                />
-              </div>
-            )}
-
-            <button 
-              type="submit"
-              disabled={isSubmitting}
-              className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed text-white font-bold py-3 rounded-lg shadow-sm active:scale-[0.98] transition-all mt-4"
-            >
-              {isSubmitting ? 'Creating account...' : 'Create account'}
-            </button>
-          </form>
-
-          <div className="mt-8 text-center text-sm text-gray-600">
-            Already have an account?{' '}
-            <Link to="/login" className="font-semibold text-blue-600 hover:text-blue-800 hover:underline">
-              Log in
-            </Link>
+          <div className="auth-brand-copy">
+            <span className="eyebrow">Join APT Rent</span>
+            <h2>One profile, verified once, used everywhere.</h2>
+            <p>Whether you're listing a unit or looking for one, your details are recorded once and carried through every lease.</p>
+            <ul className="auth-brand-list">
+              <li>ID verification keeps both sides accountable</li>
+              <li>Landlords manage listings, leases, and rent in one view</li>
+              <li>Tenants get a documented paper trail, digitally</li>
+            </ul>
           </div>
 
-        </div>
-      </section>
+          <p className="auth-brand-foot">APT&nbsp;RENT // NEW ACCOUNT</p>
+        </section>
+
+        <section className="auth-form-panel">
+          <div className="auth-card auth-card-wide corner-marks">
+            <header>
+              <span className="eyebrow">Create your account</span>
+              <h1>Register</h1>
+              <p>Tell us who you are — this becomes your verified APT Rent profile.</p>
+            </header>
+
+            <div className="role-tabs" role="tablist" aria-label="Register as">
+              <div className="role-tab" role="tab" aria-selected={role === 'tenant'} data-role="tenant" tabIndex={0} onClick={() => setRole('tenant')}>I'm a Tenant</div>
+              <div className="role-tab" role="tab" aria-selected={role === 'landlord'} data-role="landlord" tabIndex={0} onClick={() => setRole('landlord')}>I'm a Landlord</div>
+            </div>
+
+            <form id="registerForm" className="form-grid" onSubmit={handleRegister} noValidate>
+              <input type="hidden" id="selectedRole" name="role" value={role} />
+
+              <div className="form-row-2">
+                <div className="field" data-field="fullName" data-required="true">
+                  <label htmlFor="fullName">Full name <span className="req">*</span></label>
+                  <div className="input-shell">
+                    <img src="/assets/icons/user.svg" alt="" />
+                    <input type="text" id="fullName" name="fullName" placeholder="e.g. Farhana Akter" value={formData.fullName} onChange={handleInputChange} />
+                  </div>
+                  <span className="field-error"></span>
+                </div>
+
+                <div className="field" data-field="userId">
+                  <label htmlFor="userId">User ID <span className="hint">auto-generated</span></label>
+                  <div className="input-shell disabled">
+                    <input type="text" id="userId" name="userId" value={formData.userId || 'Assigned after registration'} disabled />
+                  </div>
+                </div>
+              </div>
+
+              <div className="form-row-2">
+                <div className="field" data-field="profilePhoto">
+                  <label htmlFor="profilePhoto">Profile picture</label>
+                  <label className="upload-zone" htmlFor="profilePhoto">
+                    <img src="/assets/icons/upload.svg" alt="" />
+                    <span className="upload-copy">
+                      <strong>Upload photo</strong>
+                      <span>JPG or PNG</span>
+                    </span>
+                    <span className="file-name"></span>
+                    <input type="file" id="profilePhoto" name="profilePhoto" accept="image/*" />
+                  </label>
+                </div>
+
+                <div className="field" data-field="nidPhoto">
+                  <label htmlFor="nidPhoto">NID photo <span className="req">*</span></label>
+                  <label className="upload-zone" htmlFor="nidPhoto">
+                    <img src="/assets/icons/upload.svg" alt="" />
+                    <span className="upload-copy">
+                      <strong>Upload NID</strong>
+                      <span>Front side, clear scan</span>
+                    </span>
+                    <span className="file-name"></span>
+                    <input type="file" id="nidPhoto" name="nidPhoto" accept="image/*" />
+                  </label>
+                </div>
+              </div>
+
+              <div className="field" data-field="address" data-required="true">
+                <label htmlFor="address">Present address <span className="req">*</span></label>
+                <div className="input-shell">
+                  <input type="text" id="address" name="address" placeholder="House, road, area, city" value={formData.address} onChange={handleInputChange} />
+                </div>
+                <span className="field-error"></span>
+              </div>
+
+              <div className="field" data-field="occupation" data-required="true">
+                <label htmlFor="occupation">Occupation <span className="req">*</span></label>
+                <div className="input-shell">
+                  <select id="occupation" name="occupation" value={occupation} onChange={(e) => setOccupation(e.target.value)}>
+                    <option value="" disabled>Select occupation</option>
+                    <option value="student">Student</option>
+                    <option value="service">Service holder</option>
+                    <option value="business">Businessman</option>
+                  </select>
+                </div>
+                <span className="field-error"></span>
+              </div>
+
+              {/* Student fields (example) */}
+              {occupation === 'student' && (
+                <div className="occupation-fields" data-occupation-group="student">
+                  <div className="field" data-field="institution">
+                    <label htmlFor="institution">School / College / University</label>
+                    <div className="input-shell">
+                      <input type="text" id="institution" name="institution" placeholder="Institution name" />
+                    </div>
+                  </div>
+                  <div className="field" data-field="studentIdCard">
+                    <label htmlFor="studentIdCard">Student ID card copy</label>
+                    <label className="upload-zone" htmlFor="studentIdCard">
+                      <img src="/assets/icons/upload.svg" alt="" />
+                      <span className="upload-copy"><strong>Upload ID card</strong><span>JPG, PNG, or PDF</span></span>
+                      <span className="file-name"></span>
+                      <input type="file" id="studentIdCard" name="studentIdCard" accept="image/*,.pdf" />
+                    </label>
+                  </div>
+                </div>
+              )}
+
+              <div className="form-row-2">
+                <div className="field" data-field="phone" data-required="true">
+                  <label htmlFor="phone">Contact number <span className="req">*</span></label>
+                  <div className="input-shell">
+                    <input type="tel" id="phone" name="phone" placeholder="+880 1XXX-XXXXXX" value={formData.phone} onChange={handleInputChange} />
+                  </div>
+                  <span className="field-error"></span>
+                </div>
+
+                <div className="field" data-field="email" data-required="true">
+                  <label htmlFor="registerEmail">Email address <span className="req">*</span></label>
+                  <div className="input-shell">
+                    <img src="/assets/icons/email.svg" alt="" />
+                    <input type="email" id="registerEmail" name="email" placeholder="you@example.com" value={formData.email} onChange={handleInputChange} />
+                  </div>
+                  <span className="field-error"></span>
+                </div>
+              </div>
+
+              <div className="form-row-2">
+                <div className="field" data-field="password" data-required="true">
+                  <label htmlFor="registerPassword">Password <span className="req">*</span></label>
+                  <div className="input-shell">
+                    <img src="/assets/icons/lock.svg" alt="" />
+                    <input type="password" id="registerPassword" name="password" placeholder="••••••••" />
+                    <button type="button" className="toggle-visibility" aria-label="Show password">
+                      <img className="icon-show" src="/assets/icons/eye.svg" alt="" />
+                      <img className="icon-hide" src="/assets/icons/eye-off.svg" alt="" style={{display: 'none'}} />
+                    </button>
+                  </div>
+                  <span className="field-error"></span>
+                </div>
+
+                <div className="field" data-field="confirmPassword" data-required="true">
+                  <label htmlFor="registerConfirmPassword">Confirm password <span className="req">*</span></label>
+                  <div className="input-shell">
+                    <img src="/assets/icons/lock.svg" alt="" />
+                    <input type="password" id="registerConfirmPassword" name="confirmPassword" placeholder="••••••••" />
+                    <button type="button" className="toggle-visibility" aria-label="Show password">
+                      <img className="icon-show" src="/assets/icons/eye.svg" alt="" />
+                      <img className="icon-hide" src="/assets/icons/eye-off.svg" alt="" style={{display: 'none'}} />
+                    </button>
+                  </div>
+                  <span className="field-error"></span>
+                </div>
+              </div>
+
+              <label className="field-checkbox">
+                <input type="checkbox" id="confirmAccurate" name="confirmAccurate" />
+                I confirm the details above are accurate and I am submitting them for verification review.
+              </label>
+
+              <label className="field-checkbox" id="agreeTermsWrap">
+                <input type="checkbox" id="agreeTerms" name="agreeTerms" />
+                I agree to the <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>.
+              </label>
+
+              <button type="submit" className="btn btn-primary btn-block">Create account</button>
+              <p className="form-note">Front-end preview — no files are uploaded anywhere yet; this just demonstrates the UI.</p>
+            </form>
+
+            <div className="auth-switch">
+              Already have an account? <a href="/login">Log in</a>
+            </div>
+          </div>
+        </section>
+      </main>
+
     </div>
   );
 }
