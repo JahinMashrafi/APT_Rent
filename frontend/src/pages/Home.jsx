@@ -1,4 +1,5 @@
 import Navbar from "../components/Navbar.jsx";
+import PropertyMap from "../components/PropertyMap.jsx";
 
 export default function Home() {
   return (
@@ -13,19 +14,46 @@ export default function Home() {
             <div className="hero-overlay"></div>
           </div>
           <div className="container hero-inner">
-            <span className="eyebrow">Verified listings · Digital leases · Cashless rent</span>
-            <h1><em>Find Your Next Home</em></h1>
+            <span className="eyebrow">
+              Verified listings · Digital leases · Cashless rent
+            </span>
+            <h1>
+              <em>Find Your Next Home</em>
+            </h1>
 
-            <form className="search-tag" role="search" aria-label="Search apartments">
+            <form
+              className="search-tag"
+              role="search"
+              aria-label="Search apartments"
+            >
               <span className="search-icon">
-                <img src="/assets/icons/search.svg" alt="" width="16" height="16" />
+                <img
+                  src="/assets/icons/search.svg"
+                  alt=""
+                  width="16"
+                  height="16"
+                />
               </span>
               <span className="search-tag-seam" aria-hidden="true"></span>
-              <input type="search" placeholder="Search by area, e.g. Gulshan, Dhanmondi..." aria-label="Search apartments by area" />
-              <button type="submit" className="btn btn-primary">Search</button>
+              <input
+                type="search"
+                placeholder="Search by area, e.g. Gulshan, Dhanmondi..."
+                aria-label="Search apartments by area"
+              />
+              <button type="submit" className="btn btn-primary">
+                Search
+              </button>
             </form>
-            <p className="hero-note">Sign in to unlock live listings, filters, and saved searches.</p>
+            <p className="hero-note">
+              Sign in to unlock live listings, filters, and saved searches.
+            </p>
           </div>
+        </section>
+        <section className="max-w-7xl mx-auto px-4 py-16">
+          <h2 className="text-3xl font-bold text-gray-900 mb-8">
+            Explore Available Properties
+          </h2>
+          <PropertyMap />
         </section>
       </main>
 
@@ -35,7 +63,6 @@ export default function Home() {
           <p>APT&nbsp;RENT // EST. 2026</p>
         </div>
       </footer>
-
     </div>
   );
 }
