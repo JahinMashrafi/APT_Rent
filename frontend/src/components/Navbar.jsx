@@ -1,35 +1,78 @@
-import { Link } from 'react-router-dom';
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { fetchCurrentUser } from "../utils/auth";
 
 export default function Navbar() {
-  return (
-    <header className="bg-gray-800 border-b border-gray-800">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
-          
-          {/* Brand Logo */}
-          <Link to="/" className="flex items-center gap-2 hover:opacity-90 transition-opacity">
-            <img src="/assets/images/logo/apt-rent-logo.png" alt="APT Rent logo" className="h-8 w-auto" />
-            <span className="text-xl font-bold text-gray-900">
-              APT <span className="font-light">Rent</span>
-            </span>
-          </Link>
-          
-          {/* Right Side Actions */}
-          <div className="flex items-center gap-4">
-            <Link 
-              to="/login" 
-              className="text-sm font-semibold text-gray-600 hover:text-gray-900 transition-colors"
-            >
-              Log in
-            </Link>
-            <Link 
-              to="/register" 
-              className="text-sm font-semibold bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
-            >
-              Register
-            </Link>
-          </div>
+  const [user, setUser] = useState(null);
 
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadCurrentUser = async () => {
+      try {
+        const currentUser = await fetchCurrentUser();
+        if (isMounted) {
+          setUser(currentUser);
+        }
+      } catch (error) {
+        console.error("Failed to load auth user", error);
+        if (isMounted) {
+          setUser(null);
+        }
+      }
+    };
+
+    loadCurrentUser();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const avatarInitial = (user?.name?.trim()?.[0] || "U").toUpperCase();
+
+  return (
+    <header className="navbar">
+      <div className="container">
+        <Link to="/" className="brand">
+          <img src="/assets/images/logo/apt-rent-logo.png" alt="APT Rent logo" className="brand-logo" />
+        </Link>
+
+        <nav className="nav-links" id="navLinks">
+          <Link to="/">Home</Link>
+          <a href="#" className="is-locked" title="Sign in to browse properties">
+            Properties <span className="lock-badge">Sign in</span>
+          </a>
+          <a href="#" className="is-locked" title="Sign in to view this page">
+            About <span className="lock-badge">Sign in</span>
+          </a>
+        </nav>
+
+        <div className="nav-actions">
+          {user?.id ? (
+            <Link to="/profile" className="auth-only-in user-chip" aria-label="Open profile">
+              {user.profilePictureUrl ? (
+                <img
+                  src={user.profilePictureUrl}
+                  alt={`${user.name || "User"} profile`}
+                  className="avatar-image"
+                  referrerPolicy="no-referrer"
+                />
+              ) : (
+                <span className="avatar">{avatarInitial}</span>
+              )}
+              Profile
+            </Link>
+          ) : (
+            <div className="auth-only-out" style={{ display: "flex", gap: 10 }}>
+              <Link to="/login" className="btn btn-ghost">
+                Log in
+              </Link>
+              <Link to="/register" className="btn btn-primary">
+                Register
+              </Link>
+            </div>
+          )}
         </div>
       </div>
     </header>

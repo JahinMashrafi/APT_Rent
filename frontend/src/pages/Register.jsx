@@ -1,14 +1,15 @@
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
+import Navbar from "../components/Navbar.jsx";
 
 export default function Register() {
-  const [role, setRole] = useState('tenant');
-  const [occupation, setOccupation] = useState('');
+  const [role, setRole] = useState("tenant");
+  const [occupation, setOccupation] = useState("");
   const [formData, setFormData] = useState({
-    fullName: '', userId: '', phone: '', email: '', password: '', confirmPassword: '', address: ''
+    fullName: "", userId: "", phone: "", email: "", password: "", confirmPassword: "", address: ""
   });
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
 
@@ -19,39 +20,41 @@ export default function Register() {
 
   const handleRegister = async (e) => {
     e.preventDefault();
-    setError('');
+    setError("");
 
     // Basic front-end validation similar to original HTML preview
     if (!formData.fullName || !formData.email || !formData.phone || !formData.password || !formData.confirmPassword) {
-      setError('Please fill in all required fields.');
+      setError("Please fill in all required fields.");
       return;
     }
 
     if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match.');
+      setError("Passwords do not match.");
       return;
     }
 
     try {
       setIsSubmitting(true);
-      // Example payload — adapt to real API if needed
+      const [firstName = "", ...rest] = formData.fullName.trim().split(/\s+/);
+      const lastName = rest.join(" ") || "User";
       const payload = {
-        fullName: formData.fullName,
+        firstName,
+        lastName,
         email: formData.email,
         phone: formData.phone,
         password: formData.password,
-        address: formData.address,
-        role
+        is_landlord: role === "landlord",
+        is_tenant: role === "tenant",
       };
 
-      const response = await axios.post('http://localhost:5000/api/auth/register', payload, { withCredentials: true });
-      if (response.data?.status === 'success') {
-        navigate('/');
+      const response = await axios.post("http://localhost:5000/api/auth/register", payload, { withCredentials: true });
+      if (response.data?.status === "success") {
+        navigate("/");
       } else {
-        setError(response.data?.message || 'Registration failed');
+        setError(response.data?.message || "Registration failed");
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'Registration failed');
+      setError(err.response?.data?.message || "Registration failed");
     } finally {
       setIsSubmitting(false);
     }
@@ -59,34 +62,7 @@ export default function Register() {
 
   return (
     <div className="page-shell">
-
-      {/* NAVBAR to match HTML */}
-      <header className="navbar">
-        <div className="container">
-          <a href="/" className="brand">
-            <img src="/assets/images/logo/apt-rent-logo.png" alt="APT Rent logo" className="brand-logo" />
-            <span className="brand-name">APT<span> Rent</span></span>
-          </a>
-          <nav className="nav-links" id="navLinks">
-            <a href="/">Home</a>
-            <a href="#" className="is-locked" title="Sign in to browse properties">Properties <span className="lock-badge">Sign in</span></a>
-            <a href="#" className="is-locked" title="Sign in to view this page">About <span className="lock-badge">Sign in</span></a>
-          </nav>
-          <div className="nav-actions">
-            <div className="auth-only-out" style={{display: 'flex', gap: 10}}>
-              <a href="/login" className="btn btn-ghost">Log in</a>
-              <a href="/register" className="btn btn-primary">Register</a>
-            </div>
-            <div className="auth-only-in user-chip">
-              <span className="avatar">A</span>
-              Account
-            </div>
-            <button className="nav-toggle" id="navToggle" aria-label="Toggle menu" aria-expanded="false">
-              <img src="/assets/icons/menu.svg" alt="" />
-            </button>
-          </div>
-        </div>
-      </header>
+      <Navbar />
 
       {/* AUTH LAYOUT */}
       <main className="auth-shell">
@@ -238,7 +214,14 @@ export default function Register() {
                   <label htmlFor="registerPassword">Password <span className="req">*</span></label>
                   <div className="input-shell">
                     <img src="/assets/icons/lock.svg" alt="" />
-                    <input type="password" id="registerPassword" name="password" placeholder="••••••••" />
+                    <input
+                      type="password"
+                      id="registerPassword"
+                      name="password"
+                      placeholder="••••••••"
+                      value={formData.password}
+                      onChange={handleInputChange}
+                    />
                     <button type="button" className="toggle-visibility" aria-label="Show password">
                       <img className="icon-show" src="/assets/icons/eye.svg" alt="" />
                       <img className="icon-hide" src="/assets/icons/eye-off.svg" alt="" style={{display: 'none'}} />
@@ -251,7 +234,14 @@ export default function Register() {
                   <label htmlFor="registerConfirmPassword">Confirm password <span className="req">*</span></label>
                   <div className="input-shell">
                     <img src="/assets/icons/lock.svg" alt="" />
-                    <input type="password" id="registerConfirmPassword" name="confirmPassword" placeholder="••••••••" />
+                    <input
+                      type="password"
+                      id="registerConfirmPassword"
+                      name="confirmPassword"
+                      placeholder="••••••••"
+                      value={formData.confirmPassword}
+                      onChange={handleInputChange}
+                    />
                     <button type="button" className="toggle-visibility" aria-label="Show password">
                       <img className="icon-show" src="/assets/icons/eye.svg" alt="" />
                       <img className="icon-hide" src="/assets/icons/eye-off.svg" alt="" style={{display: 'none'}} />
@@ -271,7 +261,10 @@ export default function Register() {
                 I agree to the <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a>.
               </label>
 
-              <button type="submit" className="btn btn-primary btn-block">Create account</button>
+              <button type="submit" className="btn btn-primary btn-block" disabled={isSubmitting}>
+                {isSubmitting ? "Creating account..." : "Create account"}
+              </button>
+              {error ? <p className="form-note" style={{ color: "var(--color-error)" }}>{error}</p> : null}
               <p className="form-note">Front-end preview — no files are uploaded anywhere yet; this just demonstrates the UI.</p>
             </form>
 

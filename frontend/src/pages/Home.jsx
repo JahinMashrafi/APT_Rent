@@ -1,37 +1,9 @@
-import { Link } from 'react-router-dom';
+import Navbar from "../components/Navbar.jsx";
 
 export default function Home() {
   return (
     <div className="page-shell">
-
-      {/* NAVBAR matching index.html */}
-      <header className="navbar">
-        <div className="container">
-          <a href="/" className="brand">
-            <img src="/assets/images/logo/apt-rent-logo.png" alt="APT Rent logo" className="brand-logo" />
-          </a>
-
-          <nav className="nav-links" id="navLinks">
-            <a href="/">Home</a>
-            <a href="#" className="is-locked" title="Sign in to browse properties">Properties <span className="lock-badge">Sign in</span></a>
-            <a href="#" className="is-locked" title="Sign in to view this page">About <span className="lock-badge">Sign in</span></a>
-          </nav>
-
-          <div className="nav-actions">
-            <div className="auth-only-out" style={{display: 'flex', gap: 10}}>
-              <a href="/login" className="btn btn-ghost">Log in</a>
-              <a href="/register" className="btn btn-primary">Register</a>
-            </div>
-            <div className="auth-only-in user-chip">
-              <span className="avatar">A</span>
-              Account
-            </div>
-            <button className="nav-toggle" id="navToggle" aria-label="Toggle menu" aria-expanded="false">
-              <img src="/assets/icons/menu.svg" alt="" />
-            </button>
-          </div>
-        </div>
-      </header>
+      <Navbar />
 
       {/* HERO */}
       <main>

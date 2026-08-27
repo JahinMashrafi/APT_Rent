@@ -1,62 +1,32 @@
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
+import Navbar from "../components/Navbar.jsx";
 
 export default function Login() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
   const navigate = useNavigate();
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    setError('');
+    setError("");
 
     try {
-      const response = await axios.post(
-        'http://localhost:5000/api/auth/login',
-        { email, password },
-        { withCredentials: true }
-      );
+      const response = await axios.post("http://localhost:5000/api/auth/login", { email, password }, { withCredentials: true });
 
-      if (response.data?.status === 'success') {
-        navigate('/');
+      if (response.data?.success) {
+        navigate("/");
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'Something went wrong');
+      setError(err.response?.data?.message || "Something went wrong");
     }
   };
 
   return (
     <div className="page-shell">
-
-      {/* NAVBAR (matches HTML structure) */}
-      <header className="navbar">
-        <div className="container">
-          <a href="/" className="brand">
-            <img src="/assets/images/logo/apt-rent-logo.png" alt="APT Rent logo" className="brand-logo" />
-          </a>
-          <nav className="nav-links" id="navLinks">
-            <a href="/">Home</a>
-            <a href="#" className="is-locked" title="Sign in to browse properties">Properties <span className="lock-badge">Sign in</span></a>
-            <a href="#" className="is-locked" title="Sign in to view this page">About <span className="lock-badge">Sign in</span></a>
-          </nav>
-
-          <div className="nav-actions">
-            <div className="auth-only-out" style={{display: 'flex', gap: 10}}>
-              <a href="/login" className="btn btn-ghost">Log in</a>
-              <a href="/register" className="btn btn-primary">Register</a>
-            </div>
-            <div className="auth-only-in user-chip">
-              <span className="avatar">A</span>
-              Account
-            </div>
-            <button className="nav-toggle" id="navToggle" aria-label="Toggle menu" aria-expanded="false">
-              <img src="/assets/icons/menu.svg" alt="" />
-            </button>
-          </div>
-        </div>
-      </header>
+      <Navbar />
 
       {/* AUTH LAYOUT (left brand + right form) */}
       <main className="auth-shell">
@@ -94,7 +64,15 @@ export default function Login() {
                 <label htmlFor="loginEmail">Email address <span className="req">*</span></label>
                 <div className="input-shell">
                   <img src="/assets/icons/email.svg" alt="" />
-                  <input type="email" id="loginEmail" name="email" placeholder="you@example.com" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+                  <input
+                    type="email"
+                    id="loginEmail"
+                    name="email"
+                    placeholder="you@example.com"
+                    autoComplete="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                  />
                 </div>
                 <span className="field-error"></span>
               </div>
@@ -103,7 +81,15 @@ export default function Login() {
                 <label htmlFor="loginPassword">Password <span className="req">*</span></label>
                 <div className="input-shell">
                   <img src="/assets/icons/lock.svg" alt="" />
-                  <input type="password" id="loginPassword" name="password" placeholder="••••••••" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} />
+                  <input
+                    type="password"
+                    id="loginPassword"
+                    name="password"
+                    placeholder="••••••••"
+                    autoComplete="current-password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                  />
                   <button type="button" className="toggle-visibility" aria-label="Show password">
                     <img className="icon-show" src="/assets/icons/eye.svg" alt="" />
                     <img className="icon-hide" src="/assets/icons/eye-off.svg" alt="" style={{display: 'none'}} />
@@ -121,6 +107,7 @@ export default function Login() {
               </div>
 
               <button type="submit" className="btn btn-primary btn-block">Log in</button>
+              {error ? <p className="form-note" style={{ color: "var(--color-error)" }}>{error}</p> : null}
               <p className="form-note">This is a front-end preview — submitting logs you in locally only, no server yet.</p>
             </form>
 

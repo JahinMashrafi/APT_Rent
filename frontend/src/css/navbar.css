@@ -118,6 +118,12 @@
   font-weight: 700;
   font-size: 0.85rem;
 }
+.user-chip .avatar-image {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+}
 
 /* ---- Mobile menu toggle ---- */
 .nav-toggle {

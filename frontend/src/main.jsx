@@ -5,6 +5,7 @@ import './css/global.css';
 import './css/navbar.css';
 import './css/auth.css';
 import './css/home.css';
+import './css/profile.css';
 import App from './App.jsx';
 
 createRoot(document.getElementById('root')).render(
