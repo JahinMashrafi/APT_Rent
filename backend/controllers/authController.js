@@ -2,6 +2,16 @@ const pool = require("../config/db.js");
 const jwtService = require("../config/JWT.js");
 const bcrypt = require("bcrypt");
 
+const getCookieOptions = () => ({
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production",
+  sameSite: "strict",
+  maxAge: 7 * 24 * 60 * 60 * 1000,
+});
+
+const getTokenFromRequest = (req) =>
+  req.cookies?.accessToken || req.cookies?.token || null;
+
 const registerUser = async (req, res) => {
   const {
     firstName,
@@ -18,10 +28,10 @@ const registerUser = async (req, res) => {
     errors.push({ field: "firstName", message: "First name is invalid" });
   }
   if (!lastName || lastName.length === 0) {
-    errors.push({ field: "lastName", Message: "lastName name is invalid" });
+    errors.push({ field: "lastName", message: "lastName name is invalid" });
   }
   if (!password || password.length === 0) {
-    errors.push({ field: "passwrod", message: "password is invalid" });
+    errors.push({ field: "password", message: "password is invalid" });
   }
   if (
     !email ||
@@ -151,19 +161,14 @@ const loginUser = async (req, res) => {
 
     const payload = {
       user_id: user.user_id,
-      islandlord: user.is_landlord,
-      istenant: user.is_tenant,
-      isadmin: user.is_admin,
+      is_landlord: user.is_landlord,
+      is_tenant: user.is_tenant,
+      is_admin: user.is_admin,
     };
     const token = await jwtService.generateToken(payload);
 
-    const cookieOptions = {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: 7 * 24 * 60 * 60 * 1000 
-    };
-    res.cookie('accessToken', token, cookieOptions);
+    const cookieOptions = getCookieOptions();
+    res.cookie("accessToken", token, cookieOptions);
 
     res.status(200).json({
       success: true,
