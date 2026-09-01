@@ -233,7 +233,6 @@ const logoutUser = async (req, res) => {
   const cookieOptions = getCookieOptions();
   res.clearCookie("accessToken", cookieOptions);
   res.clearCookie("token", cookieOptions);
-  res.clearCookie("acessToken", cookieOptions);
   return res.status(200).json({ success: true, message: "Logged out successfully" });
 };
 

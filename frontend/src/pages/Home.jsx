@@ -32,25 +32,6 @@ export default function Home() {
   // ==========================================================================
   // SECTION A — AUTHENTICATED HOME (post-login/register)
   // ==========================================================================
-  if (isAuthenticated) {
-    return (
-      <div className="page-shell">
-        {/* --- Navbar: same visual style as login/logout pages, minus "About" --- */}
-        <AuthNavbar />
-
-        <main>
-          {/* --- Newsfeed: search/filter bar + apartment posts + pagination --- */}
-          <NewsFeed />
-        </main>
-
-        <footer className="site-footer">
-          <div className="container">
-            <p>APT&nbsp;RENT // EST. 2026</p>
-          </div>
-        </footer>
-      </div>
-    );
-  }
 
   // ==========================================================================
   // SECTION B — PUBLIC / LOGGED-OUT HOME (unchanged from your original code)
