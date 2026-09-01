@@ -70,7 +70,7 @@ const registerUser = async (req, res) => {
     const newUser = userResult.rows[0];
 
     const token = await jwtService.generateToken({
-      userId: newUser.user_id,
+      user_id: newUser.user_id,
       is_tenant: newUser.is_tenant,
       is_landlord: newUser.is_landlord,
       is_admin: newUser.is_admin,
@@ -81,13 +81,12 @@ const registerUser = async (req, res) => {
       sameSite: 'strict',
       maxAge: 7 * 24 * 60 * 60 * 1000 
     };
-    res.cookie('token', token, cookieOptions);
+    res.cookie("accessToken", token, cookieOptions);
 
     return res.status(201).json({
       status: "success",
       message: "registration successful",
       data: {
-        acessToken: token,
         user: {
           userId: newUser.user_id,
           name: newUser.name,
@@ -168,7 +167,6 @@ const loginUser = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      token: token,
       user: {
         id: user.user_id,
         name: user.name,
@@ -184,4 +182,34 @@ const loginUser = async (req, res) => {
   }
 };
 
-module.exports = { loginUser, registerUser };
+const getCurrentUser = async (req, res) => {
+  try {
+    const result = await pool.query(
+      `select user_id, name, email, contact_number, address, occupation,
+              institution_name, workplace_name, profile_picture_url,
+              is_landlord, is_tenant, is_admin
+       from users where user_id = $1`,
+      [req.user.user_id],
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(401).json({ success: false, message: "User not found" });
+    }
+
+    return res.status(200).json({ success: true, user: result.rows[0] });
+  } catch (error) {
+    console.error("Current user error: ", error);
+    return res.status(500).json({ success: false, message: "Failed to load user" });
+  }
+};
+
+const logoutUser = (req, res) => {
+  res.clearCookie("accessToken", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+  });
+  return res.status(200).json({ success: true, message: "Logged out successfully" });
+};
+
+module.exports = { loginUser, registerUser, getCurrentUser, logoutUser };
