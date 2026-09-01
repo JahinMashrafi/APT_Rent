@@ -19,7 +19,7 @@ export default function Login() {
       const response = await axios.post("http://localhost:5000/api/auth/login", { email, password }, { withCredentials: true });
 
       if (response.data?.success) {
-        navigate("/");
+        navigate("/dashboard");
       }
     } catch (err) {
       setError(err.response?.data?.message || "Something went wrong");
