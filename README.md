@@ -95,7 +95,7 @@ system connecting **Tenants, Owners, and Administrators**.
 <details>
 <summary>🔌 External Services</summary>
 
-- [ ] Configure Map API
+- [x] Configure Map API
 - [ ] Configure Stripe test environment
 - [ ] Verify API credentials
 - [ ] Test external services

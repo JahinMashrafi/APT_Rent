@@ -108,7 +108,7 @@ export default function Login() {
 
               <button type="submit" className="btn btn-primary btn-block">Log in</button>
               {error ? <p className="form-note" style={{ color: "var(--color-error)" }}>{error}</p> : null}
-              <p className="form-note">This is a front-end preview — submitting logs you in locally only, no server yet.</p>
+              <p className="form-note">Your secure session is saved in an HTTP-only cookie for seven days.</p>
             </form>
 
             <div className="auth-switch">

@@ -80,7 +80,7 @@ const registerUser = async (req, res) => {
     const newUser = userResult.rows[0];
 
     const token = await jwtService.generateToken({
-      userId: newUser.user_id,
+      user_id: newUser.user_id,
       is_tenant: newUser.is_tenant,
       is_landlord: newUser.is_landlord,
       is_admin: newUser.is_admin,
@@ -168,7 +168,6 @@ const loginUser = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      token: token,
       user: {
         id: user.user_id,
         name: user.name,
