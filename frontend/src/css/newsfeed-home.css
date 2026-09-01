@@ -1,0 +1,331 @@
+/* ============================================================================
+   newsfeed-home.css
+   ============================================================================
+   Styles for the authenticated home bar: AuthNavbar, HamburgerMenu,
+   SearchFilterBar, ApartmentCard grid, and Pagination.
+
+   Import this once, e.g. in your app entry point or Home.jsx:
+     import "../styles/newsfeed-home.css";
+
+   Organized into the same section groups as the components themselves so
+   you can find/edit styles quickly.
+   ============================================================================ */
+
+/* ============================== 1. NAVBAR ============================== */
+
+.navbar-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 0;
+}
+
+.navbar-links {
+  display: flex;
+  gap: 1.5rem;
+}
+
+.navbar-actions {
+  position: relative;
+}
+
+/* ========================= 2. HAMBURGER MENU ============================ */
+
+.hamburger-menu {
+  position: relative;
+}
+
+.hamburger-toggle {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.hamburger-bar {
+  width: 22px;
+  height: 2px;
+  background-color: currentColor;
+  display: block;
+}
+
+.hamburger-dropdown {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  min-width: 220px;
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  padding: 0.5rem;
+  z-index: 40;
+}
+
+.hamburger-dropdown ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.hamburger-dropdown li a {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.6rem 0.75rem;
+  border-radius: 8px;
+  text-decoration: none;
+  color: inherit;
+}
+
+.hamburger-dropdown li a:hover {
+  background-color: #f4f4f5;
+}
+
+/* ======================= 3. SEARCH + FILTER BAR ========================= */
+
+.newsfeed-search-bar {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+}
+
+.newsfeed-search-input {
+  flex: 1 1 320px;
+}
+
+.newsfeed-filter-wrapper {
+  position: relative;
+}
+
+.newsfeed-filter-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  height: 100%;
+}
+
+.newsfeed-filter-panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 320px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.14);
+  padding: 1rem;
+  z-index: 40;
+}
+
+.filter-group {
+  border: none;
+  padding: 0 0 0.85rem 0;
+  margin: 0 0 0.85rem 0;
+  border-bottom: 1px solid #eee;
+}
+
+.filter-group legend {
+  font-weight: 600;
+  font-size: 0.85rem;
+  margin-bottom: 0.4rem;
+  padding: 0;
+}
+
+.filter-group input,
+.filter-group select {
+  width: 100%;
+  padding: 0.45rem 0.6rem;
+  margin-bottom: 0.4rem;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+}
+
+.filter-field {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  margin-bottom: 0.4rem;
+}
+
+.filter-field input,
+.filter-field select {
+  width: 100px;
+  margin-bottom: 0;
+}
+
+.filter-range-separator {
+  display: inline-block;
+  margin: 0 0.4rem;
+  font-size: 0.8rem;
+  color: #777;
+}
+
+.filter-panel-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+/* ========================= 4. NEWSFEED GRID ============================= */
+
+.newsfeed-section {
+  max-width: 80rem;
+  margin: 0 auto;
+  padding: 2.5rem 1rem;
+}
+
+.newsfeed-status {
+  text-align: center;
+  color: #777;
+  padding: 3rem 0;
+}
+
+.newsfeed-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.5rem;
+}
+
+/* =========================== 5. APARTMENT CARD =========================== */
+
+.apartment-card {
+  border: 1px solid #eee;
+  border-radius: 14px;
+  overflow: hidden;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+}
+
+.apartment-photos {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: 2px;
+  height: 200px;
+  text-decoration: none;
+}
+
+.apartment-photos .apartment-photo-tile:first-child {
+  grid-row: 1 / span 2;
+}
+
+.apartment-photo-tile {
+  position: relative;
+  overflow: hidden;
+}
+
+.apartment-photo-tile img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.apartment-photo-overflow {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  font-weight: 600;
+}
+
+.apartment-card-body {
+  padding: 1rem;
+}
+
+.apartment-listed-date {
+  font-size: 0.78rem;
+  color: #999;
+  margin: 0 0 0.35rem 0;
+}
+
+.apartment-address {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0 0 0.3rem 0;
+}
+
+.apartment-price {
+  font-weight: 700;
+  margin: 0 0 0.6rem 0;
+}
+
+.apartment-icon-row {
+  display: flex;
+  gap: 1rem;
+  list-style: none;
+  padding: 0;
+  margin: 0 0 0.75rem 0;
+}
+
+.apartment-icon-row li {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.85rem;
+}
+
+.apartment-actions {
+  display: flex;
+  gap: 0.5rem;
+  border-top: 1px solid #f0f0f0;
+  padding-top: 0.6rem;
+}
+
+.icon-btn {
+  background: transparent;
+  border: 1px solid #eee;
+  border-radius: 8px;
+  padding: 0.4rem 0.6rem;
+  cursor: pointer;
+}
+
+.wishlist-btn.is-active {
+  border-color: #f5b301;
+  background: #fff8e6;
+}
+
+/* ============================ 6. PAGINATION ============================= */
+
+.pagination-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 2.5rem;
+  flex-wrap: wrap;
+}
+
+.pagination-numbers {
+  display: flex;
+  gap: 0.4rem;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.pagination-btn {
+  min-width: 38px;
+  height: 38px;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+  background: #fff;
+  cursor: pointer;
+}
+
+.pagination-number.is-current {
+  background: #111;
+  color: #fff;
+  border-color: #111;
+}
