@@ -9,6 +9,8 @@ export default function Register() {
   const [formData, setFormData] = useState({
     fullName: "", userId: "", phone: "", email: "", password: "", confirmPassword: "", address: ""
   });
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
@@ -210,41 +212,73 @@ export default function Register() {
               </div>
 
               <div className="form-row-2">
+                {/* Password field with working visibility toggle */}
                 <div className="field" data-field="password" data-required="true">
                   <label htmlFor="registerPassword">Password <span className="req">*</span></label>
                   <div className="input-shell">
                     <img src="/assets/icons/lock.svg" alt="" />
                     <input
-                      type="password"
+                      type={showPassword ? "text" : "password"}
                       id="registerPassword"
                       name="password"
                       placeholder="••••••••"
                       value={formData.password}
                       onChange={handleInputChange}
                     />
-                    <button type="button" className="toggle-visibility" aria-label="Show password">
-                      <img className="icon-show" src="/assets/icons/eye.svg" alt="" />
-                      <img className="icon-hide" src="/assets/icons/eye-off.svg" alt="" style={{display: 'none'}} />
+                    <button
+                      type="button"
+                      className="toggle-visibility"
+                      aria-label={showPassword ? "Hide password" : "Show password"}
+                      onClick={() => setShowPassword((prev) => !prev)}
+                    >
+                      <img
+                        className="icon-show"
+                        src="/assets/icons/eye.svg"
+                        alt=""
+                        style={{ display: showPassword ? "none" : "block" }}
+                      />
+                      <img
+                        className="icon-hide"
+                        src="/assets/icons/eye-off.svg"
+                        alt=""
+                        style={{ display: showPassword ? "block" : "none" }}
+                      />
                     </button>
                   </div>
                   <span className="field-error"></span>
                 </div>
 
+                {/* Confirm Password field with working visibility toggle */}
                 <div className="field" data-field="confirmPassword" data-required="true">
                   <label htmlFor="registerConfirmPassword">Confirm password <span className="req">*</span></label>
                   <div className="input-shell">
                     <img src="/assets/icons/lock.svg" alt="" />
                     <input
-                      type="password"
+                      type={showConfirmPassword ? "text" : "password"}
                       id="registerConfirmPassword"
                       name="confirmPassword"
                       placeholder="••••••••"
                       value={formData.confirmPassword}
                       onChange={handleInputChange}
                     />
-                    <button type="button" className="toggle-visibility" aria-label="Show password">
-                      <img className="icon-show" src="/assets/icons/eye.svg" alt="" />
-                      <img className="icon-hide" src="/assets/icons/eye-off.svg" alt="" style={{display: 'none'}} />
+                    <button
+                      type="button"
+                      className="toggle-visibility"
+                      aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+                      onClick={() => setShowConfirmPassword((prev) => !prev)}
+                    >
+                      <img
+                        className="icon-show"
+                        src="/assets/icons/eye.svg"
+                        alt=""
+                        style={{ display: showConfirmPassword ? "none" : "block" }}
+                      />
+                      <img
+                        className="icon-hide"
+                        src="/assets/icons/eye-off.svg"
+                        alt=""
+                        style={{ display: showConfirmPassword ? "block" : "none" }}
+                      />
                     </button>
                   </div>
                   <span className="field-error"></span>
