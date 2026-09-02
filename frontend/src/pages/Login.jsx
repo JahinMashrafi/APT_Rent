@@ -7,6 +7,8 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  // Controls whether the password field shows plain text or dots.
+  const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
 
   const handleLogin = async (e) => {
@@ -81,8 +83,8 @@ export default function Login() {
                 <label htmlFor="loginPassword">Password <span className="req">*</span></label>
                 <div className="input-shell">
                   <img src="/assets/icons/lock.svg" alt="" />
-                  <input
-                    type="password"
+                                   <input
+                    type={showPassword ? "text" : "password"}
                     id="loginPassword"
                     name="password"
                     placeholder="••••••••"
@@ -90,9 +92,14 @@ export default function Login() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                   />
-                  <button type="button" className="toggle-visibility" aria-label="Show password">
-                    <img className="icon-show" src="/assets/icons/eye.svg" alt="" />
-                    <img className="icon-hide" src="/assets/icons/eye-off.svg" alt="" style={{display: 'none'}} />
+                  <button
+                    type="button"
+                    className="toggle-visibility"
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                    onClick={() => setShowPassword((prev) => !prev)}
+                  >
+                    <img className="icon-show" src="/assets/icons/eye.svg" alt="" style={{ display: showPassword ? "none" : "block" }} />
+                    <img className="icon-hide" src="/assets/icons/eye-off.svg" alt="" style={{ display: showPassword ? "block" : "none" }} />
                   </button>
                 </div>
                 <span className="field-error"></span>
