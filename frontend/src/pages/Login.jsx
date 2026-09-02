@@ -6,6 +6,7 @@ import Navbar from "../components/Navbar.jsx";
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
@@ -82,7 +83,7 @@ export default function Login() {
                 <div className="input-shell">
                   <img src="/assets/icons/lock.svg" alt="" />
                   <input
-                    type="password"
+                    type={showPassword ? "text" : "password"}
                     id="loginPassword"
                     name="password"
                     placeholder="••••••••"
@@ -90,9 +91,24 @@ export default function Login() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                   />
-                  <button type="button" className="toggle-visibility" aria-label="Show password">
-                    <img className="icon-show" src="/assets/icons/eye.svg" alt="" />
-                    <img className="icon-hide" src="/assets/icons/eye-off.svg" alt="" style={{display: 'none'}} />
+                  <button
+                    type="button"
+                    className="toggle-visibility"
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                    onClick={() => setShowPassword((prev) => !prev)}
+                  >
+                    <img
+                      className="icon-show"
+                      src="/assets/icons/eye.svg"
+                      alt=""
+                      style={{ display: showPassword ? "none" : "block" }}
+                    />
+                    <img
+                      className="icon-hide"
+                      src="/assets/icons/eye-off.svg"
+                      alt=""
+                      style={{ display: showPassword ? "block" : "none" }}
+                    />
                   </button>
                 </div>
                 <span className="field-error"></span>
