@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import Navbar from "../components/Navbar.jsx";
+import AuthNavbar from "../components/AuthNavbar.jsx";
 import { fetchCurrentUser, logoutUser } from "../utils/auth";
 
 const toFormState = (user) => ({
@@ -118,7 +118,7 @@ export default function Profile() {
 
   return (
     <div className="page-shell">
-      <Navbar />
+      <AuthNavbar />
       <section className="profile-page">
         <div className="profile-container">
           <div className="profile-card">
