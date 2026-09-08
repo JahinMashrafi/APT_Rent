@@ -21,14 +21,13 @@ const registerUser = async (req, res) => {
     password,
     is_landlord,
     is_tenant,
+    address,
+    occupation,
   } = req.body;
   let errors = [];
 
   if (!firstName || firstName.length === 0) {
     errors.push({ field: "firstName", message: "First name is invalid" });
-  }
-  if (!lastName || lastName.length === 0) {
-    errors.push({ field: "lastName", message: "lastName name is invalid" });
   }
   if (!password || password.length === 0) {
     errors.push({ field: "password", message: "password is invalid" });
@@ -58,14 +57,16 @@ const registerUser = async (req, res) => {
   try {
     const saltRound = 10;
     const hashedPassword = await bcrypt.hash(password, saltRound);
-    const fullName = `${firstName.trim()} ${lastName.trim()}`;
+    const fullName = lastName && lastName.trim()
+      ? `${firstName.trim()} ${lastName.trim()}`
+      : firstName.trim();
     const isAdmin = false;
 
     const userResult = await pool.query(
       `
-      insert into users (name, email , password_hash, contact_number, is_landlord, is_tenant, is_admin)
-      values ($1, $2, $3, $4, $5, $6, $7)
-      returning user_id, name, email, contact_number, is_landlord, is_tenant, is_admin
+      insert into users (name, email, password_hash, contact_number, is_landlord, is_tenant, is_admin, address, occupation)
+      values ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      returning user_id, name, email, contact_number, is_landlord, is_tenant, is_admin, address, occupation
       `,
       [
         fullName,
@@ -75,6 +76,8 @@ const registerUser = async (req, res) => {
         Boolean(is_landlord),
         Boolean(is_tenant),
         isAdmin,
+        address,
+        occupation,
       ],
     );
     const newUser = userResult.rows[0];
@@ -97,10 +100,12 @@ const registerUser = async (req, res) => {
           userId: newUser.user_id,
           name: newUser.name,
           email: newUser.email,
-          phone: newUser.contact_number,
+          contact_number: newUser.contact_number,
           is_tenant: newUser.is_tenant,
           is_landlord: newUser.is_landlord,
           is_admin: newUser.is_admin,
+          address: newUser.address,
+          occupation: newUser.occupation,
         },
       },
     });
@@ -109,7 +114,7 @@ const registerUser = async (req, res) => {
     if (error.code === "23505") {
       return res.status(409).json({
         status: "error",
-        message: "Email or phoen number is already registered",
+        message: "Email or phone number is already registered",
         statusCode: 409,
       });
     }
@@ -120,6 +125,7 @@ const registerUser = async (req, res) => {
     });
   }
 };
+
 const loginUser = async (req, res) => {
   const { email, password } = req.body;
   if (

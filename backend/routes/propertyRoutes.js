@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 
-const { requireAuth, requireLandlord } = requre(
+const { requireAuth, requireLandlord } = require(
   "../middleware/authMiddleware.js",
 );
 

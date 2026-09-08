@@ -64,7 +64,7 @@ export default function Navbar() {
         </Link>
 
         <nav className="nav-links" id="navLinks">
-          <Link to="/dashboard">Freed</Link>
+          <Link to="/dashboard">Feed</Link>
           <a href="#" className="is-locked" title="Sign in to browse properties">
             Properties <span className="lock-badge">Sign in</span>
           </a>
