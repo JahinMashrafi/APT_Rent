@@ -1,5 +1,5 @@
 const pool = require("../config/db.js");
-const { fileUrl } = require("../middleware/upload.js");
+const { uploadToBucket, deleteFromBucket } = require("../utils/storage.js");
 
 // GET /properties  — search/discovery with filters + pagination
 const getProperties = async (req, res) => {
@@ -37,7 +37,6 @@ const getProperties = async (req, res) => {
       values.push(list);
     }
 
-    // Haversine radius filter (km) when lat/lng/radius_km all provided
     if (lat && lng && radius_km) {
       where.push(`
         (6371 * acos(
@@ -101,7 +100,7 @@ const getProperties = async (req, res) => {
       furnish_type: row.furnish_type,
       facilities: row.facilities,
       availability_status: row.availability_status,
-      photos: row.photos,
+      photos: row.photos, // property-photos bucket is public — stored as full URLs already
       owner: {
         user_id: row.owner_user_id,
         name: row.owner_name,
@@ -283,7 +282,7 @@ const updateProperty = async (req, res) => {
   }
 };
 
-// DELETE /properties/:id — soft delete: mark status archived (spec's literal behavior)
+// DELETE /properties/:id — soft delete: mark status archived
 const deleteProperty = async (req, res) => {
   try {
     const { id } = req.params;
@@ -334,7 +333,9 @@ const uploadPropertyPhotos = async (req, res) => {
 
     const uploaded = [];
     for (const file of files) {
-      const url = fileUrl(req, file.filename);
+      const ext = file.originalname.split(".").pop();
+      const path = `properties/${id}/${Date.now()}-${Math.round(Math.random() * 1e9)}.${ext}`;
+      const { url } = await uploadToBucket("property-photos", path, file.buffer, file.mimetype);
       const result = await pool.query(
         "INSERT INTO property_photos (property_id, photo_url) VALUES ($1, $2) RETURNING photo_id, photo_url",
         [id, url],
@@ -367,12 +368,25 @@ const deletePropertyPhoto = async (req, res) => {
     }
 
     const result = await pool.query(
-      "DELETE FROM property_photos WHERE photo_id = $1 AND property_id = $2 RETURNING photo_id",
+      "DELETE FROM property_photos WHERE photo_id = $1 AND property_id = $2 RETURNING photo_id, photo_url",
       [photo_id, id],
     );
     if (result.rows.length === 0) {
       return res.status(404).json({ success: false, message: "Photo not found on this property" });
     }
+
+    // Best-effort cleanup in the bucket so deleted photos don't linger as orphaned storage.
+    try {
+      const url = result.rows[0].photo_url;
+      const marker = "/object/public/property-photos/";
+      const idx = url.indexOf(marker);
+      if (idx !== -1) {
+        await deleteFromBucket("property-photos", url.slice(idx + marker.length));
+      }
+    } catch (cleanupErr) {
+      console.error("deletePropertyPhoto storage cleanup error: ", cleanupErr);
+    }
+
     return res.status(204).send();
   } catch (err) {
     console.error("deletePropertyPhoto error: ", err);

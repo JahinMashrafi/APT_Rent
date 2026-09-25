@@ -1,5 +1,6 @@
 const pool = require("../config/db.js");
-const { fileUrl } = require("../middleware/upload.js");
+const { uploadToBucket } = require("../utils/storage.js");
+const { signFields, USER_SIGNED_FIELDS } = require("../utils/signFields.js");
 
 // ---- Admin-facing list/update/delete ----
 
@@ -112,7 +113,9 @@ const getMe = async (req, res) => {
     if (result.rows.length === 0) {
       return res.status(404).json({ success: false, message: "User not found" });
     }
-    return res.status(200).json(result.rows[0]);
+
+    const user = await signFields(result.rows[0], USER_SIGNED_FIELDS);
+    return res.status(200).json(user);
   } catch (err) {
     console.error("getMe error: ", err);
     return res.status(500).json({ success: false, message: "Failed to fetch current user" });
@@ -175,10 +178,21 @@ const uploadDocuments = async (req, res) => {
     const files = req.files || {};
     const updates = {};
 
-    if (files.nid_photo?.[0]) updates.nid_photo_url = fileUrl(req, files.nid_photo[0].filename);
-    if (files.student_id_card?.[0]) updates.student_id_card_url = fileUrl(req, files.student_id_card[0].filename);
-    if (files.job_id_card?.[0]) updates.job_id_card_url = fileUrl(req, files.job_id_card[0].filename);
-    if (files.trade_license?.[0]) updates.trade_license_url = fileUrl(req, files.trade_license[0].filename);
+    const jobs = [
+      ["nid_photo", "nid_photo_url"],
+      ["student_id_card", "student_id_card_url"],
+      ["job_id_card", "job_id_card_url"],
+      ["trade_license", "trade_license_url"],
+    ];
+
+    for (const [field, column] of jobs) {
+      const file = files[field]?.[0];
+      if (!file) continue;
+      const ext = file.originalname.split(".").pop();
+      const path = `users/${userId}/${field}-${Date.now()}.${ext}`;
+      const { path: storedPath } = await uploadToBucket("verification-docs", path, file.buffer, file.mimetype);
+      updates[column] = storedPath; // store path; verification-docs is private
+    }
 
     const fields = Object.keys(updates);
     if (fields.length === 0) {
@@ -228,15 +242,12 @@ const getPublicProfile = async (req, res) => {
     return res.status(200).json({
       user_id: user.user_id,
       name: user.name,
-      profile_picture_url: user.profile_picture_url,
+      profile_picture_url: user.profile_picture_url, // avatars bucket is public — stored as-is
       is_verified: user.is_verified,
       is_landlord: user.is_landlord,
       member_since: user.created_at,
       average_rating: Number(average_rating.toFixed(2)),
       total_reviews,
-      // response_rate requires message/reply-time tracking, which isn't
-      // built yet (see Conversations & Live Messaging section) — omitted
-      // rather than faked.
     });
   } catch (err) {
     console.error("getPublicProfile error: ", err);
