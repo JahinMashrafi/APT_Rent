@@ -1,6 +1,5 @@
-import Navbar from "../components/Navbar.jsx";
+import AppNavbar from "../components/AppNavbar.jsx";
 import PropertyMap from "../components/PropertyMap.jsx";
-import AuthNavbar from "../components/AuthNavbar.jsx";
 import NewsFeed from "../components/NewsFeed.jsx";
 import useAuth from "../hooks/useAuth.js";
 
@@ -12,7 +11,7 @@ import useAuth from "../hooks/useAuth.js";
  * auth state:
  *
  *   - LOGGED OUT -> original public hero (search-tag + map), unchanged.
- *   - LOGGED IN  -> AuthNavbar (no "About", hamburger menu) + NewsFeed
+ *   - LOGGED IN  -> AppNavbar + NewsFeed
  *                   (search/filter bar + apartment cards + pagination).
  *
  * Everything below the imports is grouped into clearly labeled sections so
@@ -38,7 +37,7 @@ export default function Home() {
   // ==========================================================================
   return (
     <div className="page-shell">
-      <Navbar />
+      <AppNavbar />
 
       {/* HERO */}
       <main>

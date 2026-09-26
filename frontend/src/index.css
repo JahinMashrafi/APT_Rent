@@ -1,2 +1,29 @@
 
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&family=Big+Shoulders+Stencil:wght@600;800&family=Special+Elite&display=swap');
 @import "tailwindcss";
+@import "./css/global.css";
+@import "./css/navbar.css";
+@import "./css/auth.css";
+@import "./css/home.css";
+@import "./css/newsfeed-home.css";
+@import "./css/profile.css";
+
+/* Fix Leaflet map tiles z-index bleeding over sticky navbar */
+.leaflet-container {
+  z-index: 0;
+}
+.leaflet-control-container .leaflet-top,
+.leaflet-control-container .leaflet-bottom {
+  z-index: 5;
+}
+
+/* Custom scrollbar for chat panels */
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-line-strong) transparent;
+}
+.scrollbar-thin::-webkit-scrollbar { width: 5px; }
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background-color: var(--color-line-strong);
+  border-radius: 999px;
+}

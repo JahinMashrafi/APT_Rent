@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
-import Navbar from "../components/Navbar.jsx";
+import AppNavbar from "../components/AppNavbar.jsx";
+import { loginUser } from "../utils/auth";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -15,19 +15,16 @@ export default function Login() {
     setError("");
 
     try {
-      const response = await axios.post("http://localhost:5000/api/auth/login", { email, password }, { withCredentials: true });
-
-      if (response.data?.success) {
-        navigate("/dashboard");
-      }
+      await loginUser(email, password);
+      navigate("/dashboard");
     } catch (err) {
-      setError(err.response?.data?.message || "Something went wrong");
+      setError(err.message || "Something went wrong");
     }
   };
 
   return (
     <div className="page-shell">
-      <Navbar />
+      <AppNavbar />
 
       {/* AUTH LAYOUT (left brand + right form) */}
       <main className="auth-shell">
