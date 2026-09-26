@@ -2,9 +2,8 @@
    APT RENT — global.css
    Shared design tokens, reset, and base components used across every page.
    Edit colors/fonts here and the whole site updates.
+   (Google Fonts @import is in index.css to ensure correct ordering)
    ========================================================================== */
-
-@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&family=Big+Shoulders+Stencil:wght@600;800&family=Special+Elite&display=swap');
 
 :root {
   /* ---- Color tokens (Blueprint & Brass Key palette) ---- */

@@ -2,10 +2,18 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
+const path = require("path");
 
 const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
-// const propertyRoutes = require('./routes/propertyRoutes');
+const propertyRoutes = require('./routes/propertyRoutes');
+const applicationRoutes = require("./routes/applicationRoutes");
+const appointmentRoutes = require("./routes/appointmentRoutes");
+const contractRoutes = require("./routes/contractRoutes");
+const rentRoutes = require("./routes/rentRoutes");
+const paymentRoutes = require("./routes/paymentRoutes");
+const historyRoutes = require("./routes/historyRoutes");
+const landlordRoutes = require("./routes/landlordRoutes");
 
 const app = express();
 
@@ -15,14 +23,22 @@ app.use(cors({
 }));
 app.use(express.json());
 app.use(cookieParser());
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
-// app.use('/api/properties',propertyRoutes);
+app.use("/api/properties", propertyRoutes);
+app.use("/api/applications", applicationRoutes);
+app.use("/api/appointments", appointmentRoutes);
+app.use("/api/contracts", contractRoutes);
+app.use("/api/rent", rentRoutes);
+app.use("/api/payments", paymentRoutes);
+app.use("/api/history", historyRoutes);
+app.use("/api/landlord", landlordRoutes);
 //app,use(cors());
 
 app.get("/", (req, res) => {
-  res.status(200).json({ message: "API is running sucessfullyy," });
+  res.status(200).json({ message: "API is running sucessfully," });
 });
 app.use((req, res, next) => {
   res.status(404).json({ statusCode: 404, message: "Endpoint not found" });

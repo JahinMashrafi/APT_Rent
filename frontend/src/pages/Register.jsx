@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
-import Navbar from "../components/Navbar.jsx";
+import AppNavbar from "../components/AppNavbar.jsx";
+import { registerUser } from "../utils/auth";
 
 export default function Register() {
   const [role, setRole] = useState("tenant");
@@ -37,26 +37,22 @@ export default function Register() {
 
     try {
       setIsSubmitting(true);
-      const [firstName = "", ...rest] = formData.fullName.trim().split(/\s+/);
-      const lastName = rest.join(" ") || "User";
+      // Matches the POST /auth/register body in the API spec exactly.
       const payload = {
-        firstName,
-        lastName,
+        name: formData.fullName.trim(),
         email: formData.email,
-        phone: formData.phone,
         password: formData.password,
-        is_landlord: role === "landlord",
+        contact_number: formData.phone,
+        address: formData.address,
+        occupation,
         is_tenant: role === "tenant",
+        is_landlord: role === "landlord",
       };
 
-      const response = await axios.post("http://localhost:5000/api/auth/register", payload, { withCredentials: true });
-      if (response.data?.status === "success") {
-        navigate("/");
-      } else {
-        setError(response.data?.message || "Registration failed");
-      }
+      await registerUser(payload);
+      navigate("/dashboard");
     } catch (err) {
-      setError(err.response?.data?.message || "Registration failed");
+      setError(err.message || "Registration failed");
     } finally {
       setIsSubmitting(false);
     }
@@ -64,7 +60,7 @@ export default function Register() {
 
   return (
     <div className="page-shell">
-      <Navbar />
+      <AppNavbar />
 
       {/* AUTH LAYOUT */}
       <main className="auth-shell">
