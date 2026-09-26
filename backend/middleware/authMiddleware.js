@@ -36,4 +36,24 @@ const requireLandlord = (req, res, next) => {
   next();
 };
 
-module.exports = { requireAuth, requireLandlord };
+const requireTenant = (req, res, next) => {
+  if (!req.user || !req.user.is_tenant) {
+    return res.status(403).json({
+      status: "error",
+      message: "Access denied. Only tenants can perform this action",
+    });
+  }
+  next();
+};
+
+const requireAdmin = (req, res, next) => {
+  if (!req.user || !req.user.is_admin) {
+    return res.status(403).json({
+      status: "error",
+      message: "Access denied. Admins only",
+    });
+  }
+  next();
+};
+
+module.exports = { requireAuth, requireLandlord, requireTenant, requireAdmin };
