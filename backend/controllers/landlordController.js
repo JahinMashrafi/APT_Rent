@@ -61,4 +61,122 @@ const getLandlordLedger = async (req, res) => {
   }
 };
 
-module.exports = { getLandlordLedger };
+// GET /landlord/stats  [landlord only]
+const getLandlordStats = async (req, res) => {
+  try {
+    const ownerId = req.user.user_id;
+
+    const unitsResult = await pool.query(
+      `SELECT
+         COUNT(*)::int AS total_units,
+         COUNT(*) FILTER (WHERE tenant_id IS NOT NULL)::int AS occupied_units
+       FROM properties
+       WHERE owner_id = $1 AND availability_status != 'archived'`,
+      [ownerId],
+    );
+    const { total_units, occupied_units } = unitsResult.rows[0];
+    const vacant_units = total_units - occupied_units;
+    const occupancy_rate_pct = total_units > 0
+      ? Number(((occupied_units / total_units) * 100).toFixed(1))
+      : 0;
+
+    const now = new Date();
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+
+    const contractsResult = await pool.query(
+      `SELECT contract_id, rate FROM contracts WHERE owner_id = $1 AND status = 'active'`,
+      [ownerId],
+    );
+
+    let monthly_gross_revenue = 0;
+    let totalCollected = 0;
+    for (const contract of contractsResult.rows) {
+      monthly_gross_revenue += Number(contract.rate);
+      const paymentCheck = await pool.query(
+        `SELECT amount FROM payments
+         WHERE contract_id = $1 AND status = 'paid'
+           AND payment_date >= $2 AND payment_date < $3
+         LIMIT 1`,
+        [contract.contract_id, monthStart, monthEnd],
+      );
+      if (paymentCheck.rows.length > 0) totalCollected += Number(paymentCheck.rows[0].amount);
+    }
+    const pending_rent_amount = monthly_gross_revenue - totalCollected;
+
+    const pendingApplicationsResult = await pool.query(
+      `SELECT COUNT(*)::int AS count
+       FROM applications a
+       JOIN properties p ON p.property_id = a.property_id
+       WHERE p.owner_id = $1 AND a.status = 'pending'`,
+      [ownerId],
+    );
+
+    const upcomingToursResult = await pool.query(
+      `SELECT COUNT(*)::int AS count
+       FROM appointments
+       WHERE owner_id = $1 AND status IN ('pending', 'confirmed') AND appointment_date >= CURRENT_DATE`,
+      [ownerId],
+    );
+
+    return res.status(200).json({
+      total_units,
+      occupied_units,
+      vacant_units,
+      occupancy_rate_pct,
+      monthly_gross_revenue,
+      pending_rent_amount,
+      pending_applications: pendingApplicationsResult.rows[0].count,
+      upcoming_tours: upcomingToursResult.rows[0].count,
+    });
+  } catch (err) {
+    console.error("getLandlordStats error: ", err);
+    return res.status(500).json({ success: false, message: "Failed to fetch landlord stats" });
+  }
+};
+
+// GET /landlord/properties  [landlord only]
+const getLandlordProperties = async (req, res) => {
+  try {
+    const ownerId = req.user.user_id;
+
+    const result = await pool.query(
+      `SELECT p.property_id, p.address, p.rate, p.availability_status,
+              c.tenant_id AS active_tenant_id, u.name AS active_tenant_name,
+              u.contact_number AS active_tenant_contact,
+              COALESCE(
+                (SELECT COUNT(*)::int FROM appointments ap
+                 WHERE ap.property_id = p.property_id AND ap.status = 'pending'),
+                0
+              ) AS pending_tour_requests
+       FROM properties p
+       LEFT JOIN contracts c ON c.property_id = p.property_id AND c.status = 'active'
+       LEFT JOIN users u ON u.user_id = c.tenant_id
+       WHERE p.owner_id = $1 AND p.availability_status != 'archived'
+       ORDER BY p.property_id DESC`,
+      [ownerId],
+    );
+
+    const data = result.rows.map((row) => ({
+      property_id: row.property_id,
+      address: row.address,
+      rate: row.rate,
+      availability_status: row.availability_status,
+      active_tenant: row.active_tenant_id
+        ? {
+            user_id: row.active_tenant_id,
+            name: row.active_tenant_name,
+            contact_number: row.active_tenant_contact,
+          }
+        : null,
+      pending_tour_requests: row.pending_tour_requests,
+    }));
+
+    return res.status(200).json({ data });
+  } catch (err) {
+    console.error("getLandlordProperties error: ", err);
+    return res.status(500).json({ success: false, message: "Failed to fetch landlord properties" });
+  }
+};
+
+module.exports = { getLandlordLedger, getLandlordStats, getLandlordProperties };
