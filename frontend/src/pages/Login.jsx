@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import AppNavbar from "../components/AppNavbar.jsx";
 import { loginUser } from "../utils/auth";
+import { useApp } from "../context/AppContext.jsx";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -9,14 +10,37 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const navigate = useNavigate();
+  const location = useLocation();
+  const { applyAuthenticatedUser } = useApp();
+
+  // RequireAuth records the page the visitor was trying to reach, so
+  // signing in from a guarded page returns them there instead of
+  // stranding them on the dashboard.
+  //
+  // The search string has to come along: "Contact Landlord" sends
+  // people to /inbox?contact=<landlord>&property=<id>, and those params
+  // are what open the thread. The path alone would drop them and land
+  // on an empty inbox.
+  const from = (() => {
+    const target = location.state?.from;
+    if (!target) return null;
+    const path = `${target.pathname ?? ""}${target.search ?? ""}`;
+    // Internal paths only — guards against a crafted state pushing
+    // someone off-site after they authenticate.
+    return path.startsWith("/") && !path.startsWith("//") ? path : null;
+  })();
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setError("");
 
     try {
-      await loginUser(email, password);
-      navigate("/dashboard");
+      // The server sets an httpOnly cookie we can't read, so context has to
+      // be told explicitly — otherwise currentUser stays null and
+      // RequireAuth bounces straight back here.
+      const user = await loginUser(email, password);
+      applyAuthenticatedUser(user);
+      navigate(from || "/dashboard", { replace: true });
     } catch (err) {
       setError(err.message || "Something went wrong");
     }

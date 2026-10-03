@@ -1,11 +1,12 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { mockProperties, mockApplications } from '../data/mockData.js';
 import AppNavbar from '../components/AppNavbar.jsx';
 import Modal from '../components/ui/Modal.jsx';
 import PaymentGateway from '../components/lease/PaymentGateway.jsx';
-import { FileText, CheckCircle, ChevronDown, ChevronUp, ArrowRightLeft } from 'lucide-react';
+import { FileText, CheckCircle, ChevronDown, ChevronUp } from 'lucide-react';
 import api from '../services/api';
+import { adaptProperty } from '../services/adapters';
+import { useApp } from '../context/AppContext.jsx';
 import '../css/global.css';
 import '../css/navbar.css';
 import '../css/newsfeed-home.css';
@@ -13,10 +14,32 @@ import '../css/modules.css';
 
 export default function LeaseDeposit() {
   const { propertyId } = useParams();
-  const property = mockProperties.find(p => p.id === propertyId) || mockProperties[0];
-  const approvedTenant = mockApplications.find(a => a.status === 'approved') || { tenantName: 'Ruksana Khanam', tenantEmail: 'ruksana@example.com' };
+  const { currentUser } = useApp();
+  const [property, setProperty] = useState(null);
+  const [approvedTenant, setApprovedTenant] = useState(null);
 
-  const [viewAs, setViewAs] = useState('landlord');
+  useEffect(() => {
+    // adaptProperty, not the raw row: ownership is read off
+    // property.landlord.id, which only the adapter exposes.
+    api.properties
+      .getById(propertyId)
+      .then((data) => setProperty(adaptProperty(data)))
+      .catch(() => setProperty(null));
+    api.applications.list()
+      .then((data) => setApprovedTenant((data?.data ?? []).find((application) => application.status === 'approved') ?? null))
+      .catch(() => setApprovedTenant(null));
+  }, [propertyId]);
+
+  // Which side of this lease you're on is a fact about the account,
+  // not a preference. A "Viewing as" pill let anyone flip to the
+  // landlord's offer screen on someone else's flat; ownership decides.
+  // Falls back to the tenant side until the property loads, so the
+  // owner never sees the tenant screen flash first.
+  const isOwner =
+    property?.landlord?.id != null &&
+    currentUser?.id != null &&
+    String(property.landlord.id) === String(currentUser.id);
+  const viewAs = isOwner ? 'landlord' : 'tenant';
   const [offerSent, setOfferSent] = useState(false);
   const [expandedClause, setExpandedClause] = useState(null);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
@@ -30,8 +53,8 @@ export default function LeaseDeposit() {
     // POST /contracts — best-effort; the demo keeps working locally either way.
     api.contracts
       .create({
-        property_id: property?.id,
-        tenant_id: approvedTenant?.tenantId ?? null,
+        property_id: property?.id ?? propertyId,
+        tenant_id: approvedTenant?.tenantId ?? approvedTenant?.tenant_id,
         rate: property?.pricePerMonth,
         deposit: property?.securityDeposit,
         start_date: '2026-10-01',
@@ -73,10 +96,6 @@ export default function LeaseDeposit() {
     <div className="module-shell">
       <AppNavbar />
       <main className="module-main" style={{ maxWidth: '760px', margin: '0 auto', position: 'relative' }}>
-        <button className="demo-toggle" onClick={() => setViewAs(viewAs === 'landlord' ? 'tenant' : 'landlord')} style={{ position: 'absolute', top: 0, right: 0, display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'none', border: '1px solid var(--color-line)', padding: '0.25rem 0.5rem', borderRadius: 'var(--radius-pill)', cursor: 'pointer', fontSize: '0.75rem', fontFamily: 'var(--font-mono)' }}>
-          <ArrowRightLeft size={14} /> Viewing as: {viewAs}
-        </button>
-
         {viewAs === 'landlord' ? (
           <>
             <span className="eyebrow" style={{ color: 'var(--color-blueprint)', fontFamily: 'var(--font-mono)', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Lease Management</span>
@@ -88,7 +107,7 @@ export default function LeaseDeposit() {
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
                   {[
                     { label: 'Property', value: `${property?.title} - ${property?.location}` },
-                    { label: 'Tenant', value: `${approvedTenant.tenantName} (${approvedTenant.tenantEmail})` },
+                    { label: 'Tenant', value: approvedTenant ? `${approvedTenant.tenantName ?? approvedTenant.tenant?.name ?? 'Unknown'} (${approvedTenant.tenantEmail ?? approvedTenant.tenant?.email ?? 'No email'})` : 'No approved tenant found' },
                     { label: 'Start Date', value: 'October 1, 2026' },
                     { label: 'Duration', value: '12 months' },
                     { label: 'Monthly Rent', value: `৳${(property?.price || 45000).toLocaleString('en-BD')}` },
@@ -112,7 +131,7 @@ export default function LeaseDeposit() {
                   <CheckCircle size={36} />
                 </div>
                 <h2 className="module-title" style={{ marginBottom: '1rem' }}>Lease Offer Sent!</h2>
-                <p style={{ color: 'var(--color-charcoal)', marginBottom: '2rem' }}>{approvedTenant.tenantName} has been notified and can now review and accept the lease.</p>
+                <p style={{ color: 'var(--color-charcoal)', marginBottom: '2rem' }}>{approvedTenant?.tenantName ?? approvedTenant?.tenant?.name ?? 'The tenant'} has been notified and can now review and accept the lease.</p>
                 <Link to="/landlord" className="btn btn-ghost" style={{ padding: '0.75rem 1.5rem', background: 'transparent', color: 'var(--color-ink)', border: '1px solid var(--color-ink)', borderRadius: 'var(--radius-sm)', textDecoration: 'none', display: 'inline-block', fontWeight: 'bold' }}>
                   Return to Dashboard
                 </Link>

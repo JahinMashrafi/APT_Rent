@@ -128,6 +128,13 @@ const getProperties = async (req, res) => {
 const getPropertyById = async (req, res) => {
   try {
     const { id } = req.params;
+    if (!/^[1-9]\d*$/.test(id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Property id must be a positive integer",
+      });
+    }
+
     const propResult = await pool.query(
       `SELECT p.*, u.user_id AS owner_user_id, u.name AS owner_name,
               u.contact_number AS owner_contact_number, u.is_verified AS owner_is_verified,
@@ -217,10 +224,14 @@ const createProperty = async (req, res) => {
       }
     }
 
+    // RETURNING * so the caller gets a row the UI can render directly.
+    // Returning only the old five columns made every freshly created
+    // listing come back with no photos and no landlord, so the card the
+    // landlord lands on was blank until a full page reload.
     const query = `
       INSERT INTO properties (${columns.join(", ")})
       VALUES (${placeholders.join(", ")})
-      RETURNING property_id, owner_id, address, rate, availability_status, created_at`;
+      RETURNING *`;
 
     const result = await pool.query(query, values);
     return res.status(201).json(result.rows[0]);
@@ -270,8 +281,11 @@ const updateProperty = async (req, res) => {
 
     setClauses.push("updated_at = NOW()");
     values.push(id);
+    // RETURNING * for the same reason createProperty does: the thin
+    // response left the edited card rendering stale values, because the
+    // landlord's own listing still showed the old rate and status.
     const result = await pool.query(
-      `UPDATE properties SET ${setClauses.join(", ")} WHERE property_id = $${i} RETURNING property_id, rate, availability_status, updated_at`,
+      `UPDATE properties SET ${setClauses.join(", ")} WHERE property_id = $${i} RETURNING *`,
       values,
     );
     return res.status(200).json(result.rows[0]);
@@ -279,6 +293,45 @@ const updateProperty = async (req, res) => {
     console.error("updateProperty error: ", err);
     if (err.code === "22P02") return res.status(400).json({ success: false, message: "Invalid enum value" });
     return res.status(500).json({ success: false, message: "Failed to update property" });
+  }
+};
+
+// PATCH /properties/:id/visibility  { is_hidden }
+// The dashboard has always shipped a Hide/Show toggle that calls this,
+// but no route existed — the request 404'd and the listing never hid.
+// Kept off UPDATE_FIELDS on purpose: hiding a listing is a listing-level
+// action, not one of the editable listing details.
+const setPropertyVisibility = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const ownerId = req.user.user_id;
+
+    const ownCheck = await pool.query(
+      "SELECT owner_id FROM properties WHERE property_id = $1 AND availability_status != 'archived'",
+      [id],
+    );
+    if (ownCheck.rows.length === 0) {
+      return res.status(404).json({ success: false, message: `Property with id ${id} not found` });
+    }
+    if (ownCheck.rows[0].owner_id !== ownerId && !req.user.is_admin) {
+      return res.status(403).json({ success: false, message: "You do not own this property" });
+    }
+
+    // Absence is ambiguous — an omitted body could mean "leave it alone"
+    // or "unset it" — so require the flag explicitly rather than
+    // defaulting to one and silently flipping a listing.
+    if (typeof req.body?.is_hidden !== "boolean") {
+      return res.status(422).json({ success: false, message: "is_hidden must be a boolean" });
+    }
+
+    const result = await pool.query(
+      "UPDATE properties SET is_hidden = $1, updated_at = NOW() WHERE property_id = $2 RETURNING property_id, is_hidden",
+      [req.body.is_hidden, id],
+    );
+    return res.status(200).json(result.rows[0]);
+  } catch (err) {
+    console.error("setPropertyVisibility error: ", err);
+    return res.status(500).json({ success: false, message: "Failed to update visibility" });
   }
 };
 
@@ -400,6 +453,7 @@ module.exports = {
   createProperty,
   updateProperty,
   deleteProperty,
+  setPropertyVisibility,
   uploadPropertyPhotos,
   deletePropertyPhoto,
 };

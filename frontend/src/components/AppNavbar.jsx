@@ -14,8 +14,10 @@ import {
   X,
   CheckCheck,
   FileText,
+  Calendar,
 } from "lucide-react";
 import { useApp } from "../context/AppContext.jsx";
+import { logoutUser } from "../utils/auth";
 
 // =============================================================================
 // AppNavbar.jsx — Unified role-aware navigation bar
@@ -37,6 +39,7 @@ const navLinks = {
   ],
   landlord: [
     { label: "Dashboard", to: "/landlord", icon: LayoutDashboard },
+    { label: "Tour Requests", to: "/tour-requests", icon: Calendar },
     { label: "Inbox", to: "/inbox", icon: MessageSquare },
     { label: "Browse", to: "/dashboard", icon: Home },
   ],
@@ -60,16 +63,31 @@ function timeAgo(iso) {
 }
 
 export default function AppNavbar() {
-  const { role, currentUser, notifications, unreadCount, switchRole, markNotificationRead, markAllNotificationsRead } = useApp();
+  const { role, currentUser, notifications, unreadCount, messageUnreadCount, switchRole, markNotificationRead, markAllNotificationsRead, clearSession } = useApp();
+  const isDualRole = Boolean(currentUser?.isLandlord && currentUser?.isTenant);
+  const isAdmin = Boolean(currentUser?.isAdmin);
   const navigate = useNavigate();
   const location = useLocation();
 
   const [mobileOpen, setMobileOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const notifRef = useRef(null);
   const userMenuRef = useRef(null);
+
+  const handleLogout = async () => {
+    setIsLoggingOut(true);
+    try {
+      await logoutUser();
+    } finally {
+      clearSession();
+      setUserMenuOpen(false);
+      setIsLoggingOut(false);
+      navigate("/login", { replace: true });
+    }
+  };
 
   useEffect(() => {
     function handleClickOutside(e) {
@@ -103,45 +121,56 @@ export default function AppNavbar() {
         <nav className="app-nav-links" aria-label="Main navigation">
           {links.map(({ label, to, icon: Icon }) => {
             const isActive = location.pathname === to || location.pathname.startsWith(to + "/");
+            const showMessageBadge = to === "/inbox" && messageUnreadCount > 0;
             return (
               <Link key={to} to={to} className={`app-nav-link ${isActive ? "is-active" : ""}`}>
                 <Icon size={16} />
                 {label}
+                {showMessageBadge && (
+                  <span className="notif-count">{messageUnreadCount > 9 ? "9+" : messageUnreadCount}</span>
+                )}
               </Link>
             );
           })}
         </nav>
 
         <div className="app-navbar-actions">
-          {/* Role switcher */}
-          <div className="role-switch">
-            {["tenant", "landlord"].map((r) => (
-              <button
-                key={r}
-                type="button"
-                onClick={() => {
-                  if (role !== r) {
-                    switchRole(r);
-                    navigate(r === "landlord" ? "/landlord" : "/dashboard");
-                  }
-                }}
-                className={`role-switch-btn ${role === r ? "is-active" : ""}`}
-              >
-                {roleLabels[r]}
-              </button>
-            ))}
-            <button
-              type="button"
-              onClick={() => {
-                switchRole("admin");
-                navigate("/admin");
-              }}
-              className={`role-switch-btn ${role === "admin" ? "is-active" : ""}`}
-              title="Admin (dev)"
-            >
-              Admin
-            </button>
-          </div>
+          {/* Role switcher — only for accounts that really are both.
+              A tenant-only or landlord-only user has nothing to switch
+              between, and offering it let anyone impersonate the other
+              side just by clicking. */}
+          {(isDualRole || isAdmin) && (
+            <div className="role-switch">
+              {isDualRole && ["tenant", "landlord"].map((r) => (
+                <button
+                  key={r}
+                  type="button"
+                  onClick={() => {
+                    if (role !== r) {
+                      switchRole(r);
+                      navigate(r === "landlord" ? "/landlord" : "/dashboard");
+                    }
+                  }}
+                  className={`role-switch-btn ${role === r ? "is-active" : ""}`}
+                >
+                  {roleLabels[r]}
+                </button>
+              ))}
+              {isAdmin && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    switchRole("admin");
+                    navigate("/admin");
+                  }}
+                  className={`role-switch-btn ${role === "admin" ? "is-active" : ""}`}
+                  title="Admin"
+                >
+                  Admin
+                </button>
+              )}
+            </div>
+          )}
 
           {/* Notifications */}
           <div className="app-navbar-menu-wrapper" ref={notifRef}>
@@ -201,10 +230,14 @@ export default function AppNavbar() {
                       className="dropdown-link"
                       onClick={() => {
                         setNotifOpen(false);
-                        navigate("/inbox");
+                        // Tour requests are the one notification type with
+                        // a page of its own; everything else is either
+                        // handled in place or has no inbox yet. Sending
+                        // users to /inbox for all of them was simply wrong.
+                        navigate(role === "landlord" ? "/tour-requests" : "/inbox");
                       }}
                     >
-                      View all in Inbox →
+                      {role === "landlord" ? "View tour requests →" : "Go to Inbox →"}
                     </button>
                   </div>
                 )}
@@ -244,10 +277,8 @@ export default function AppNavbar() {
                 <button
                   type="button"
                   className="app-dropdown-item is-danger"
-                  onClick={() => {
-                    setUserMenuOpen(false);
-                    navigate("/login");
-                  }}
+                  onClick={handleLogout}
+                  disabled={isLoggingOut}
                 >
                   <LogOut size={15} /> Log out
                 </button>
@@ -272,32 +303,38 @@ export default function AppNavbar() {
           <nav>
             {links.map(({ label, to, icon: Icon }) => {
               const isActive = location.pathname === to;
+              const showMessageBadge = to === "/inbox" && messageUnreadCount > 0;
               return (
                 <Link key={to} to={to} className={`app-nav-link ${isActive ? "is-active" : ""}`}>
                   <Icon size={17} />
                   {label}
+                  {showMessageBadge && (
+                    <span className="notif-count">{messageUnreadCount > 9 ? "9+" : messageUnreadCount}</span>
+                  )}
                 </Link>
               );
             })}
           </nav>
-          <div className="app-mobile-role-switch">
-            <p className="app-mobile-role-label">Switch role</p>
-            <div className="role-switch role-switch-block">
-              {["tenant", "landlord", "admin"].map((r) => (
-                <button
-                  key={r}
-                  type="button"
-                  className={`role-switch-btn ${role === r ? "is-active" : ""}`}
-                  onClick={() => {
-                    switchRole(r);
-                    navigate(r === "landlord" ? "/landlord" : r === "admin" ? "/admin" : "/dashboard");
-                  }}
-                >
-                  {roleLabels[r]}
-                </button>
-              ))}
+          {(isDualRole || isAdmin) && (
+            <div className="app-mobile-role-switch">
+              <p className="app-mobile-role-label">Switch role</p>
+              <div className="role-switch role-switch-block">
+                {[...(isDualRole ? ["tenant", "landlord"] : []), ...(isAdmin ? ["admin"] : [])].map((r) => (
+                  <button
+                    key={r}
+                    type="button"
+                    className={`role-switch-btn ${role === r ? "is-active" : ""}`}
+                    onClick={() => {
+                      switchRole(r);
+                      navigate(r === "landlord" ? "/landlord" : r === "admin" ? "/admin" : "/dashboard");
+                    }}
+                  >
+                    {roleLabels[r]}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
         </div>
       )}
     </header>

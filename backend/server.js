@@ -14,6 +14,8 @@ const rentRoutes = require("./routes/rentRoutes");
 const paymentRoutes = require("./routes/paymentRoutes");
 const historyRoutes = require("./routes/historyRoutes");
 const landlordRoutes = require("./routes/landlordRoutes");
+const conversationRoutes = require("./routes/conversationRoutes");
+const notificationRoutes = require("./routes/notificationRoutes");
 
 const app = express();
 
@@ -35,6 +37,8 @@ app.use("/api/rent", rentRoutes);
 app.use("/api/payments", paymentRoutes);
 app.use("/api/history", historyRoutes);
 app.use("/api/landlord", landlordRoutes);
+app.use("/api/conversations", conversationRoutes);
+app.use("/api/notifications", notificationRoutes);
 //app,use(cors());
 
 app.get("/", (req, res) => {

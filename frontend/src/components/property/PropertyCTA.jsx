@@ -2,14 +2,35 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Calendar, MessageSquare, ShieldCheck, FileText } from 'lucide-react';
 import api from '../../services/api';
+import { useApp } from '../../context/AppContext.jsx';
 import '../../css/modules.css';
 import '../../css/global.css';
 
 export default function PropertyCTA({ propertyId, pricePerMonth, onContactLandlord, mobileOnly }) {
   const navigate = useNavigate();
+  const { currentUser, authReady } = useApp();
   const [applyState, setApplyState] = useState('idle'); // idle | sending | sent | error
 
+  // Both actions below hit authenticated endpoints. Asking for a sign-in
+  // on click, rather than letting RequireAuth bounce off the destination,
+  // means the visitor never fills in a form they can't submit. The
+  // intended URL rides along so Login returns them to it.
+  const requireLogin = (pathname) => {
+    if (authReady && !currentUser) {
+      navigate('/login', { state: { from: { pathname } } });
+      return true;
+    }
+    return false;
+  };
+
+  const handleRequestTour = () => {
+    const path = `/tour/${propertyId}`;
+    if (requireLogin(path)) return;
+    navigate(path);
+  };
+
   const handleApply = async () => {
+    if (requireLogin(`/property/${propertyId}`)) return;
     try {
       setApplyState('sending');
       // POST /applications — tenant-only per the spec.
@@ -43,7 +64,7 @@ export default function PropertyCTA({ propertyId, pricePerMonth, onContactLandlo
           <button 
             className="btn-primary" 
             style={{ padding: '8px 16px', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.9rem', background: 'var(--color-ink)', color: 'white', border: 'none', borderRadius: 'var(--radius-sm)' }}
-            onClick={() => navigate('/tour/' + propertyId)}
+            onClick={handleRequestTour}
           >
             <Calendar size={16} />
             Tour
@@ -82,7 +103,7 @@ export default function PropertyCTA({ propertyId, pricePerMonth, onContactLandlo
         <button 
           className="btn-primary" 
           style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '12px', background: 'var(--color-ink)', color: 'white', border: 'none', borderRadius: 'var(--radius-sm)', cursor: 'pointer', fontFamily: 'var(--font-body)', fontWeight: 'bold' }}
-          onClick={() => navigate('/tour/' + propertyId)}
+          onClick={handleRequestTour}
         >
           <Calendar size={18} />
           Request a Tour
