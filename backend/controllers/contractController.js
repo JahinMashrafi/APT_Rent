@@ -47,6 +47,50 @@ const createContract = async (req, res) => {
   }
 };
 
+// GET /contracts  [auth required] — every lease the caller is a party to.
+// The by-id endpoint already gates on party membership; this lists them up
+// front so tenant and landlord can pull their contracts up at any time
+// without having to remember a contract id.
+const listContracts = async (req, res) => {
+  try {
+    const userId = req.user.user_id;
+
+    const result = await pool.query(
+      `SELECT c.contract_id, c.property_id, p.address AS property_address,
+              c.owner_id, c.tenant_id, c.rate, c.start_date, c.end_date,
+              c.owner_signature_url, c.tenant_signature_url, c.status, c.created_at,
+              owner.name AS owner_name, tenant.name AS tenant_name
+       FROM contracts c
+       JOIN properties p ON p.property_id = c.property_id
+       JOIN users owner ON owner.user_id = c.owner_id
+       JOIN users tenant ON tenant.user_id = c.tenant_id
+       WHERE c.owner_id = $1 OR c.tenant_id = $1
+       ORDER BY c.created_at DESC`,
+      [userId],
+    );
+
+    const data = result.rows.map((row) => ({
+      contract_id: row.contract_id,
+      property_id: row.property_id,
+      property_address: row.property_address,
+      owner: { user_id: row.owner_id, name: row.owner_name },
+      tenant: { user_id: row.tenant_id, name: row.tenant_name },
+      rate: row.rate,
+      start_date: row.start_date,
+      end_date: row.end_date,
+      owner_signature_url: row.owner_signature_url,
+      tenant_signature_url: row.tenant_signature_url,
+      status: row.status,
+      created_at: row.created_at,
+    }));
+
+    return res.status(200).json({ data });
+  } catch (err) {
+    console.error("listContracts error: ", err);
+    return res.status(500).json({ success: false, message: "Failed to fetch contracts" });
+  }
+};
+
 // GET /contracts/:id  [auth required — owner or tenant on the contract]
 const getContractById = async (req, res) => {
   try {
@@ -240,4 +284,4 @@ const payDeposit = async (req, res) => {
   }
 };
 
-module.exports = { createContract, getContractById, signContract, payDeposit };
+module.exports = { createContract, listContracts, getContractById, signContract, payDeposit };

@@ -14,6 +14,7 @@ import {
   X,
   CheckCheck,
   FileText,
+  FileSignature,
   Calendar,
 } from "lucide-react";
 import { useApp } from "../context/AppContext.jsx";
@@ -34,12 +35,14 @@ const navLinks = {
   tenant: [
     { label: "Browse", to: "/dashboard", icon: Home },
     { label: "Applications", to: "/applications", icon: FileText },
+    { label: "Contracts", to: "/contracts", icon: FileSignature },
     { label: "Inbox", to: "/inbox", icon: MessageSquare },
     { label: "Pay Rent", to: "/rent", icon: CreditCard },
   ],
   landlord: [
     { label: "Dashboard", to: "/landlord", icon: LayoutDashboard },
     { label: "Tour Requests", to: "/tour-requests", icon: Calendar },
+    { label: "Contracts", to: "/contracts", icon: FileSignature },
     { label: "Inbox", to: "/inbox", icon: MessageSquare },
     { label: "Browse", to: "/dashboard", icon: Home },
   ],

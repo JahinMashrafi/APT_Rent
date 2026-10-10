@@ -123,6 +123,7 @@ export default function PropertyDetails() {
           <div className="property-sidebar cta-desktop">
             <PropertyCTA
               propertyId={property.id}
+              ownerId={property.landlord?.id}
               pricePerMonth={property.pricePerMonth}
               onContactLandlord={handleContactLandlord}
             />
@@ -133,6 +134,7 @@ export default function PropertyDetails() {
       {/* Mobile CTA bottom bar — rendered once inside PropertyCTA via CSS class */}
       <PropertyCTA
         propertyId={property.id}
+        ownerId={property.landlord?.id}
         pricePerMonth={property.pricePerMonth}
         onContactLandlord={handleContactLandlord}
         mobileOnly

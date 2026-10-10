@@ -101,6 +101,8 @@ export const appointments = {
 // ---------------------------------------------------------------------------
 export const contracts = {
   create: (payload) => apiClient.post("/contracts", payload).then((r) => r.data),
+  // Every lease the signed-in user is a party to (owner or tenant).
+  list: () => apiClient.get("/contracts").then((r) => r.data),
   getById: (contractId) => apiClient.get(`/contracts/${contractId}`).then((r) => r.data),
   sign: (contractId, signatureImageBase64) =>
     apiClient

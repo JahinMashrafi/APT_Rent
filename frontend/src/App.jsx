@@ -18,6 +18,7 @@ import Inbox from "./pages/Inbox.jsx";
 import LandlordDashboard from "./pages/LandlordDashboard.jsx";
 import AdminDashboard from "./pages/AdminDashboard.jsx";
 import Applications from "./pages/Applications.jsx";
+import Contracts from "./pages/Contracts.jsx";
 
 // Simple placeholder for unlisted routes
 function SimplePage({ title, text }) {
@@ -81,6 +82,7 @@ function App() {
         <Route path="/rent" element={<RequireAuth><RentCollection /></RequireAuth>} />
         <Route path="/inbox" element={<RequireAuth><Inbox /></RequireAuth>} />
         <Route path="/applications" element={<RequireAuth><Applications /></RequireAuth>} />
+        <Route path="/contracts" element={<RequireAuth><Contracts /></RequireAuth>} />
         <Route path="/landlord" element={<RequireAuth><LandlordDashboard /></RequireAuth>} />
 
         {/* Admin-only */}
