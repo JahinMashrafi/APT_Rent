@@ -18,6 +18,7 @@ const landlordRoutes = require("./routes/landlordRoutes");
 const messageRoutes = require("./routes/messageRoutes");
 const notificationRoutes = require("./routes/notificationRoutes");
 const reviewRoutes = require("./routes/reviewRoutes");
+const adminRoutes = require("./routes/adminRoutes");
 const { initSocket } = require("./utils/socket.js");
 
 const app = express();
@@ -44,6 +45,7 @@ app.use("/api/landlord", landlordRoutes);
 app.use("/api/conversations", messageRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/users", reviewRoutes);
+app.use("/api/admin", adminRoutes);
 //app,use(cors());
 
 app.get("/", (req, res) => {

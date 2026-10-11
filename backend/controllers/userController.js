@@ -204,7 +204,7 @@ const uploadDocuments = async (req, res) => {
     values.push(userId);
 
     await pool.query(
-      `UPDATE users SET ${setClauses.join(", ")} WHERE user_id = $${fields.length + 1}`,
+      `UPDATE users SET ${setClauses.join(", ")}, documents_submitted_at = NOW() WHERE user_id = $${fields.length + 1}`,
       values,
     );
 
