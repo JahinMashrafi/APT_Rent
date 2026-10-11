@@ -8,6 +8,7 @@ const {
   createProperty,
   updateProperty,
   deleteProperty,
+  setPropertyVisibility,
   uploadPropertyPhotos,
   deletePropertyPhoto,
   updatePropertyVisibility,
@@ -19,6 +20,7 @@ router.get("/:id", getPropertyById);
 router.post("/", requireAuth, requireLandlord, createProperty);
 router.patch("/:id", requireAuth, requireLandlord, updateProperty);
 router.delete("/:id", requireAuth, requireLandlord, deleteProperty);
+router.patch("/:id/visibility", requireAuth, requireLandlord, setPropertyVisibility);
 
 router.post(
   "/:id/photos",

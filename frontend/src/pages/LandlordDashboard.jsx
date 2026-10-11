@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { mockProperties, mockApplications } from '../data/mockData.js';
 import AppNavbar from '../components/AppNavbar.jsx';
 import Modal from '../components/ui/Modal.jsx';
-import { TrendingUp, Users, Wrench, Edit3, Eye, EyeOff, Trash2, ChevronRight, Building2, DollarSign, AlertTriangle, Calendar, User, FileText } from 'lucide-react';
+import { TrendingUp, Users, Wrench, Edit3, Eye, EyeOff, Trash2, ChevronRight, Building2, DollarSign, AlertTriangle, Calendar, User, FileText, MessageSquare } from 'lucide-react';
+import PropertyFormModal from '../components/property/PropertyFormModal.jsx';
+import { useToast } from '../components/ui/Toast.jsx';
 import api from '../services/api';
 import { adaptProperty, adaptApplication, flattenApplication } from '../services/adapters';
 import '../css/global.css';
@@ -11,23 +12,16 @@ import '../css/navbar.css';
 import '../css/newsfeed-home.css';
 import '../css/modules.css';
 
-const NEW_PROPERTY_FORM = {
-  address: '',
-  rate: '',
-  deposit: '',
-  bedroom: '',
-  bathroom: '',
-  size_sqft: '',
-  property_type: 'apartment',
-  furnish_type: 'unfurnished',
-};
+// The listing form's defaults live in PropertyFormModal now, so add and
+// edit can't end up with different empty states.
 
 export default function LandlordDashboard() {
   const navigate = useNavigate();
+  const { showToast } = useToast();
   
   const [activeTab, setActiveTab] = useState('overview');
-  const [properties, setProperties] = useState(mockProperties || []);
-  const [applications, setApplications] = useState((mockApplications || []).map(flattenApplication));
+  const [properties, setProperties] = useState([]);
+  const [applications, setApplications] = useState([]);
   
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [propertyToDelete, setPropertyToDelete] = useState(null);
@@ -36,14 +30,15 @@ export default function LandlordDashboard() {
   const [selectedApplicant, setSelectedApplicant] = useState(null);
 
   const [showAddModal, setShowAddModal] = useState(false);
-  const [newProperty, setNewProperty] = useState(NEW_PROPERTY_FORM);
-  const [addingProperty, setAddingProperty] = useState(false);
-  const [addPropertyError, setAddPropertyError] = useState('');
+  // Edit reuses the same modal as Add, so the form lives in one place
+  // instead of drifting between two copies. editTarget holds the raw
+  // property row because photo_id is needed to delete a photo and the
+  // adapter keeps only URLs.
+  const [editTarget, setEditTarget] = useState(null);
+  const [editPhotos, setEditPhotos] = useState([]);
   
   const [appFilter, setAppFilter] = useState('All');
 
-  // GET /landlord/properties and GET /applications — fall back to the mock
-  // arrays already sitting in state until the backend exists.
   useEffect(() => {
     let cancelled = false;
 
@@ -52,18 +47,18 @@ export default function LandlordDashboard() {
       .then((data) => {
         if (cancelled) return;
         const items = (data?.data ?? []).map(adaptProperty);
-        if (items.length) setProperties(items);
+        setProperties(items);
       })
-      .catch(() => {});
+      .catch(() => setProperties([]));
 
     api.applications
       .list()
       .then((data) => {
         if (cancelled) return;
         const items = (data?.data ?? []).map(adaptApplication).map(flattenApplication);
-        if (items.length) setApplications(items);
+        setApplications(items);
       })
-      .catch(() => {});
+      .catch(() => setApplications([]));
 
     return () => {
       cancelled = true;
@@ -85,12 +80,44 @@ export default function LandlordDashboard() {
   };
 
   const toggleVisibility = (id) => {
-    const next = !properties.find((p) => p.id === id)?.isHidden;
-    // PATCH /properties/:id/visibility
-    api.properties.setVisibility(id, next).catch(() => {});
-    setProperties(properties.map(p => 
-      p.id === id ? { ...p, isHidden: next } : p
-    ));
+    const current = properties.find((p) => p.id === id);
+    if (!current) return;
+    const next = !current.isHidden;
+    // Optimistic, but rolled back if the server disagrees — this used to
+    // fire-and-forget against a route that didn't exist, so the UI could
+    // claim a listing was hidden while nothing had actually changed.
+    setProperties(properties.map(p => (p.id === id ? { ...p, isHidden: next } : p)));
+    api.properties
+      .setVisibility(id, next)
+      .then(() => showToast({ message: next ? 'Listing hidden from search.' : 'Listing is visible again.', type: 'success' }))
+      .catch((error) => {
+        setProperties(properties.map(p => (p.id === id ? { ...p, isHidden: current.isHidden } : p)));
+        showToast({ message: error.message || 'Could not change visibility.', type: 'error' });
+      });
+  };
+
+  const handleEditClick = async (property) => {
+    // Fetch the full row before opening rather than reusing the list
+    // entry: the list query returns photos as bare URLs, and removing
+    // one needs its photo_id. Opening after the fetch avoids the dialog
+    // flashing an empty gallery before the images arrive.
+    let photos = [];
+    try {
+      const full = await api.properties.getById(property.id);
+      photos = full?.photos ?? [];
+    } catch {
+      // Photos failing to load shouldn't block editing the listing.
+    }
+    setEditPhotos(photos);
+    setEditTarget(property);
+  };
+
+  const handlePropertySaved = (saved) => {
+    if (!saved) return;
+    setProperties((prev) => {
+      const exists = prev.some((p) => p.id === saved.id);
+      return exists ? prev.map((p) => (p.id === saved.id ? saved : p)) : [saved, ...prev];
+    });
   };
 
   const handleReviewProfile = (app) => {
@@ -109,33 +136,13 @@ export default function LandlordDashboard() {
     }
   };
 
-  const handleNewPropertyChange = (event) => {
-    const { name, value } = event.target;
-    setNewProperty((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleCreateProperty = async (event) => {
-    event.preventDefault();
-    try {
-      setAddingProperty(true);
-      setAddPropertyError('');
-      // POST /properties
-      const created = await api.properties.create({
-        ...newProperty,
-        rate: Number(newProperty.rate),
-        deposit: Number(newProperty.deposit),
-        bedroom: Number(newProperty.bedroom),
-        bathroom: Number(newProperty.bathroom),
-        size_sqft: Number(newProperty.size_sqft),
-      });
-      setProperties((prev) => [adaptProperty(created), ...prev]);
-      setShowAddModal(false);
-      setNewProperty(NEW_PROPERTY_FORM);
-    } catch (createError) {
-      setAddPropertyError(createError.message || 'Could not save this listing yet — the backend endpoint may not exist.');
-    } finally {
-      setAddingProperty(false);
-    }
+  const handleMessageApplicant = () => {
+    // flattenApplication spreads the adapted application, so the nested
+    // tenant object (and its id) survives onto selectedApplicant.
+    const tenantId = selectedApplicant?.tenant?.id;
+    if (!tenantId) return;
+    setShowProfileModal(false);
+    navigate(`/inbox?contact=${tenantId}&property=${selectedApplicant.propertyId}`);
   };
 
   const filteredApps = appFilter === 'All' 
@@ -289,14 +296,18 @@ export default function LandlordDashboard() {
                     
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '12px' }}>
                       <div>
-                        <span style={{ fontFamily: 'var(--font-stencil)', fontSize: '1.3rem', color: 'var(--color-ink)' }}>৳{property.price?.toLocaleString()}</span>
+                        <span style={{ fontFamily: 'var(--font-stencil)', fontSize: '1.3rem', color: 'var(--color-ink)' }}>৳{(property.pricePerMonth ?? 0).toLocaleString()}</span>
                         <span style={{ fontSize: '0.85rem', color: 'var(--color-charcoal)' }}>/month</span>
                       </div>
                       <span style={{ fontSize: '0.85rem', color: 'var(--color-charcoal)' }}>{property.bedrooms} Bed • {property.bathrooms} Bath</span>
                     </div>
                     
                     <div style={{ display: 'flex', gap: '6px', paddingTop: '0.75rem', borderTop: '1px solid var(--color-line)', justifyContent: 'flex-end' }}>
-                      <button className="icon-action-btn" title="Edit">
+                      <button
+                        className="icon-action-btn"
+                        title="Edit"
+                        onClick={() => handleEditClick(property)}
+                      >
                         <Edit3 size={18} /> Edit
                       </button>
                       <button 
@@ -371,8 +382,12 @@ export default function LandlordDashboard() {
                     <button className="icon-action-btn" onClick={() => handleReviewProfile(app)}>
                       <User size={18} /> Review Profile
                     </button>
-                    <button className="icon-action-btn" onClick={() => navigate(`/tour/${app.propertyId}`)}>
-                      <Calendar size={18} /> Offer Tour
+                    {/* Tour times are offered from the dedicated requests
+                        page, which is tenant-initiated. Sending a landlord
+                        to /tour/:propertyId landed them on a page that
+                        correctly refuses to let them request their own flat. */}
+                    <button className="icon-action-btn" onClick={() => navigate('/tour-requests')}>
+                      <Calendar size={18} /> Tour Requests
                     </button>
                     <button 
                       className="icon-action-btn primary" 
@@ -452,84 +467,38 @@ export default function LandlordDashboard() {
 
           <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', paddingTop: '1rem', borderTop: '1px solid var(--color-line)' }}>
             <button className="btn btn-ghost" style={{ color: 'var(--color-error)', borderColor: 'var(--color-error)' }} onClick={() => setShowProfileModal(false)}>Decline</button>
+            <button
+              className="btn btn-ghost"
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
+              onClick={handleMessageApplicant}
+            >
+              <MessageSquare size={15} />
+              Message
+            </button>
             <button className="btn btn-primary" onClick={handleApproveApplicant}>Approve Applicant</button>
           </div>
         </Modal>
       )}
 
       {showAddModal && (
-        <Modal isOpen={showAddModal} onClose={() => setShowAddModal(false)} title="Add New Property" size="md">
-          <form onSubmit={handleCreateProperty} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            <label className="field">
-              <span>Address</span>
-              <input
-                type="text"
-                name="address"
-                value={newProperty.address}
-                onChange={handleNewPropertyChange}
-                placeholder="House 32, Road 4, Dhanmondi, Dhaka"
-                required
-              />
-            </label>
+        <PropertyFormModal
+          isOpen
+          mode="create"
+          onClose={() => setShowAddModal(false)}
+          onSaved={handlePropertySaved}
+        />
+      )}
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-              <label className="field">
-                <span>Monthly Rate (BDT)</span>
-                <input type="number" name="rate" value={newProperty.rate} onChange={handleNewPropertyChange} required min="0" />
-              </label>
-              <label className="field">
-                <span>Deposit (BDT)</span>
-                <input type="number" name="deposit" value={newProperty.deposit} onChange={handleNewPropertyChange} required min="0" />
-              </label>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
-              <label className="field">
-                <span>Bedrooms</span>
-                <input type="number" name="bedroom" value={newProperty.bedroom} onChange={handleNewPropertyChange} required min="0" />
-              </label>
-              <label className="field">
-                <span>Bathrooms</span>
-                <input type="number" name="bathroom" value={newProperty.bathroom} onChange={handleNewPropertyChange} required min="0" />
-              </label>
-              <label className="field">
-                <span>Size (sqft)</span>
-                <input type="number" name="size_sqft" value={newProperty.size_sqft} onChange={handleNewPropertyChange} required min="0" />
-              </label>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-              <label className="field">
-                <span>Property Type</span>
-                <select name="property_type" value={newProperty.property_type} onChange={handleNewPropertyChange}>
-                  <option value="apartment">Apartment</option>
-                  <option value="studio">Studio</option>
-                  <option value="duplex">Duplex</option>
-                  <option value="house">House</option>
-                </select>
-              </label>
-              <label className="field">
-                <span>Furnishing</span>
-                <select name="furnish_type" value={newProperty.furnish_type} onChange={handleNewPropertyChange}>
-                  <option value="unfurnished">Unfurnished</option>
-                  <option value="semi-furnished">Semi-furnished</option>
-                  <option value="furnished">Furnished</option>
-                </select>
-              </label>
-            </div>
-
-            {addPropertyError && (
-              <p style={{ color: 'var(--color-error)', fontSize: '0.82rem', margin: 0 }}>{addPropertyError}</p>
-            )}
-
-            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', paddingTop: '1rem', borderTop: '1px solid var(--color-line)' }}>
-              <button type="button" className="btn btn-ghost" onClick={() => setShowAddModal(false)}>Cancel</button>
-              <button type="submit" className="btn btn-primary" disabled={addingProperty}>
-                {addingProperty ? 'Saving…' : 'Save Listing'}
-              </button>
-            </div>
-          </form>
-        </Modal>
+      {editTarget && (
+        <PropertyFormModal
+          key={editTarget.id}
+          isOpen
+          mode="edit"
+          property={editTarget}
+          existingPhotos={editPhotos}
+          onClose={() => setEditTarget(null)}
+          onSaved={handlePropertySaved}
+        />
       )}
     </div>
   );

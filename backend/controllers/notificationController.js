@@ -32,6 +32,8 @@ const getNotifications = async (req, res) => {
 };
 
 // PATCH /notifications/:id/read  [auth required]
+// The user_id predicate is the authorization check: someone else's
+// notification id simply matches zero rows.
 const markNotificationRead = async (req, res) => {
   try {
     const { id } = req.params;

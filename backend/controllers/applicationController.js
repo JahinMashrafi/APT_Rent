@@ -7,8 +7,12 @@ const createApplication = async (req, res) => {
     const tenantId = req.user.user_id;
     const { property_id, monthly_income, occupation, family_size, message } = req.body || {};
 
-    if (!property_id || !monthly_income || !family_size) {
-      return res.status(422).json({ success: false, message: "property_id, monthly_income, and family_size are required" });
+    // property_id is the only field we cannot do without; income,
+    // family size, occupation and message are optional so the Apply
+    // button works as a one-click action. Provide defaults for
+    // NOT NULL columns when not provided.
+    if (!property_id) {
+      return res.status(422).json({ success: false, message: "property_id is required" });
     }
 
     const propCheck = await pool.query(
@@ -19,11 +23,15 @@ const createApplication = async (req, res) => {
       return res.status(404).json({ success: false, message: "Property not found" });
     }
 
+    // Defaults for NOT NULL columns in the current schema
+    const monthlyIncome = monthly_income ?? 0;
+    const familySize = family_size ?? 1;
+
     const result = await pool.query(
       `INSERT INTO applications (property_id, tenant_id, monthly_income, occupation, family_size, message)
        VALUES ($1, $2, $3, $4, $5, $6)
        RETURNING application_id, property_id, tenant_id, status, created_at`,
-      [property_id, tenantId, monthly_income, occupation, family_size, message],
+      [property_id, tenantId, monthlyIncome, occupation, familySize, message],
     );
 
     await notify({

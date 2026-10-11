@@ -1,6 +1,71 @@
 const pool = require("../config/db.js");
 const { isoDate } = require("../utils/dateFormat.js");
 
+// GET /landlord/properties — all non-archived properties owned by the user
+const getLandlordProperties = async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT p.*,
+              u.user_id AS owner_user_id, u.name AS owner_name,
+              u.is_verified AS owner_is_verified,
+              COALESCE(r.avg_rating, 0)::float AS owner_rating,
+              COALESCE(
+                (SELECT array_agg(pp.photo_url ORDER BY pp.photo_id)
+                 FROM property_photos pp
+                 WHERE pp.property_id = p.property_id),
+                ARRAY[]::text[]
+              ) AS photos
+       FROM properties p
+       JOIN users u ON u.user_id = p.owner_id
+       LEFT JOIN (
+         SELECT reviewed_user_id, AVG(rating) AS avg_rating
+         FROM reviews
+         GROUP BY reviewed_user_id
+       ) r ON r.reviewed_user_id = u.user_id
+       WHERE p.owner_id = $1
+         AND p.availability_status != 'archived'
+       ORDER BY p.property_id DESC`,
+      [req.user.user_id],
+    );
+
+    const data = result.rows.map((row) => ({
+      property_id: row.property_id,
+      owner_id: row.owner_id,
+      address: row.address,
+      latitude: row.latitude,
+      longitude: row.longitude,
+      details: row.details,
+      facilities: row.facilities,
+      rate: row.rate,
+      deposit: row.deposit,
+      property_type: row.property_type,
+      bedroom: row.bedroom,
+      bathroom: row.bathroom,
+      size_sqft: row.size_sqft,
+      floor: row.floor,
+      total_floors: row.total_floors,
+      availability_date: row.availability_date,
+      availability_status: row.availability_status,
+      is_hidden: row.is_hidden,
+      furnish_type: row.furnish_type,
+      nearest_transport: row.nearest_transport,
+      created_at: row.created_at,
+      photos: row.photos,
+      owner: {
+        user_id: row.owner_user_id,
+        name: row.owner_name,
+        is_verified: row.owner_is_verified,
+        average_rating: Number(row.owner_rating.toFixed(2)),
+      },
+    }));
+
+    return res.status(200).json({ data });
+  } catch (err) {
+    console.error("getLandlordProperties error: ", err);
+    return res.status(500).json({ success: false, message: "Failed to fetch landlord properties" });
+  }
+};
+
 // GET /landlord/rent-ledger  [landlord only]
 const getLandlordLedger = async (req, res) => {
   try {

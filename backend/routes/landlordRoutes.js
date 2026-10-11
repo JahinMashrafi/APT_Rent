@@ -7,6 +7,7 @@ const {
   getLandlordProperties,
 } = require("../controllers/landlordController");
 
+router.get("/properties", requireAuth, requireLandlord, getLandlordProperties);
 router.get("/rent-ledger", requireAuth, requireLandlord, getLandlordLedger);
 router.get("/stats", requireAuth, requireLandlord, getLandlordStats);
 router.get("/properties", requireAuth, requireLandlord, getLandlordProperties);

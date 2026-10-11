@@ -6,7 +6,7 @@
  *
  * Responsibilities:
  *   1. Owns the current page number + filters state
- *   2. Fetches apartment posts for rent (TODO: wire to your real API)
+ *   2. Fetches apartment posts for rent from the real API
  *   3. Renders: <SearchFilterBar /> -> grid of <ApartmentCard /> -> <Pagination />
  *
  * You said "follow the design and formats of the given backend" — since no
@@ -39,6 +39,7 @@ export default function NewsFeed() {
   const [totalPages, setTotalPages] = useState(1);
   const [activeFilters, setActiveFilters] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
 
   // --------------------------------------------------------------------------
   // Re-fetch whenever the page number or the applied filters change.
@@ -48,11 +49,21 @@ export default function NewsFeed() {
 
     async function loadApartments() {
       setIsLoading(true);
-      const { items, totalPages: pages } = await fetchApartments(currentPage, activeFilters);
-      if (!isCancelled) {
-        setApartments(items);
-        setTotalPages(pages);
-        setIsLoading(false);
+      setLoadError("");
+      try {
+        const { items, totalPages: pages } = await fetchApartments(currentPage, activeFilters);
+        if (!isCancelled) {
+          setApartments(items);
+          setTotalPages(pages);
+        }
+      } catch (error) {
+        if (!isCancelled) {
+          setApartments([]);
+          setTotalPages(1);
+          setLoadError(error.message || "Could not load listings.");
+        }
+      } finally {
+        if (!isCancelled) setIsLoading(false);
       }
     }
 
@@ -87,6 +98,8 @@ export default function NewsFeed() {
       {/* ===================== APARTMENT POSTS GRID ===================== */}
       {isLoading ? (
         <p className="newsfeed-status">Loading listings…</p>
+      ) : loadError ? (
+        <p className="newsfeed-status">{loadError}</p>
       ) : apartments.length === 0 ? (
         <p className="newsfeed-status">No apartments match your search yet.</p>
       ) : (
@@ -111,58 +124,10 @@ export default function NewsFeed() {
   );
 }
 
-/**
- * ----------------------------------------------------------------------------
- * MOCK DATA FETCHER — replace this whole function with a real API call.
- * Kept here (rather than a separate file) so it's obvious this is the one
- * thing you need to swap out.
- * ----------------------------------------------------------------------------
- */
-/**
- * ----------------------------------------------------------------------------
- * Tries GET /properties first; falls back to a generated mock page if the
- * backend isn't reachable yet. Keeps the same return shape either way
- * ({ items, totalPages }) so nothing else in this file needs to change once
- * a real backend exists.
- * ----------------------------------------------------------------------------
- */
 async function fetchApartments(page, filters) {
-  try {
-    const data = await api.properties.search({ page, limit: POSTS_PER_PAGE, ...filters });
-    const items = (data?.data ?? []).map(adaptProperty);
-    if (items.length) {
-      return { items, totalPages: data?.meta?.total_pages ?? 1 };
-    }
-  } catch {
-    // No backend yet — fall through to the mock below.
-  }
-
-  return mockFetchApartments(page);
-}
-
-async function mockFetchApartments(page) {
-  // Simulated network delay so the loading state is visible during testing.
-  await new Promise((resolve) => setTimeout(resolve, 250));
-
-  const mockItems = Array.from({ length: POSTS_PER_PAGE }, (_, index) => {
-    const seed = (page - 1) * POSTS_PER_PAGE + index + 1;
-    return {
-      id: `mock-${seed}`,
-      photos: [
-        `/assets/images/mock/apartment-${(seed % 5) + 1}-a.jpg`,
-        `/assets/images/mock/apartment-${(seed % 5) + 1}-b.jpg`,
-        `/assets/images/mock/apartment-${(seed % 5) + 1}-c.jpg`,
-        `/assets/images/mock/apartment-${(seed % 5) + 1}-d.jpg`,
-      ],
-      listedAt: new Date(Date.now() - seed * 1000 * 60 * 60 * 24 * 3).toISOString(),
-      address: `House ${seed}, Road ${seed % 12}, Dhanmondi, Dhaka`,
-      pricePerMonth: 15000 + seed * 500,
-      bedrooms: (seed % 4) + 1,
-      bathrooms: (seed % 3) + 1,
-      hasLift: seed % 2 === 0,
-      isWishlisted: false,
-    };
-  });
-
-  return { items: mockItems, totalPages: 12 };
+  const data = await api.properties.search({ page, limit: POSTS_PER_PAGE, ...filters });
+  return {
+    items: (data?.data ?? []).map(adaptProperty),
+    totalPages: data?.meta?.total_pages ?? 1,
+  };
 }

@@ -45,7 +45,7 @@ export default function ApartmentCard({ apartment, onToggleWishlist }) {
 
   const visiblePhotos = photos.slice(0, 3);
   const extraPhotoCount = Math.max(photos.length - 3, 0);
-  const postDetailsUrl = `/apartments/${id}`;
+  const postDetailsUrl = `/property/${id}`;
 
   // --- Share handler: copies the post's link to the clipboard --------------
   function handleShare(event) {
