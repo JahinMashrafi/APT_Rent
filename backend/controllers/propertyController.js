@@ -447,6 +447,39 @@ const deletePropertyPhoto = async (req, res) => {
   }
 };
 
+// PATCH /properties/:id/visibility  [landlord only, must own the property]
+const updatePropertyVisibility = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const ownerId = req.user.user_id;
+    const { is_hidden } = req.body || {};
+
+    if (typeof is_hidden !== "boolean") {
+      return res.status(422).json({ success: false, message: "is_hidden (boolean) is required" });
+    }
+
+    const ownCheck = await pool.query(
+      "SELECT owner_id FROM properties WHERE property_id = $1 AND availability_status != 'archived'",
+      [id],
+    );
+    if (ownCheck.rows.length === 0) {
+      return res.status(404).json({ success: false, message: `Property with id ${id} not found` });
+    }
+    if (ownCheck.rows[0].owner_id !== ownerId && !req.user.is_admin) {
+      return res.status(403).json({ success: false, message: "You do not own this property" });
+    }
+
+    const result = await pool.query(
+      "UPDATE properties SET is_hidden = $1, updated_at = NOW() WHERE property_id = $2 RETURNING property_id, is_hidden",
+      [is_hidden, id],
+    );
+    return res.status(200).json(result.rows[0]);
+  } catch (err) {
+    console.error("updatePropertyVisibility error: ", err);
+    return res.status(500).json({ success: false, message: "Failed to update property visibility" });
+  }
+};
+
 module.exports = {
   getProperties,
   getPropertyById,
@@ -456,4 +489,5 @@ module.exports = {
   setPropertyVisibility,
   uploadPropertyPhotos,
   deletePropertyPhoto,
+  updatePropertyVisibility,
 };

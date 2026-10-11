@@ -11,6 +11,7 @@ const {
   setPropertyVisibility,
   uploadPropertyPhotos,
   deletePropertyPhoto,
+  updatePropertyVisibility,
 } = require("../controllers/propertyController");
 
 router.get("/", getProperties);
@@ -29,5 +30,7 @@ router.post(
   uploadPropertyPhotos,
 );
 router.delete("/:id/photos/:photo_id", requireAuth, requireLandlord, deletePropertyPhoto);
+
+router.patch("/:id/visibility", requireAuth, requireLandlord, updatePropertyVisibility);
 
 module.exports = router;
