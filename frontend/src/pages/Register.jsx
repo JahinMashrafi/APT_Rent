@@ -14,6 +14,8 @@ export default function Register() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const navigate = useNavigate();
   const { applyAuthenticatedUser } = useApp();
 
@@ -110,7 +112,7 @@ export default function Register() {
                   <label htmlFor="fullName">Full name <span className="req">*</span></label>
                   <div className="input-shell">
                     <img src="/assets/icons/user.svg" alt="" />
-                    <input type="text" id="fullName" name="fullName" placeholder="e.g. Farhana Akter" value={formData.fullName} onChange={handleInputChange} />
+                    <input type="text" id="fullName" name="fullName" placeholder="e.g. Arian Parvez Teshan" value={formData.fullName} onChange={handleInputChange} />
                   </div>
                   <span className="field-error"></span>
                 </div>
