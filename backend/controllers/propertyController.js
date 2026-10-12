@@ -7,10 +7,15 @@ const getProperties = async (req, res) => {
     const {
       page = 1,
       limit = 12,
+      q,
+      city,
+      thana,
+      post_code,
       min_rate,
       max_rate,
       bedroom,
       bathroom,
+      has_balcony,
       property_type,
       furnish_type,
       availability_status,
@@ -24,10 +29,38 @@ const getProperties = async (req, res) => {
     const values = [];
     let i = 1;
 
+    const addressSearch = (term) => {
+      where.push(`p.address ILIKE $${i++}`);
+      values.push(`%${term}%`);
+    };
+
+    if (q) {
+      where.push(`(
+        p.address ILIKE $${i}
+        OR COALESCE(p.details, '') ILIKE $${i}
+        OR COALESCE(p.property_type::text, '') ILIKE $${i}
+      )`);
+      values.push(`%${q}%`);
+      i += 1;
+    }
+    if (city) addressSearch(city);
+    if (thana) addressSearch(thana);
+    if (post_code) addressSearch(post_code);
     if (min_rate) { where.push(`p.rate >= $${i++}`); values.push(min_rate); }
     if (max_rate) { where.push(`p.rate <= $${i++}`); values.push(max_rate); }
     if (bedroom) { where.push(`p.bedroom = $${i++}`); values.push(bedroom); }
     if (bathroom) { where.push(`p.bathroom = $${i++}`); values.push(bathroom); }
+    if (has_balcony === "yes") {
+      where.push(`EXISTS (
+        SELECT 1 FROM unnest(COALESCE(p.facilities, ARRAY[]::text[])) facility
+        WHERE facility ILIKE '%balcony%'
+      )`);
+    } else if (has_balcony === "no") {
+      where.push(`NOT EXISTS (
+        SELECT 1 FROM unnest(COALESCE(p.facilities, ARRAY[]::text[])) facility
+        WHERE facility ILIKE '%balcony%'
+      )`);
+    }
     if (property_type) { where.push(`p.property_type = $${i++}`); values.push(property_type); }
     if (furnish_type) { where.push(`p.furnish_type = $${i++}`); values.push(furnish_type); }
     if (availability_status) { where.push(`p.availability_status = $${i++}`); values.push(availability_status); }

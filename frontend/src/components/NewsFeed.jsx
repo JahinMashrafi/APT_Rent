@@ -9,18 +9,9 @@
  *   2. Fetches apartment posts for rent from the real API
  *   3. Renders: <SearchFilterBar /> -> grid of <ApartmentCard /> -> <Pagination />
  *
- * You said "follow the design and formats of the given backend" — since no
- * backend was shared this pass, `fetchApartments()` below is a mock. Replace
- * its body with a real fetch call, e.g.:
- *
- *   const res = await fetch(
- *     `/api/apartments?page=${page}&${new URLSearchParams(filters)}`
- *   );
- *   const data = await res.json();
- *   return { items: data.items, totalPages: data.totalPages };
- *
- * and keep the same return shape ({ items, totalPages }) so nothing else
- * in this file needs to change.
+ * Search and filter values are translated to the backend's query parameter
+ * names in fetchApartments(), keeping the form's UI-facing shape separate
+ * from the API contract.
  * ============================================================================
  */
 
@@ -125,9 +116,39 @@ export default function NewsFeed() {
 }
 
 async function fetchApartments(page, filters) {
-  const data = await api.properties.search({ page, limit: POSTS_PER_PAGE, ...filters });
+  const data = await api.properties.search({
+    page,
+    limit: POSTS_PER_PAGE,
+    ...toApiFilters(filters),
+  });
   return {
     items: (data?.data ?? []).map(adaptProperty),
     totalPages: data?.meta?.total_pages ?? 1,
   };
+}
+
+function toApiFilters(filters = {}) {
+  const apiFilters = {};
+  const values = {
+    q: filters.searchText,
+    city: filters.city,
+    thana: filters.thana,
+    post_code: filters.postCode,
+    bedroom: filters.rooms,
+    bathroom: filters.bathrooms,
+    min_rate: filters.priceMin,
+    max_rate: filters.priceMax,
+  };
+
+  for (const [name, value] of Object.entries(values)) {
+    if (typeof value === "string" ? value.trim() !== "" : value != null) {
+      apiFilters[name] = typeof value === "string" ? value.trim() : value;
+    }
+  }
+
+  if (filters.hasBalcony && filters.hasBalcony !== "any") {
+    apiFilters.has_balcony = filters.hasBalcony;
+  }
+
+  return apiFilters;
 }

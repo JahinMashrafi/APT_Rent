@@ -76,15 +76,6 @@ export default function Profile() {
     }
   };
 
-  const handleLogout = async () => {
-    try {
-      await axios.post("http://localhost:5000/api/auth/logout", {}, { withCredentials: true });
-      navigate("/login");
-    } catch (err) {
-      console.error("Logout failed:", err);
-    }
-  };
-
   const avatarInitial = (form.name?.trim()?.[0] || "U").toUpperCase();
 
   return (
@@ -151,9 +142,6 @@ export default function Profile() {
                   {saving ? "Saving..." : "Save changes"}
                 </button>
                 <button type="button" className="btn btn-ghost" onClick={handleLogout}>
-                  Logout
-                </button>
-                <button type="button" className="btn btn-error" onClick={handleLogout} style={{ backgroundColor: "var(--color-error)", color: "white" }}>
                   Logout
                 </button>
               </div>

@@ -200,48 +200,4 @@ const getLandlordStats = async (req, res) => {
   }
 };
 
-// GET /landlord/properties  [landlord only]
-const getLandlordProperties = async (req, res) => {
-  try {
-    const ownerId = req.user.user_id;
-
-    const result = await pool.query(
-      `SELECT p.property_id, p.address, p.rate, p.availability_status,
-              c.tenant_id AS active_tenant_id, u.name AS active_tenant_name,
-              u.contact_number AS active_tenant_contact,
-              COALESCE(
-                (SELECT COUNT(*)::int FROM appointments ap
-                 WHERE ap.property_id = p.property_id AND ap.status = 'pending'),
-                0
-              ) AS pending_tour_requests
-       FROM properties p
-       LEFT JOIN contracts c ON c.property_id = p.property_id AND c.status = 'active'
-       LEFT JOIN users u ON u.user_id = c.tenant_id
-       WHERE p.owner_id = $1 AND p.availability_status != 'archived'
-       ORDER BY p.property_id DESC`,
-      [ownerId],
-    );
-
-    const data = result.rows.map((row) => ({
-      property_id: row.property_id,
-      address: row.address,
-      rate: row.rate,
-      availability_status: row.availability_status,
-      active_tenant: row.active_tenant_id
-        ? {
-            user_id: row.active_tenant_id,
-            name: row.active_tenant_name,
-            contact_number: row.active_tenant_contact,
-          }
-        : null,
-      pending_tour_requests: row.pending_tour_requests,
-    }));
-
-    return res.status(200).json({ data });
-  } catch (err) {
-    console.error("getLandlordProperties error: ", err);
-    return res.status(500).json({ success: false, message: "Failed to fetch landlord properties" });
-  }
-};
-
 module.exports = { getLandlordLedger, getLandlordStats, getLandlordProperties };

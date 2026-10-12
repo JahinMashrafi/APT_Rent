@@ -50,6 +50,9 @@ export default function SearchFilterBar({ onSearch }) {
   // --- "Clear filters" convenience action -----------------------------------
   function handleClearFilters() {
     setFilters(EMPTY_FILTERS);
+    setSearchText("");
+    onSearch?.({ searchText: "", ...EMPTY_FILTERS });
+    setIsFilterOpen(false);
   }
 
   return (
