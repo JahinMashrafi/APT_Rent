@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { MapPin, Bed, Bath, Maximize2, Building2, ShieldCheck, Check } from 'lucide-react';
 import StarRating from '../ui/StarRating.jsx';
 import '../../css/modules.css';
@@ -25,12 +25,12 @@ export default function PropertyInfo({ property }) {
       <div>
         <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px' }}>
           <span style={{ fontFamily: 'var(--font-stencil)', fontSize: '2.4rem', color: 'var(--color-ink)' }}>
-            ৳{property?.price?.toLocaleString('en-BD')}
+            ৳{property?.pricePerMonth?.toLocaleString('en-BD')}
           </span>
           <span style={{ color: 'var(--color-line-strong)' }}>/month</span>
         </div>
         <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.8rem', color: 'var(--color-line-strong)', marginTop: '4px' }}>
-          Security Deposit: ৳{property?.deposit?.toLocaleString('en-BD')}
+          Security Deposit: ৳{property?.securityDeposit?.toLocaleString('en-BD')}
         </div>
       </div>
 
@@ -45,7 +45,7 @@ export default function PropertyInfo({ property }) {
         </div>
         <div className="mod-card" style={{ padding: '12px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
           <Maximize2 size={20} color="var(--color-blueprint)" />
-          <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.9rem', color: 'var(--color-ink)' }}>{property?.sqft} sqft</div>
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.9rem', color: 'var(--color-ink)' }}>{property?.size} sqft</div>
         </div>
         <div className="mod-card" style={{ padding: '12px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
           <Building2 size={20} color="var(--color-blueprint)" />
@@ -89,7 +89,7 @@ export default function PropertyInfo({ property }) {
         <div className="landlord-card" style={{ marginTop: '12px' }}>
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px' }}>
             <div className="landlord-avatar" style={{ 
-              border: property?.landlord?.verified ? '2px solid var(--color-brass)' : 'none' 
+              border: property?.landlord?.isVerified ? '2px solid var(--color-brass)' : 'none' 
             }}>
               {property?.landlord?.name?.charAt(0)}
             </div>
@@ -98,14 +98,14 @@ export default function PropertyInfo({ property }) {
                 <span style={{ fontFamily: 'var(--font-display)', fontSize: '1.2rem', color: 'var(--color-ink)', fontWeight: 'bold' }}>
                   {property?.landlord?.name}
                 </span>
-                {property?.landlord?.verified && (
+                {property?.landlord?.isVerified && (
                   <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--color-success)', fontSize: '0.8rem', fontFamily: 'var(--font-mono)' }}>
                     <ShieldCheck size={14} />
                     Verified Landlord
                   </div>
                 )}
               </div>
-              <StarRating rating={property?.landlord?.rating} count={property?.landlord?.reviewCount} />
+              <StarRating rating={property?.landlord?.rating} />
               <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.8rem', color: 'var(--color-line-strong)', marginTop: '8px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
                 <div>Response time: {property?.landlord?.responseTime || 'Within a day'}</div>
                 <div>Member since: {property?.landlord?.memberSince || '2023'}</div>

@@ -3,10 +3,10 @@ import axios from "axios";
 /**
  * Base URL for the APT Rent REST API (see apt_rent_api spec, "Global
  * Architectural Blueprint"). Point VITE_API_BASE_URL at your backend once
- * it's built — e.g. http://localhost:5000/v1 for local dev, or
- * https://api.aptrent.app/v1 in production.
+ * it's built — e.g. http://localhost:5000/api for local dev, or
+ * https://api.aptrent.app/api in production.
  */
-const baseURL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/v1";
+const baseURL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api";
 
 /**
  * Auth model: httpOnly cookie, not a token kept in JS.

@@ -14,70 +14,60 @@ const getTokenFromRequest = (req) =>
 
 const registerUser = async (req, res) => {
   const {
-    firstName,
-    lastName,
+    name,
     email,
-    phone,
+    contact_number,
     password,
     is_landlord,
     is_tenant,
     address,
     occupation,
-  } = req.body;
+    institution_name,
+    workplace_name,
+  } = req.body || {};
   let errors = [];
 
-  if (!firstName || firstName.length === 0) {
-    errors.push({ field: "firstName", message: "First name is invalid" });
+  if (!name || !name.trim()) {
+    errors.push({ field: "name", message: "Name is invalid" });
   }
   if (!password || password.length === 0) {
-    errors.push({ field: "password", message: "password is invalid" });
+    errors.push({ field: "password", message: "Password is invalid" });
   }
-  if (
-    !email ||
-    email.length === 0 ||
-    !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
-  ) {
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     errors.push({ field: "email", message: "Email is invalid" });
   }
-  if (!phone || phone.length === 0) {
-    errors.push({ field: "phone", message: "Phone is invalid" });
+  if (!contact_number || !contact_number.trim()) {
+    errors.push({ field: "contact_number", message: "Contact number is invalid" });
   }
-
   if (!is_landlord && !is_tenant) {
-    errors.push({
-      field: "role",
-      message: "You must register as a tenant or a landlord",
-    });
+    errors.push({ field: "role", message: "You must register as a tenant or a landlord" });
   }
 
   if (errors.length > 0) {
-    return res.status(422).json({ errors: errors });
+    return res.status(422).json({ errors });
   }
 
   try {
     const saltRound = 10;
     const hashedPassword = await bcrypt.hash(password, saltRound);
-    const fullName = lastName && lastName.trim()
-      ? `${firstName.trim()} ${lastName.trim()}`
-      : firstName.trim();
     const isAdmin = false;
 
     const userResult = await pool.query(
-      `
-      insert into users (name, email, password_hash, contact_number, is_landlord, is_tenant, is_admin, address, occupation)
-      values ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-      returning user_id, name, email, contact_number, is_landlord, is_tenant, is_admin, address, occupation
-      `,
+      `INSERT INTO users (name, email, password_hash, contact_number, is_landlord, is_tenant, is_admin, address, occupation, institution_name, workplace_name)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+       RETURNING user_id, name, email, contact_number, is_landlord, is_tenant, is_admin, address, occupation, institution_name, workplace_name`,
       [
-        fullName,
+        name.trim(),
         email,
         hashedPassword,
-        phone,
+        contact_number,
         Boolean(is_landlord),
         Boolean(is_tenant),
         isAdmin,
         address,
-        occupation,
+        occupation || null,
+        institution_name || null,
+        workplace_name || null,
       ],
     );
     const newUser = userResult.rows[0];
@@ -88,41 +78,22 @@ const registerUser = async (req, res) => {
       is_landlord: newUser.is_landlord,
       is_admin: newUser.is_admin,
     });
-    const cookieOptions = getCookieOptions();
-    res.cookie("accessToken", token, cookieOptions);
+    res.cookie("accessToken", token, getCookieOptions());
 
     return res.status(201).json({
       status: "success",
       message: "registration successful",
-      data: {
-        accessToken: token,
-        user: {
-          userId: newUser.user_id,
-          name: newUser.name,
-          email: newUser.email,
-          contact_number: newUser.contact_number,
-          is_tenant: newUser.is_tenant,
-          is_landlord: newUser.is_landlord,
-          is_admin: newUser.is_admin,
-          address: newUser.address,
-          occupation: newUser.occupation,
-        },
-      },
+      data: { accessToken: token, user: newUser },
     });
   } catch (error) {
     console.error("Registration error: ", error);
     if (error.code === "23505") {
-      return res.status(409).json({
-        status: "error",
-        message: "Email or phone number is already registered",
-        statusCode: 409,
-      });
+      return res.status(409).json({ status: "error", message: "Email or contact number is already registered", statusCode: 409 });
     }
-    return res.status(400).json({
-      status: "Bad request",
-      message: "Registration unsuccessful",
-      statusCode: 400,
-    });
+    if (error.code === "22P02") {
+      return res.status(422).json({ status: "error", message: "Invalid value provided for occupation", statusCode: 422 });
+    }
+    return res.status(400).json({ status: "Bad request", message: "Registration unsuccessful", statusCode: 400 });
   }
 };
 

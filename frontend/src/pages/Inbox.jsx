@@ -1,12 +1,17 @@
-import { useState, useRef, useEffect } from 'react';
-import { mockConversations } from '../data/mockData.js';
+import { useState, useRef, useEffect, useCallback } from 'react';
+import { useSearchParams, useNavigate, useLocation } from 'react-router-dom';
 import AppNavbar from '../components/AppNavbar.jsx';
 import { Send, Search, ArrowLeft, MessageSquare, MoreVertical } from 'lucide-react';
 import api from '../services/api';
+import { useApp } from '../context/AppContext.jsx';
+import { useToast } from '../components/ui/Toast.jsx';
+import { mockConversations } from '../data/mockData.js';
 import '../css/global.css';
 import '../css/navbar.css';
 import '../css/newsfeed-home.css';
 import '../css/modules.css';
+
+const POLL_INTERVAL_MS = 5000;
 
 function formatMessageTime(iso) {
   return new Date(iso).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
@@ -27,45 +32,245 @@ function getDateLabel(iso) {
 }
 
 export default function Inbox() {
-  const [conversations, setConversations] = useState(mockConversations);
+  const { currentUser, authReady, setMessageUnreadCount } = useApp();
+  const { showToast } = useToast();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const [conversations, setConversations] = useState([]);
+  const [messagesByConv, setMessagesByConv] = useState({});
   const [activeConvId, setActiveConvId] = useState(null);
   const [messageText, setMessageText] = useState('');
   const [mobileView, setMobileView] = useState('list');
   const [searchQuery, setSearchQuery] = useState('');
+  const [usingMock, setUsingMock] = useState(false);
   const messagesEndRef = useRef(null);
+
+  // Set once the first list call settles, so the ?contact= deep link knows
+  // whether an existing thread was found or a new one needs creating.
+  const [listReady, setListReady] = useState(false);
+  const handledContactRef = useRef(null);
+  // Whether a successful list response has landed yet — decides if a
+  // failure should fall back to demo data.
+  const loadedOnceRef = useRef(false);
+  // Last lastMessageTime we've rendered per conversation. Used to decide
+  // whether a poll actually brought anything new, so polling never yanks
+  // the view around while someone is reading or typing.
+  const lastSeenRef = useRef({});
+
+  const activeConv = conversations.find((c) => c.id === activeConvId);
+  const activeMessages = activeConvId ? messagesByConv[activeConvId] ?? [] : [];
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [activeConvId, conversations]);
+  }, [activeMessages.length, activeConvId]);
 
-  useEffect(() => {
-    // GET /conversations — falls back to the mock list already in state.
-    api.conversations
-      .list()
-      .then((data) => {
-        if (data?.data?.length) setConversations(data.data);
-      })
-      .catch(() => {});
+  // ---------------------------------------------------------------------------
+  // Data loading
+  // ---------------------------------------------------------------------------
+
+  const applyMockData = useCallback(() => {
+    setConversations(mockConversations);
+    const seeded = {};
+    mockConversations.forEach((c) => {
+      seeded[c.id] = c.messages ?? [];
+    });
+    setMessagesByConv(seeded);
+    setUsingMock(true);
   }, []);
 
-  const filteredConvs = conversations.filter(c => 
-    c.participant.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-    c.propertyTitle.toLowerCase().includes(searchQuery.toLowerCase())
+  const loadMessages = useCallback(async (convId) => {
+    try {
+      const data = await api.conversations.getMessages(convId);
+      setMessagesByConv((prev) => ({ ...prev, [convId]: data?.data ?? [] }));
+    } catch {
+      // Keep whatever's already on screen rather than blanking the thread.
+    }
+  }, []);
+
+  const loadConversations = useCallback(async () => {
+    try {
+      const data = await api.conversations.list();
+      const items = data?.data ?? [];
+      loadedOnceRef.current = true;
+      setConversations(items);
+      setListReady(true);
+      return items;
+    } catch {
+      // Degrade to demo data rather than showing a permanently empty inbox.
+      setListReady(true);
+      if (!loadedOnceRef.current) {
+        loadedOnceRef.current = true;
+        applyMockData();
+      }
+      return null;
+    }
+  }, [applyMockData]);
+
+  // Poll for new messages. Cleared on unmount.
+  useEffect(() => {
+    let cancelled = false;
+    // loadConversations only calls setState after its `await`, so this is
+    // not the synchronous-render cascade the lint rule guards against.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    loadConversations();
+    const timer = setInterval(() => {
+      if (!cancelled) loadConversations();
+    }, POLL_INTERVAL_MS);
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+    };
+  }, [loadConversations]);
+
+  // Navbar unread badge: total across all threads. Only pushed up when it
+  // actually changes, so opening the inbox doesn't re-render the navbar.
+  const lastBadgeRef = useRef(0);
+  useEffect(() => {
+    const total = conversations.reduce((sum, c) => sum + (c.unreadCount || 0), 0);
+    if (total === lastBadgeRef.current) return;
+    lastBadgeRef.current = total;
+    setMessageUnreadCount(total);
+  }, [conversations, setMessageUnreadCount]);
+
+  // RequireAuth already guards this route on the way in. This covers the
+  // case it can't: a session that expires while the page is open, which
+  // would otherwise leave an empty inbox and 401s. `state.from` keeps the
+  // ?contact=&property= params so signing back in returns to the thread.
+  useEffect(() => {
+    if (authReady && !currentUser) {
+      navigate('/login', {
+        replace: true,
+        state: { from: { pathname: '/inbox', search: location.search } },
+      });
+    }
+  }, [authReady, currentUser, navigate, location.search]);
+
+  const openConversation = useCallback(
+    (convId) => {
+      setActiveConvId(convId);
+      setMobileView('chat');
+      // Seed the change-detector so opening a thread isn't mistaken for
+      // "new messages arrived" by the poll effect below.
+      const conv = conversations.find((c) => c.id === convId);
+      if (conv) lastSeenRef.current[convId] = String(conv.lastMessageTime);
+      loadMessages(convId);
+      api.conversations.markRead(convId).catch(() => {});
+      setConversations((prev) => prev.map((c) => (c.id === convId ? { ...c, unreadCount: 0 } : c)));
+    },
+    [conversations, loadMessages]
   );
 
-  const activeConv = conversations.find(c => c.id === activeConvId);
+  // When a poll brings genuinely new activity on the open thread, pull the
+  // new messages and clear the unread badge.
+  useEffect(() => {
+    if (!activeConv) return;
+    const key = String(activeConv.lastMessageTime);
+    if (lastSeenRef.current[activeConv.id] === key) return;
+    lastSeenRef.current[activeConv.id] = key;
+    loadMessages(activeConv.id);
+    api.conversations.markRead(activeConv.id).catch(() => {});
+    setConversations((prev) =>
+      prev.map((c) => (c.id === activeConv.id ? { ...c, unreadCount: 0 } : c))
+    );
+  }, [conversations, activeConv, loadMessages]);
+
+  // ---------------------------------------------------------------------------
+  // ?contact=<userId>&property=<propertyId> deep link
+  //
+  // PropertyDetails navigates here from its "Contact Landlord" button. Without
+  // this, arriving with ?contact set used to silently do nothing.
+  // ---------------------------------------------------------------------------
+  useEffect(() => {
+    const contactId = searchParams.get('contact');
+    const propertyId = searchParams.get('property');
+    if (!contactId || !listReady || !currentUser) return;
+    if (handledContactRef.current === contactId) return;
+    handledContactRef.current = contactId;
+
+    const existing = conversations.find((c) => String(c.participant.id) === String(contactId));
+    if (existing) {
+      // Syncing the ?contact= URL param into the open thread is a legitimate
+      // effect — there's no event handler that could do this instead.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      openConversation(existing.id);
+    } else if (propertyId) {
+      // No thread yet — create one for this property and its owner.
+      api.conversations
+        .start({ property_id: propertyId, recipient_id: contactId })
+        .then(async (result) => {
+          const items = await loadConversations();
+          const created = (items ?? []).find(
+            (c) => String(c.id) === String(result?.conversation_id)
+          );
+          if (created) openConversation(created.id);
+        })
+        .catch((error) => {
+          showToast({
+            message: error.response?.data?.message || "Could not start this conversation.",
+            type: 'error',
+          });
+        });
+    } else {
+      showToast({
+        message: 'Open a property first to start a conversation.',
+        type: 'warning',
+      });
+    }
+    // Drop the params so a refresh doesn't re-trigger thread creation.
+    setSearchParams({}, { replace: true });
+  }, [searchParams, listReady, currentUser, conversations, openConversation, loadConversations, showToast, setSearchParams]);
+
+  // ---------------------------------------------------------------------------
+  // Sending
+  // ---------------------------------------------------------------------------
 
   function sendMessage() {
-    if (!messageText.trim() || !activeConvId) return;
-    const newMsg = { id: `msg-${Date.now()}`, senderId: 'user-1', text: messageText.trim(), timestamp: new Date().toISOString() };
-    setConversations(prev => prev.map(c => c.id === activeConvId
-      ? { ...c, messages: [...c.messages, newMsg], lastMessage: newMsg.text, lastMessageTime: newMsg.timestamp, unreadCount: 0 }
-      : c
-    ));
-    // POST /conversations/:id/messages — best-effort; the thread already
-    // updated locally above.
-    api.conversations.sendMessage(activeConvId, newMsg.text).catch(() => {});
+    const text = messageText.trim();
+    if (!text || !activeConvId) return;
+
+    const tempId = `temp-${Date.now()}`;
+    const optimistic = {
+      id: tempId,
+      senderId: currentUser?.id,
+      text,
+      timestamp: new Date().toISOString(),
+      pending: true,
+    };
+
+    setMessagesByConv((prev) => ({
+      ...prev,
+      [activeConvId]: [...(prev[activeConvId] ?? []), optimistic],
+    }));
+    setConversations((prev) =>
+      prev.map((c) =>
+        c.id === activeConvId
+          ? { ...c, lastMessage: text, lastMessageTime: optimistic.timestamp }
+          : c
+      )
+    );
     setMessageText('');
+
+    api.conversations
+      .sendMessage(activeConvId, text)
+      .then((res) => {
+        const saved = res?.message;
+        setMessagesByConv((prev) => ({
+          ...prev,
+          [activeConvId]: (prev[activeConvId] ?? []).map((m) =>
+            m.id === tempId ? { ...saved, pending: false } : m
+          ),
+        }));
+      })
+      .catch(() => {
+        setMessagesByConv((prev) => ({
+          ...prev,
+          [activeConvId]: (prev[activeConvId] ?? []).filter((m) => m.id !== tempId),
+        }));
+        setMessageText(text); // don't lose what they typed
+        showToast({ message: 'Message failed to send. Please try again.', type: 'error' });
+      });
   }
 
   const handleKeyDown = (e) => {
@@ -75,13 +280,11 @@ export default function Inbox() {
     }
   };
 
-  const selectConversation = (id) => {
-    setActiveConvId(id);
-    setMobileView('chat');
-    setConversations(prev => prev.map(c => c.id === id ? { ...c, unreadCount: 0 } : c));
-    // PATCH /conversations/:id/read
-    api.conversations.markRead(id).catch(() => {});
-  };
+  const filteredConvs = conversations.filter(
+    (c) =>
+      (c.participant?.name ?? '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (c.propertyTitle ?? '').toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
     <div className="module-shell" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
@@ -169,6 +372,18 @@ export default function Inbox() {
            color: var(--color-ink);
            border-bottom-left-radius: 2px;
         }
+        .msg-bubble.pending {
+           opacity: 0.6;
+        }
+        .nav-badge {
+           background: var(--color-brass);
+           color: var(--color-ink);
+           border-radius: 999px;
+           font-size: 0.62rem;
+           font-weight: 700;
+           padding: 1px 6px;
+           margin-left: 6px;
+        }
         @media (max-width: 768px) {
            .inbox-contacts {
               width: 100%;
@@ -199,7 +414,7 @@ export default function Inbox() {
       `}</style>
       <div className={`inbox-shell ${mobileView === 'chat' ? 'show-chat' : ''}`}>
 
-        
+
         {/* Left Panel */}
         <div className="inbox-contacts">
           <div style={{ padding: '16px', borderBottom: '1px solid var(--color-line)' }}>
@@ -223,11 +438,16 @@ export default function Inbox() {
             </div>
           </div>
           <div style={{ flex: 1, overflowY: 'auto' }}>
+            {filteredConvs.length === 0 && (
+              <p style={{ padding: '24px 16px', color: '#8a8f85', fontSize: '0.85rem', textAlign: 'center' }}>
+                {usingMock ? 'No conversations.' : 'No conversations yet.'}
+              </p>
+            )}
             {filteredConvs.map(conv => (
               <button
                 key={conv.id}
                 className={`contact-item ${activeConvId === conv.id ? 'is-active' : ''}`}
-                onClick={() => selectConversation(conv.id)}
+                onClick={() => openConversation(conv.id)}
               >
                 <div className="contact-avatar">
                   {conv.participant.initials}
@@ -288,12 +508,12 @@ export default function Inbox() {
               <div style={{ flex: 1, overflowY: 'auto', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '6px', background: 'var(--color-paper)' }}>
                 {(() => {
                   let lastLabel = null;
-                  return activeConv.messages.map((msg) => {
+                  return activeMessages.map((msg) => {
                     const label = getDateLabel(msg.timestamp);
                     const showSep = label !== lastLabel;
                     lastLabel = label;
-                    const isSent = msg.senderId === 'user-1';
-                    
+                    const isSent = String(msg.senderId) === String(currentUser?.id);
+
                     return (
                       <div key={msg.id} style={{ display: 'flex', flexDirection: 'column' }}>
                         {showSep && (
@@ -304,11 +524,12 @@ export default function Inbox() {
                           </div>
                         )}
                         <div style={{ display: 'flex', flexDirection: 'column', alignItems: isSent ? 'flex-end' : 'flex-start', width: '100%' }}>
-                          <div className={`msg-bubble ${isSent ? 'sent' : 'received'}`}>
+                          <div className={`msg-bubble ${isSent ? 'sent' : 'received'}${msg.pending ? ' pending' : ''}`}>
                             {msg.text}
                           </div>
                           <span style={{ fontSize: '0.65rem', fontFamily: 'var(--font-mono)', color: '#8a8f85', marginTop: '2px' }}>
                             {formatMessageTime(msg.timestamp)}
+                            {isSent && (msg.pending ? ' · sending' : msg.readAt ? ' · read' : '')}
                           </span>
                         </div>
                       </div>

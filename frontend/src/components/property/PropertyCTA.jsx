@@ -2,20 +2,55 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Calendar, MessageSquare, ShieldCheck, FileText } from 'lucide-react';
 import api from '../../services/api';
+import { useApp } from '../../context/AppContext.jsx';
 import '../../css/modules.css';
 import '../../css/global.css';
 
-export default function PropertyCTA({ propertyId, pricePerMonth, onContactLandlord, mobileOnly }) {
+export default function PropertyCTA({ propertyId, ownerId, pricePerMonth, onContactLandlord, mobileOnly }) {
   const navigate = useNavigate();
+  const { currentUser, authReady } = useApp();
   const [applyState, setApplyState] = useState('idle'); // idle | sending | sent | error
+  const [applyError, setApplyError] = useState(null);
+
+  // The apply endpoint is tenant-only (requireTenant), so a landlord
+  // never has a working Apply button. Owners would get a 403 on their
+  // own flat even as dual-role accounts, so they're hidden too.
+  const canApply = Boolean(
+    currentUser &&
+    !currentUser.isLandlord &&
+    (ownerId == null || String(ownerId) !== String(currentUser.id)),
+  );
+
+  // Both actions below hit authenticated endpoints. Asking for a sign-in
+  // on click, rather than letting RequireAuth bounce off the destination,
+  // means the visitor never fills in a form they can't submit. The
+  // intended URL rides along so Login returns them to it.
+  const requireLogin = (pathname) => {
+    if (authReady && !currentUser) {
+      navigate('/login', { state: { from: { pathname } } });
+      return true;
+    }
+    return false;
+  };
+
+  const handleRequestTour = () => {
+    const path = `/tour/${propertyId}`;
+    if (requireLogin(path)) return;
+    navigate(path);
+  };
 
   const handleApply = async () => {
+    if (requireLogin(`/property/${propertyId}`)) return;
     try {
       setApplyState('sending');
+      setApplyError(null);
       // POST /applications — tenant-only per the spec.
       await api.applications.create({ property_id: propertyId });
       setApplyState('sent');
-    } catch {
+    } catch (err) {
+      // The api client normalizes the backend envelope into err.message;
+      // showing it beats a generic "try again" that hides the real cause.
+      setApplyError(err?.message || "Couldn't send your application — try again in a moment.");
       setApplyState('error');
     }
   };
@@ -43,7 +78,7 @@ export default function PropertyCTA({ propertyId, pricePerMonth, onContactLandlo
           <button 
             className="btn-primary" 
             style={{ padding: '8px 16px', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.9rem', background: 'var(--color-ink)', color: 'white', border: 'none', borderRadius: 'var(--radius-sm)' }}
-            onClick={() => navigate('/tour/' + propertyId)}
+            onClick={handleRequestTour}
           >
             <Calendar size={16} />
             Tour
@@ -69,20 +104,22 @@ export default function PropertyCTA({ propertyId, pricePerMonth, onContactLandlo
       <hr style={{ border: 'none', borderTop: '1px solid var(--color-line)', margin: '0 0 24px 0' }} />
       
       <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-        <button
-          className="btn-primary"
-          style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '12px', background: 'var(--color-brass)', color: 'var(--color-ink)', border: 'none', borderRadius: 'var(--radius-sm)', cursor: applyState === 'sent' ? 'default' : 'pointer', fontFamily: 'var(--font-body)', fontWeight: 'bold', opacity: applyState === 'sending' ? 0.7 : 1 }}
-          onClick={handleApply}
-          disabled={applyState === 'sending' || applyState === 'sent'}
-        >
-          <FileText size={18} />
-          {applyLabel}
-        </button>
+        {canApply && (
+          <button
+            className="btn-primary"
+            style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '12px', background: 'var(--color-brass)', color: 'var(--color-ink)', border: 'none', borderRadius: 'var(--radius-sm)', cursor: applyState === 'sent' ? 'default' : 'pointer', fontFamily: 'var(--font-body)', fontWeight: 'bold', opacity: applyState === 'sending' ? 0.7 : 1 }}
+            onClick={handleApply}
+            disabled={applyState === 'sending' || applyState === 'sent'}
+          >
+            <FileText size={18} />
+            {applyLabel}
+          </button>
+        )}
 
         <button 
           className="btn-primary" 
           style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '12px', background: 'var(--color-ink)', color: 'white', border: 'none', borderRadius: 'var(--radius-sm)', cursor: 'pointer', fontFamily: 'var(--font-body)', fontWeight: 'bold' }}
-          onClick={() => navigate('/tour/' + propertyId)}
+          onClick={handleRequestTour}
         >
           <Calendar size={18} />
           Request a Tour
@@ -96,9 +133,9 @@ export default function PropertyCTA({ propertyId, pricePerMonth, onContactLandlo
           <MessageSquare size={18} />
           Contact Landlord
         </button>
-        {applyState === 'error' && (
+        {applyState === 'error' && applyError && (
           <p style={{ color: 'var(--color-error)', fontSize: '0.8rem', margin: 0 }}>
-            Couldn't send your application — try again in a moment.
+            {applyError}
           </p>
         )}
       </div>
