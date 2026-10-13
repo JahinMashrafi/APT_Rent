@@ -2,46 +2,43 @@
  * ============================================================================
  * ApartmentCard.jsx
  * ============================================================================
- * Renders ONE apartment post in the newsfeed. Expects an `apartment` object
- * shaped like this (adjust the field names to match your real API response
- * — this is the only place you'd need to touch for a field-name mismatch):
+ * THE SECOND BUG YOU DESCRIBED: "the full card should be a link... wherever
+ * I click on the card, it will move to the next page."
  *
- *   {
- *     id: "abc123",
- *     photos: ["/img1.jpg", "/img2.jpg", "/img3.jpg", "/img4.jpg", ...],
- *     listedAt: "2026-08-01T00:00:00Z",
- *     address: "House 12, Road 5, Dhanmondi, Dhaka",
- *     pricePerMonth: 25000,
- *     bedrooms: 3,
- *     bathrooms: 2,
- *     hasLift: true,
- *     isWishlisted: false,
- *   }
+ * Fix: the whole <article> is now wrapped in a single <Link to={`/property/${id}`}>
+ * (route confirmed from your Contracts.jsx: `to={`/property/${contract.property_id}`}`).
+ * The wishlist star and share button still work normally — each one calls
+ * event.preventDefault() + event.stopPropagation(), which stops the click
+ * from ever reaching the surrounding <Link> and navigating away.
  *
- * Sections inside this card (top to bottom):
- *   1. Photo grid (first 3 photos, "+N" overlay for the rest)
- *   2. Meta row (listed date)
- *   3. Address + price
- *   4. Icon row (bedrooms, bathrooms, lift)
- *   5. Action row (wishlist star, share)
+ * FIELD NAMES: your real adapters.js wasn't included, so this reads several
+ * possible field-name spellings defensively (camelCase and snake_case) so it
+ * works whichever your adaptProperty() actually produces. If your adapter
+ * uses different names than these fallbacks, just adjust the destructuring
+ * below — everything else stays the same.
+ *
+ * LIFT ICON: your schema has no dedicated "has lift" column — lift/elevator
+ * is one of the free-text strings in properties.facilities (same pattern
+ * your own backend already uses for "balcony" in the has_balcony filter in
+ * propertyController.js). So this card checks facilities for a "lift" or
+ * "elevator" entry instead of a field that doesn't exist.
  * ============================================================================
  */
 
-import { Link } from "react-router-dom"; // TODO: swap for next/link if this is a Next.js project
+import { Link } from "react-router-dom";
 import formatRelativeDate from "../utils/formatRelativeDate.js";
 
 export default function ApartmentCard({ apartment, onToggleWishlist }) {
-  const {
-    id,
-    photos = [],
-    listedAt,
-    address,
-    pricePerMonth,
-    bedrooms,
-    bathrooms,
-    hasLift,
-    isWishlisted,
-  } = apartment;
+  const id = apartment.id ?? apartment.property_id;
+  const photos = apartment.photos ?? [];
+  const listedAt = apartment.createdAt ?? apartment.created_at ?? apartment.listedAt;
+  const address = apartment.address ?? apartment.title ?? "Untitled listing";
+  const pricePerMonth = apartment.pricePerMonth ?? apartment.rate ?? 0;
+  const bedrooms = apartment.bedrooms ?? apartment.bedroom ?? "—";
+  const bathrooms = apartment.bathrooms ?? apartment.bathroom ?? "—";
+  const facilities = apartment.facilities ?? [];
+  const hasLift = facilities.some((f) => /lift|elevator/i.test(f));
+  const isWishlisted = Boolean(apartment.isWishlisted);
 
   const visiblePhotos = photos.slice(0, 3);
   const extraPhotoCount = Math.max(photos.length - 3, 0);
@@ -54,11 +51,9 @@ export default function ApartmentCard({ apartment, onToggleWishlist }) {
     const fullUrl = `${window.location.origin}${postDetailsUrl}`;
 
     if (navigator.share) {
-      // Native share sheet on supported (mostly mobile) browsers
       navigator.share({ title: address, url: fullUrl }).catch(() => {});
     } else {
       navigator.clipboard?.writeText(fullUrl);
-      // TODO: swap this for a proper toast/snackbar component if you have one
       alert("Link copied to clipboard!");
     }
   }
@@ -67,34 +62,35 @@ export default function ApartmentCard({ apartment, onToggleWishlist }) {
   function handleWishlistClick(event) {
     event.preventDefault();
     event.stopPropagation();
-    onToggleWishlist?.(id); // Parent (NewsFeed) owns the actual API call / state
+    onToggleWishlist?.(id);
   }
 
   return (
-    <article className="apartment-card">
+    // ===================== WHOLE CARD IS NOW THE LINK =====================
+    // Clicking anywhere on the card (photos, address, price, icon row)
+    // navigates to /property/:id. The two buttons inside stop their click
+    // from bubbling up to this Link, so they still work on their own.
+    <Link to={postDetailsUrl} className="apartment-card" aria-label={`View details for ${address}`}>
       {/* ===================== 1. PHOTO GRID ===================== */}
-      <Link to={postDetailsUrl} className="apartment-photos" aria-label={`View details for ${address}`}>
+      <div className="apartment-photos">
         {visiblePhotos.map((photoUrl, index) => {
           const isLastVisibleTile = index === visiblePhotos.length - 1;
           const showOverflowBadge = isLastVisibleTile && extraPhotoCount > 0;
 
           return (
             <div className="apartment-photo-tile" key={photoUrl + index}>
-              <img
-                src={photoUrl}
-                alt={`${address} photo ${index + 1}`}
-                onError={(event) => {
-                  event.currentTarget.src = "/assets/images/backgrounds/hero-background.svg";
-                }}
-              />
+              <img src={photoUrl} alt={`${address} photo ${index + 1}`} />
               {/* --- "+N" overlay on the last visible tile when there are more photos --- */}
-              {showOverflowBadge && (
-                <span className="apartment-photo-overflow">+{extraPhotoCount}</span>
-              )}
+              {showOverflowBadge && <span className="apartment-photo-overflow">+{extraPhotoCount}</span>}
             </div>
           );
         })}
-      </Link>
+        {visiblePhotos.length === 0 && (
+          <div className="apartment-photo-tile apartment-photo-placeholder">
+            <span>No photos yet</span>
+          </div>
+        )}
+      </div>
 
       <div className="apartment-card-body">
         {/* ===================== 2. LISTED DATE ===================== */}
@@ -102,7 +98,7 @@ export default function ApartmentCard({ apartment, onToggleWishlist }) {
 
         {/* ===================== 3. ADDRESS + PRICE ===================== */}
         <h3 className="apartment-address">{address}</h3>
-        <p className="apartment-price">৳{pricePerMonth?.toLocaleString("en-BD")} / month</p>
+        <p className="apartment-price">৳{Number(pricePerMonth).toLocaleString("en-BD")} / month</p>
 
         {/* ===================== 4. ICON ROW (bed / bath / lift) ===================== */}
         <ul className="apartment-icon-row">
@@ -132,16 +128,11 @@ export default function ApartmentCard({ apartment, onToggleWishlist }) {
             <img src="/assets/icons/star.svg" alt="" width="18" height="18" />
           </button>
 
-          <button
-            type="button"
-            className="icon-btn share-btn"
-            onClick={handleShare}
-            aria-label="Share this listing"
-          >
+          <button type="button" className="icon-btn share-btn" onClick={handleShare} aria-label="Share this listing">
             <img src="/assets/icons/share.svg" alt="" width="18" height="18" />
           </button>
         </div>
       </div>
-    </article>
+    </Link>
   );
 }

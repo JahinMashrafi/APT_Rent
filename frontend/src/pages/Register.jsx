@@ -10,8 +10,6 @@ export default function Register() {
   const [formData, setFormData] = useState({
     fullName: "", userId: "", phone: "", email: "", password: "", confirmPassword: "", address: ""
   });
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
