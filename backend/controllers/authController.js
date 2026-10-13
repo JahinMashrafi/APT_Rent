@@ -14,8 +14,12 @@ const getTokenFromRequest = (req) =>
 
 const registerUser = async (req, res) => {
   const {
+    firstName: submittedFirstName,
+    lastName: submittedLastName,
     name,
+    fullName,
     email,
+    phone: submittedPhone,
     contact_number,
     password,
     is_landlord,
@@ -25,9 +29,13 @@ const registerUser = async (req, res) => {
     institution_name,
     workplace_name,
   } = req.body || {};
+  const submittedName =
+    name || fullName || [submittedFirstName, submittedLastName].filter(Boolean).join(" ");
+  const fullNameValue = typeof submittedName === "string" ? submittedName.trim() : "";
+  const phone = submittedPhone || contact_number;
   let errors = [];
 
-  if (!name || !name.trim()) {
+  if (!fullNameValue) {
     errors.push({ field: "name", message: "Name is invalid" });
   }
   if (!password || password.length === 0) {
@@ -36,7 +44,7 @@ const registerUser = async (req, res) => {
   if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     errors.push({ field: "email", message: "Email is invalid" });
   }
-  if (!contact_number || !contact_number.trim()) {
+  if (typeof phone !== "string" || !phone.trim()) {
     errors.push({ field: "contact_number", message: "Contact number is invalid" });
   }
   if (!is_landlord && !is_tenant) {
@@ -57,10 +65,10 @@ const registerUser = async (req, res) => {
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
        RETURNING user_id, name, email, contact_number, is_landlord, is_tenant, is_admin, address, occupation, institution_name, workplace_name`,
       [
-        name.trim(),
+        fullNameValue,
         email,
         hashedPassword,
-        contact_number,
+        phone.trim(),
         Boolean(is_landlord),
         Boolean(is_tenant),
         isAdmin,

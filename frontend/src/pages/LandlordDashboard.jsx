@@ -18,14 +18,14 @@ import '../css/modules.css';
 export default function LandlordDashboard() {
   const navigate = useNavigate();
   const { showToast } = useToast();
-  
+
   const [activeTab, setActiveTab] = useState('overview');
   const [properties, setProperties] = useState([]);
   const [applications, setApplications] = useState([]);
-  
+
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [propertyToDelete, setPropertyToDelete] = useState(null);
-  
+
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [selectedApplicant, setSelectedApplicant] = useState(null);
 
@@ -36,7 +36,7 @@ export default function LandlordDashboard() {
   // adapter keeps only URLs.
   const [editTarget, setEditTarget] = useState(null);
   const [editPhotos, setEditPhotos] = useState([]);
-  
+
   const [appFilter, setAppFilter] = useState('All');
 
   useEffect(() => {
@@ -125,13 +125,67 @@ export default function LandlordDashboard() {
     setShowProfileModal(true);
   };
 
-  const handleApproveApplicant = () => {
-    if (selectedApplicant) {
-      // PATCH /applications/:id/status
-      api.applications.updateStatus(selectedApplicant.id, 'approved').catch(() => {});
-      setApplications(applications.map(app => 
-        app.id === selectedApplicant.id ? { ...app, status: 'approved' } : app
-      ));
+  // ============================================================================
+  // CHANGED: handleApproveApplicant
+  // ============================================================================
+  // This used to only PATCH the application's status to "approved". Per your
+  // request — "when the landlord approves the application of the tenant for
+  // house rent, the contract bar will appear" — it now ALSO creates the lease
+  // contract right after approval, by calling POST /contracts (createContract
+  // in contractController.js). That backend call:
+  //   1. inserts the contracts row
+  //   2. builds the lease PDF from the one shared template (landlord/tenant
+  //      names + address + dates filled in automatically)
+  //   3. uploads the PDF to the "contract-pdfs" bucket and saves its URL
+  // So nothing here needs to know about PDF layout — it just sends the
+  // property/tenant/rate/dates, and the contract (with its PDF) shows up in
+  // the tenant's and landlord's Contracts page right after.
+  //
+  // rate comes from the property's own stored price, start_date is today,
+  // end_date defaults to a 1-year lease — adjust those two lines if you want
+  // a different default term or to let the landlord pick dates first.
+  // ============================================================================
+  const handleApproveApplicant = async () => {
+    if (!selectedApplicant) return;
+
+    const propertyId = selectedApplicant.propertyId;
+    const tenantId = selectedApplicant.tenant?.id;
+    const property = properties.find((p) => p.id === propertyId);
+
+    try {
+      // 1) Mark the application approved (unchanged from before)
+      await api.applications.updateStatus(selectedApplicant.id, 'approved');
+      setApplications((prev) =>
+        prev.map((app) => (app.id === selectedApplicant.id ? { ...app, status: 'approved' } : app))
+      );
+
+      // 2) NEW: auto-create the lease contract (+ PDF) for this tenant.
+      if (tenantId && property) {
+        const today = new Date();
+        const oneYearLater = new Date(today);
+        oneYearLater.setFullYear(oneYearLater.getFullYear() + 1);
+
+        await api.contracts.create({
+          property_id: propertyId,
+          tenant_id: tenantId,
+          rate: property.pricePerMonth,
+          start_date: today.toISOString().slice(0, 10),
+          end_date: oneYearLater.toISOString().slice(0, 10),
+        });
+
+        showToast({
+          message: 'Lease contract created — the tenant can review, sign, and download it from Contracts.',
+          type: 'success',
+        });
+      } else {
+        showToast({
+          message: 'Application approved, but a contract could not be created (missing tenant or property).',
+          type: 'error',
+        });
+      }
+    } catch (error) {
+      showToast({ message: error.message || 'Approved, but the lease contract could not be created automatically.', type: 'error' });
+    } finally {
       setShowProfileModal(false);
     }
   };
@@ -145,14 +199,14 @@ export default function LandlordDashboard() {
     navigate(`/inbox?contact=${tenantId}&property=${selectedApplicant.propertyId}`);
   };
 
-  const filteredApps = appFilter === 'All' 
-    ? applications 
+  const filteredApps = appFilter === 'All'
+    ? applications
     : applications.filter(a => a.status.toLowerCase() === appFilter.toLowerCase());
 
   return (
     <div className="module-shell">
       <AppNavbar />
-      
+
       <main className="module-main-wide">
         {/* Page header */}
         <div style={{ marginBottom: '2rem' }}>
@@ -222,8 +276,8 @@ export default function LandlordDashboard() {
 
             <h2 className="section-heading" style={{ marginTop: '2rem' }}>Action Needed</h2>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <div 
-                className="mod-card mod-card-pad" 
+              <div
+                className="mod-card mod-card-pad"
                 style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}
                 onClick={() => setActiveTab('applications')}
               >
@@ -233,8 +287,8 @@ export default function LandlordDashboard() {
                 </div>
                 <ChevronRight size={20} color="var(--color-line-strong)" />
               </div>
-              <div 
-                className="mod-card mod-card-pad" 
+              <div
+                className="mod-card mod-card-pad"
                 style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -265,10 +319,10 @@ export default function LandlordDashboard() {
               {properties.map(property => (
                 <div key={property.id} className="mod-card" style={{ overflow: 'hidden' }}>
                   <div style={{ height: '180px', position: 'relative' }}>
-                    <img 
-                      src={property.photos && property.photos[0] ? property.photos[0] : ''} 
-                      alt={property.title} 
-                      style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                    <img
+                      src={property.photos && property.photos[0] ? property.photos[0] : ''}
+                      alt={property.title}
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                       onError={(e) => { e.target.onerror = null; e.target.src = 'https://via.placeholder.com/300x180?text=No+Image'; }}
                     />
                     <div style={{ position: 'absolute', top: '10px', right: '10px' }}>
@@ -285,7 +339,7 @@ export default function LandlordDashboard() {
                       </div>
                     )}
                   </div>
-                  
+
                   <div className="mod-card-pad">
                     <h3 style={{ fontFamily: 'var(--font-display)', color: 'var(--color-ink)', fontWeight: 700, margin: '0 0 4px 0', display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                       {property.title}
@@ -293,7 +347,7 @@ export default function LandlordDashboard() {
                     <p style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-blueprint)', fontSize: '0.85rem', margin: '0 0 12px 0', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                       {property.address}
                     </p>
-                    
+
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '12px' }}>
                       <div>
                         <span style={{ fontFamily: 'var(--font-stencil)', fontSize: '1.3rem', color: 'var(--color-ink)' }}>৳{(property.pricePerMonth ?? 0).toLocaleString()}</span>
@@ -301,7 +355,7 @@ export default function LandlordDashboard() {
                       </div>
                       <span style={{ fontSize: '0.85rem', color: 'var(--color-charcoal)' }}>{property.bedrooms} Bed • {property.bathrooms} Bath</span>
                     </div>
-                    
+
                     <div style={{ display: 'flex', gap: '6px', paddingTop: '0.75rem', borderTop: '1px solid var(--color-line)', justifyContent: 'flex-end' }}>
                       <button
                         className="icon-action-btn"
@@ -310,15 +364,15 @@ export default function LandlordDashboard() {
                       >
                         <Edit3 size={18} /> Edit
                       </button>
-                      <button 
-                        className="icon-action-btn" 
+                      <button
+                        className="icon-action-btn"
                         title={property.isHidden ? "Show" : "Hide"}
                         onClick={() => toggleVisibility(property.id)}
                       >
                         {property.isHidden ? <Eye size={18} /> : <EyeOff size={18} />} {property.isHidden ? "Show" : "Hide"}
                       </button>
-                      <button 
-                        className="icon-action-btn danger" 
+                      <button
+                        className="icon-action-btn danger"
                         title="Delete"
                         onClick={() => handleDeleteClick(property)}
                       >
@@ -360,7 +414,7 @@ export default function LandlordDashboard() {
                       <div style={{ fontSize: '0.85rem', color: 'var(--color-charcoal)' }}>{app.occupation || 'Professional'}</div>
                     </div>
                   </div>
-                  
+
                   <div style={{ flex: '1 1 150px' }}>
                     <div style={{ fontSize: '0.9rem', color: 'var(--color-blueprint)' }}>{app.propertyTitle || 'Dhanmondi 2BR'}</div>
                   </div>
@@ -389,8 +443,8 @@ export default function LandlordDashboard() {
                     <button className="icon-action-btn" onClick={() => navigate('/tour-requests')}>
                       <Calendar size={18} /> Tour Requests
                     </button>
-                    <button 
-                      className="icon-action-btn primary" 
+                    <button
+                      className="icon-action-btn primary"
                       onClick={() => navigate(`/lease/${app.propertyId}`)}
                       style={app.status !== 'approved' ? { opacity: 0.4, pointerEvents: 'none' } : {}}
                     >

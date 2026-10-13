@@ -1,6 +1,22 @@
+/**
+ * ============================================================================
+ * Contracts.jsx — "the contract bar"
+ * ============================================================================
+ * CHANGED from your version:
+ *   1. Each row in the list now also shows a transaction id and a Yes/No
+ *      payment-status badge — both come straight from listContracts()'s new
+ *      transaction_id / payment_status fields (contractController.js).
+ *   2. The expanded "View details" panel now has a Lease Document section:
+ *      an embedded PDF preview (<iframe>) plus a Download button, pointed
+ *      at contract.contract_pdf_url.
+ * Everything else (the fetch-on-open accordion pattern, signature display,
+ * loading/error states) is exactly what you already had.
+ * ============================================================================
+ */
+
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { FileText, ChevronDown, ChevronUp, Clock, PenLine } from "lucide-react";
+import { FileText, ChevronDown, ChevronUp, Clock, PenLine, Download, Receipt } from "lucide-react";
 import AppNavbar from "../components/AppNavbar.jsx";
 import api from "../services/api";
 import { formatDateLong } from "../utils/tour.js";
@@ -29,17 +45,18 @@ export default function Contracts() {
   const { currentUser } = useApp();
   const [contracts, setContracts] = useState([]);
   const [loadError, setLoadError] = useState("");
-  // Which contract's detail is expanded. The list row holds the summary;
-  // terms and signature images live on GET /contracts/:id, fetched once
-  // when a row is opened.
   const [openId, setOpenId] = useState(null);
   const [details, setDetails] = useState({});
+  const [negotiation, setNegotiation] = useState({});
+  const [negotiationError, setNegotiationError] = useState({});
+  const [acceptError, setAcceptError] = useState({});
 
   useEffect(() => {
     let cancelled = false;
 
     // GET /contracts — both parties of a lease land here: the query
     // matches on owner_id OR tenant_id, so one page serves either side.
+    // Each row now also carries transaction_id / payment_status / contract_pdf_url.
     api.contracts
       .list()
       .then((data) => {
@@ -80,6 +97,53 @@ export default function Contracts() {
       : { label: "Landlord", name: contract.owner?.name ?? "Landlord" };
   };
 
+  const submitNegotiation = async (contract) => {
+    const values = negotiation[contract.contract_id] ?? {};
+    try {
+      setNegotiationError((prev) => ({ ...prev, [contract.contract_id]: "" }));
+      const updated = await api.contracts.negotiate(contract.contract_id, {
+        rate: values.rate,
+        deposit: values.deposit,
+        message: values.message,
+      });
+      setContracts((prev) => prev.map((item) =>
+        item.contract_id === contract.contract_id
+          ? { ...item, rate: updated.rate, deposit: updated.deposit, negotiation_status: updated.negotiation_status }
+          : item,
+      ));
+      setDetails((prev) => ({
+        ...prev,
+        [contract.contract_id]: { ...prev[contract.contract_id], ...updated },
+      }));
+    } catch (error) {
+      setNegotiationError((prev) => ({
+        ...prev,
+        [contract.contract_id]: error.response?.data?.message || error.message || "Could not submit proposal.",
+      }));
+    }
+  };
+
+  const acceptContract = async (contract) => {
+    try {
+      setAcceptError((prev) => ({ ...prev, [contract.contract_id]: "" }));
+      const updated = await api.contracts.accept(contract.contract_id);
+      setContracts((prev) => prev.map((item) =>
+        item.contract_id === contract.contract_id
+          ? { ...item, negotiation_status: updated.negotiation_status }
+          : item,
+      ));
+      setDetails((prev) => ({
+        ...prev,
+        [contract.contract_id]: { ...prev[contract.contract_id], ...updated },
+      }));
+    } catch (error) {
+      setAcceptError((prev) => ({
+        ...prev,
+        [contract.contract_id]: error.response?.data?.message || error.message || "Could not accept lease.",
+      }));
+    }
+  };
+
   return (
     <div className="module-shell">
       <AppNavbar />
@@ -88,7 +152,7 @@ export default function Contracts() {
         <div style={{ marginBottom: "2rem" }}>
           <span className="eyebrow">Lease Documents</span>
           <h1 className="module-title">My Contracts</h1>
-          <p className="module-subtitle">Every lease agreement you're part of — review terms and signatures anytime.</p>
+          <p className="module-subtitle">Every lease agreement you're part of — review terms, payment status, and signatures anytime.</p>
         </div>
 
         {loadError && (
@@ -122,6 +186,11 @@ export default function Contracts() {
               const isOpen = openId === contract.contract_id;
               const detail = details[contract.contract_id];
               const other = counterparty(contract);
+              // These two fields come straight off the list row — see
+              // "transaction id / payment status yes-no" in the ask.
+              const transactionId = contract.transaction_id;
+              const isPaid = contract.payment_status === "yes";
+
               return (
                 <div key={contract.contract_id} className="mod-card mod-card-pad">
                   <button
@@ -141,8 +210,31 @@ export default function Contracts() {
                       </p>
                     </div>
 
+                    {/* --- NEW: transaction id + Yes/No payment badge --- */}
+                    <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "4px" }}>
+                      <span
+                        style={{
+                          fontFamily: "var(--font-mono)",
+                          fontSize: "0.72rem",
+                          color: "var(--color-blueprint)",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "4px",
+                        }}
+                      >
+                        <Receipt size={12} /> {transactionId ? `Txn: ${transactionId}` : "No transaction yet"}
+                      </span>
+                      <span className={`badge ${isPaid ? "badge-success" : "badge-warn"}`}>
+                        Payment: {isPaid ? "Yes" : "No"}
+                      </span>
+                    </div>
+
                     <span className={`badge ${STATUS_BADGE[contract.status] ?? "badge-neutral"}`}>
-                      {STATUS_LABEL[contract.status] ?? contract.status}
+                      {contract.negotiation_status === "accepted"
+                        ? "Lease accepted"
+                        : contract.negotiation_status === "proposed"
+                          ? "Tenant proposal sent"
+                          : STATUS_LABEL[contract.status] ?? contract.status}
                     </span>
                     {isOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
                   </button>
@@ -160,6 +252,7 @@ export default function Contracts() {
                           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: "1rem", marginBottom: "1rem" }}>
                             {[
                               { label: "Monthly Rent", value: `৳${Number(contract.rate ?? 0).toLocaleString("en-BD")}` },
+                              { label: "Security Deposit", value: `৳${Number(contract.deposit ?? 0).toLocaleString("en-BD")}` },
                               { label: "Start Date", value: formatDateLong(contract.start_date) },
                               { label: "End Date", value: formatDateLong(contract.end_date) },
                             ].map((item) => (
@@ -170,6 +263,41 @@ export default function Contracts() {
                             ))}
                           </div>
 
+                          {String(contract.tenant?.user_id) === String(currentUser?.id) && contract.status === "draft" && (
+                            <form
+                              onSubmit={(event) => {
+                                event.preventDefault();
+                                submitNegotiation(contract);
+                              }}
+                              style={{ borderTop: "1px solid var(--color-line)", paddingTop: "1rem", marginBottom: "1rem" }}
+                            >
+                              <strong style={{ display: "block", marginBottom: "0.75rem", color: "var(--color-ink)" }}>
+                                Bargain lease terms
+                              </strong>
+                              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "0.75rem" }}>
+                                <label>
+                                  <span className="eyebrow">Monthly rent</span>
+                                  <input type="number" min="1" value={negotiation[contract.contract_id]?.rate ?? contract.rate ?? ""} onChange={(event) => setNegotiation((prev) => ({ ...prev, [contract.contract_id]: { ...prev[contract.contract_id], rate: event.target.value } }))} />
+                                </label>
+                                <label>
+                                  <span className="eyebrow">Security deposit</span>
+                                  <input type="number" min="0" value={negotiation[contract.contract_id]?.deposit ?? contract.deposit ?? ""} onChange={(event) => setNegotiation((prev) => ({ ...prev, [contract.contract_id]: { ...prev[contract.contract_id], deposit: event.target.value } }))} />
+                                </label>
+                              </div>
+                              <textarea placeholder="Optional message to the landlord" value={negotiation[contract.contract_id]?.message ?? ""} onChange={(event) => setNegotiation((prev) => ({ ...prev, [contract.contract_id]: { ...prev[contract.contract_id], message: event.target.value } }))} style={{ width: "100%", marginTop: "0.75rem", minHeight: "70px" }} />
+                              <button type="submit" className="btn btn-primary" style={{ marginTop: "0.75rem" }}>Send bargaining proposal</button>
+                              {negotiationError[contract.contract_id] && <p role="alert" style={{ color: "var(--color-error)", marginTop: "0.5rem" }}>{negotiationError[contract.contract_id]}</p>}
+                              {detail.negotiation_status === "proposed" && <p style={{ color: "var(--color-blueprint)", marginTop: "0.5rem" }}>Your proposed terms were sent to the landlord.</p>}
+                              {detail.negotiation_status !== "accepted" && (
+                                <button type="button" className="btn btn-primary" onClick={() => acceptContract(contract)} style={{ marginTop: "0.75rem" }}>
+                                  Accept these lease terms
+                                </button>
+                              )}
+                              {detail.negotiation_status === "accepted" && <p style={{ color: "var(--color-success)", marginTop: "0.5rem" }}>Lease accepted. The landlord has been notified.</p>}
+                              {acceptError[contract.contract_id] && <p role="alert" style={{ color: "var(--color-error)", marginTop: "0.5rem" }}>{acceptError[contract.contract_id]}</p>}
+                            </form>
+                          )}
+
                           {detail.terms_and_conditions && (
                             <div style={{ marginBottom: "1rem" }}>
                               <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.72rem", color: "var(--color-blueprint)", display: "block", marginBottom: "4px" }}>Terms &amp; Conditions</span>
@@ -177,7 +305,7 @@ export default function Contracts() {
                             </div>
                           )}
 
-                          <div style={{ display: "flex", gap: "2rem", flexWrap: "wrap" }}>
+                          <div style={{ display: "flex", gap: "2rem", flexWrap: "wrap", marginBottom: "1.5rem" }}>
                             {[
                               { label: "Landlord signature", url: detail.owner_signature_url },
                               { label: "Tenant signature", url: detail.tenant_signature_url },
@@ -193,6 +321,48 @@ export default function Contracts() {
                                 )}
                               </div>
                             ))}
+                          </div>
+
+                          {/* =================== NEW: Lease Document (PDF) =================== */}
+                          <div>
+                            <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.72rem", color: "var(--color-blueprint)", display: "block", marginBottom: "8px" }}>
+                              Lease Document
+                            </span>
+
+                            {detail.contract_pdf_url ? (
+                              <>
+                                <div
+                                  style={{
+                                    border: "1px solid var(--color-line)",
+                                    borderRadius: "var(--radius-sm)",
+                                    overflow: "hidden",
+                                    height: "420px",
+                                    marginBottom: "10px",
+                                  }}
+                                >
+                                  {/* Browser's built-in PDF viewer renders this inline. */}
+                                  <iframe
+                                    src={detail.contract_pdf_url}
+                                    title={`Lease contract #${contract.contract_id}`}
+                                    style={{ width: "100%", height: "100%", border: "none" }}
+                                  />
+                                </div>
+                                <a
+                                  href={detail.contract_pdf_url}
+                                  download={`lease-contract-${contract.contract_id}.pdf`}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="btn btn-primary"
+                                  style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}
+                                >
+                                  <Download size={16} /> Download PDF
+                                </a>
+                              </>
+                            ) : (
+                              <p style={{ color: "var(--color-charcoal)", fontSize: "0.85rem" }}>
+                                The lease document is still being generated — check back in a moment, or ask your landlord to re-save the contract.
+                              </p>
+                            )}
                           </div>
                         </>
                       )}

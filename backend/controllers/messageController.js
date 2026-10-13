@@ -2,6 +2,14 @@ const pool = require("../config/db.js");
 const { notify } = require("../utils/notify.js");
 const { emitToUser, isUserOnline } = require("../utils/socket.js");
 
+const initialsOf = (name) =>
+  (name || "?")
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part.charAt(0).toUpperCase())
+    .join("") || "?";
+
 // Loads a conversation and verifies the requester is one of its two participants.
 // Returns { conversation, otherParticipantId } or { conversation, forbidden: true }
 // if found but the requester isn't a party, or null if not found at all.
@@ -57,18 +65,19 @@ const getConversations = async (req, res) => {
       const participant = userResult.rows[0];
 
       return {
-        conversation_id: row.conversation_id,
-        property_id: row.property_id,
-        property_title: row.property_title, // properties has no `title` column — using `address` here
+        id: row.conversation_id,
+        propertyId: row.property_id,
+        propertyTitle: row.property_title,
         participant: {
-          user_id: participant.user_id,
+          id: participant.user_id,
           name: participant.name,
-          profile_picture_url: participant.profile_picture_url, // public bucket, stored as-is
-          is_online: isUserOnline(participant.user_id),
+          initials: initialsOf(participant.name),
+          profile_picture_url: participant.profile_picture_url,
+          isOnline: isUserOnline(participant.user_id),
         },
-        last_message: lastMsgResult.rows[0]?.message_text || null,
-        unread_count: unreadResult.rows[0].count,
-        last_message_at: row.last_message_at,
+        lastMessage: lastMsgResult.rows[0]?.message_text || "",
+        unreadCount: unreadResult.rows[0].count,
+        lastMessageTime: row.last_message_at,
       };
     }));
 
@@ -83,12 +92,12 @@ const getConversations = async (req, res) => {
 const createConversation = async (req, res) => {
   try {
     const userId = req.user.user_id;
-    const { recipient_id, property_id, initial_message } = req.body || {};
+    const { recipient_id, property_id } = req.body || {};
 
-    if (!recipient_id || !initial_message) {
-      return res.status(422).json({ success: false, message: "recipient_id and initial_message are required" });
+    if (!recipient_id || !property_id) {
+      return res.status(422).json({ success: false, message: "recipient_id and property_id are required" });
     }
-    if (Number(recipient_id) === userId) {
+    if (Number(recipient_id) === Number(userId)) {
       return res.status(422).json({ success: false, message: "Cannot start a conversation with yourself" });
     }
 
@@ -117,30 +126,9 @@ const createConversation = async (req, res) => {
       conversation = inserted.rows[0];
     }
 
-    const msgResult = await pool.query(
-      `INSERT INTO messages (conversation_id, sender_id, message_text)
-       VALUES ($1, $2, $3)
-       RETURNING message_id, conversation_id, sender_id, message_text, is_read, created_at`,
-      [conversation.conversation_id, userId, initial_message],
-    );
-    await pool.query(
-      "UPDATE conversations SET last_message_at = NOW() WHERE conversation_id = $1",
-      [conversation.conversation_id],
-    );
-
-    emitToUser(recipient_id, "message:new", msgResult.rows[0]);
-
-    await notify({
-      userId: recipient_id,
-      type: "new_message",
-      title: "New message",
-      message: initial_message.length > 80 ? `${initial_message.slice(0, 77)}...` : initial_message,
-      linkUrl: `/conversations/${conversation.conversation_id}`,
-    });
-
-    return res.status(201).json({
+    return res.status(existing.rows.length > 0 ? 200 : 201).json({
       conversation_id: conversation.conversation_id,
-      created_at: conversation.last_message_at, // conversations has no created_at column — using last_message_at
+      created: existing.rows.length === 0,
     });
   } catch (err) {
     console.error("createConversation error: ", err);
@@ -175,7 +163,13 @@ const getConversationMessages = async (req, res) => {
     );
 
     return res.status(200).json({
-      data: messagesResult.rows.reverse(), // oldest-first within the returned page, for a natural chat read order
+      data: messagesResult.rows.reverse().map((row) => ({
+        id: row.message_id,
+        senderId: row.sender_id,
+        text: row.message_text,
+        timestamp: row.created_at,
+        readAt: row.is_read ? row.created_at : null,
+      })),
       meta: { total_messages: countResult.rows[0].total, page },
     });
   } catch (err) {
@@ -223,7 +217,16 @@ const postMessage = async (req, res) => {
       linkUrl: `/conversations/${id}`,
     });
 
-    return res.status(201).json(result.rows[0]);
+    const row = result.rows[0];
+    return res.status(201).json({
+      message: {
+        id: row.message_id,
+        senderId: row.sender_id,
+        text: row.message_text,
+        timestamp: row.created_at,
+        readAt: row.is_read ? row.created_at : null,
+      },
+    });
   } catch (err) {
     console.error("postMessage error: ", err);
     return res.status(500).json({ success: false, message: "Failed to send message" });

@@ -426,7 +426,19 @@ const listAppointments = async (req, res) => {
   try {
     const userId = req.user.user_id;
     const result = await pool.query(
-      `SELECT a.appointment_id, a.property_id, p.address, a.appointment_date, a.appointment_time, a.status,
+      `SELECT a.appointment_id, a.property_id, p.address,       a.appointment_date, a.appointment_time,
+      CASE
+        WHEN a.proposed_by = a.tenant_id
+          AND a.status = 'cancelled'
+          AND EXISTS (
+            SELECT 1
+            FROM appointments confirmed_slot
+            WHERE confirmed_slot.appointment_batch_id = a.appointment_batch_id
+              AND confirmed_slot.status = 'confirmed'
+          )
+        THEN 'confirmed'
+        ELSE a.status
+      END AS status,
               a.appointment_batch_id, a.proposed_by, a.owner_id, a.tenant_id,
               a.cancellation_reason,
               cp.user_id AS counterpart_id, cp.name AS counterpart_name, cp.contact_number AS counterpart_phone

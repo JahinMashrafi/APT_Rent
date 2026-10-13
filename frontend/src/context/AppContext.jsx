@@ -89,7 +89,17 @@ export function AppProvider({ children }) {
       api.notifications
         .list()
         .then((data) => {
-          if (!cancelled) setNotifications(data?.data ?? data ?? []);
+          const rows = data?.data ?? data ?? [];
+          const normalized = rows.map((row) => ({
+            id: row.notification_id ?? row.id,
+            type: row.notification_type ?? row.type,
+            title: row.title,
+            message: row.message,
+            isRead: row.is_read ?? row.isRead ?? false,
+            link: row.link_url ?? row.link ?? "/notifications",
+            timestamp: row.created_at ?? row.timestamp,
+          }));
+          if (!cancelled) setNotifications(normalized);
         })
         // A failed poll is not worth surfacing; the last good list stands
         // and the next tick may well succeed.
