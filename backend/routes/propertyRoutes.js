@@ -8,8 +8,10 @@ const {
   createProperty,
   updateProperty,
   deleteProperty,
+  setPropertyVisibility,
   uploadPropertyPhotos,
   deletePropertyPhoto,
+  updatePropertyVisibility,
 } = require("../controllers/propertyController");
 
 router.get("/", getProperties);
@@ -18,6 +20,7 @@ router.get("/:id", getPropertyById);
 router.post("/", requireAuth, requireLandlord, createProperty);
 router.patch("/:id", requireAuth, requireLandlord, updateProperty);
 router.delete("/:id", requireAuth, requireLandlord, deleteProperty);
+router.patch("/:id/visibility", requireAuth, requireLandlord, setPropertyVisibility);
 
 router.post(
   "/:id/photos",
@@ -27,5 +30,7 @@ router.post(
   uploadPropertyPhotos,
 );
 router.delete("/:id/photos/:photo_id", requireAuth, requireLandlord, deletePropertyPhoto);
+
+router.patch("/:id/visibility", requireAuth, requireLandlord, updatePropertyVisibility);
 
 module.exports = router;

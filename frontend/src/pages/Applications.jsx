@@ -2,20 +2,11 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { FileText, Clock } from "lucide-react";
 import AppNavbar from "../components/AppNavbar.jsx";
-import { mockApplications, mockProperties } from "../data/mockData.js";
 import api from "../services/api";
 import { adaptApplication, flattenApplication } from "../services/adapters";
 import "../css/global.css";
 import "../css/navbar.css";
 import "../css/modules.css";
-
-// Mock fallback shaped like the tenant's own submitted applications, until
-// GET /applications is reachable — reuses the shared mock dataset so
-// property titles line up with what's on the listings pages.
-const FALLBACK_APPLICATIONS = mockApplications.map((application) => ({
-  ...flattenApplication(application),
-  property: mockProperties.find((p) => p.id === application.propertyId),
-}));
 
 const STATUS_BADGE = {
   pending: "badge-warn",
@@ -34,8 +25,8 @@ function timeAgo(iso) {
 }
 
 export default function Applications() {
-  const [applications, setApplications] = useState(FALLBACK_APPLICATIONS);
-  const [usingMock, setUsingMock] = useState(true);
+  const [applications, setApplications] = useState([]);
+  const [loadError, setLoadError] = useState("");
 
   useEffect(() => {
     let cancelled = false;
@@ -47,10 +38,13 @@ export default function Applications() {
         if (cancelled) return;
         const items = (data?.data ?? []).map(adaptApplication).map(flattenApplication);
         setApplications(items);
-        setUsingMock(false);
+        setLoadError("");
       })
-      .catch(() => {
-        // No backend yet — keep the mock already in state.
+      .catch((error) => {
+        if (!cancelled) {
+          setApplications([]);
+          setLoadError(error.message || "Could not load applications.");
+        }
       });
 
     return () => {
@@ -69,7 +63,7 @@ export default function Applications() {
           <p className="module-subtitle">Track the rental applications you've submitted to landlords.</p>
         </div>
 
-        {usingMock && (
+        {loadError && (
           <p
             style={{
               fontFamily: "var(--font-mono)",
@@ -82,7 +76,7 @@ export default function Applications() {
               marginBottom: "1.5rem",
             }}
           >
-            Showing mock data — GET /applications isn't reachable yet.
+            {loadError}
           </p>
         )}
 

@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { mockPaymentHistory, mockProperties } from '../data/mockData.js';
 import AppNavbar from '../components/AppNavbar.jsx';
 import Modal from '../components/ui/Modal.jsx';
 import PaymentGateway from '../components/lease/PaymentGateway.jsx';
@@ -19,16 +18,14 @@ export default function RentCollection() {
   const [selectedTimeSlot, setSelectedTimeSlot] = useState('Morning (9AM–12PM)');
   const [cashScheduled, setCashScheduled] = useState(false);
   const [selectedMethod, setSelectedMethod] = useState(null);
-  const [paymentHistory, setPaymentHistory] = useState(mockPaymentHistory);
-
-  const property = mockProperties[1]; // Dhanmondi flat
+  const [paymentHistory, setPaymentHistory] = useState([]);
+  const [property] = useState(null);
 
   useEffect(() => {
-    // GET /history — falls back to the mock list already in state.
     api.rent
       .history()
       .then((data) => {
-        if (data?.data?.length) setPaymentHistory(data.data);
+        setPaymentHistory(data?.data ?? []);
       })
       .catch(() => {});
   }, []);
@@ -77,8 +74,8 @@ export default function RentCollection() {
                 <Building2 size={24} />
               </div>
               <div>
-                <div style={{ fontWeight: 700, color: 'var(--color-ink)', fontSize: '1.1rem' }}>{property.title}</div>
-                <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.85rem', color: 'var(--color-blueprint)' }}>{property.address}</div>
+                <div style={{ fontWeight: 700, color: 'var(--color-ink)', fontSize: '1.1rem' }}>{property?.title || 'No active rental found'}</div>
+                <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.85rem', color: 'var(--color-blueprint)' }}>{property?.address || 'Rental details will appear here after the API responds.'}</div>
               </div>
             </div>
             

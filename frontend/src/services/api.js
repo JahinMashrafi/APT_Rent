@@ -22,7 +22,7 @@ export const auth = {
 };
 
 export const users = {
-  me: () => apiClient.get("/users/me").then((r) => r.data),
+  me: () => apiClient.get("/auth/me").then((r) => r.data),
   updateMe: (payload) => apiClient.patch("/users/me", payload).then((r) => r.data),
   uploadDocuments: (formData) =>
     apiClient
@@ -71,7 +71,16 @@ export const applications = {
 // 5. Appointments (3-Slot Tour Scheduling)
 // ---------------------------------------------------------------------------
 export const appointments = {
+  // Tenant-initiated: opens the negotiation with a preferred date.
+  request: (payload) => apiClient.post("/appointments/request", payload).then((r) => r.data),
+  // Landlord's reply. Pass request_id to answer a tenant's request
+  // (the tenant and batch then come from the request row, not the body);
+  // omit it for a standalone batch, which still needs tenant_id.
   propose: (payload) => apiClient.post("/appointments", payload).then((r) => r.data),
+  // Rejecting is per-request: all 3 proposed times are cancelled and
+  // the request stays open so the landlord can offer another set.
+  reject: (appointmentId, reason) =>
+    apiClient.patch(`/appointments/${appointmentId}/reject`, { reason }).then((r) => r.data),
   confirm: (appointmentId, confirmedAppointmentId) =>
     apiClient
       .patch(`/appointments/${appointmentId}/confirm`, {
@@ -92,6 +101,8 @@ export const appointments = {
 // ---------------------------------------------------------------------------
 export const contracts = {
   create: (payload) => apiClient.post("/contracts", payload).then((r) => r.data),
+  // Every lease the signed-in user is a party to (owner or tenant).
+  list: () => apiClient.get("/contracts").then((r) => r.data),
   getById: (contractId) => apiClient.get(`/contracts/${contractId}`).then((r) => r.data),
   sign: (contractId, signatureImageBase64) =>
     apiClient

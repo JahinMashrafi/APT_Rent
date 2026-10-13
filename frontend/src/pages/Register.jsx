@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import AppNavbar from "../components/AppNavbar.jsx";
 import { registerUser } from "../utils/auth";
+import { useApp } from "../context/AppContext.jsx";
 
 export default function Register() {
   const [role, setRole] = useState("tenant");
@@ -11,9 +12,8 @@ export default function Register() {
   });
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const navigate = useNavigate();
+  const { applyAuthenticatedUser } = useApp();
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -49,7 +49,10 @@ export default function Register() {
         is_landlord: role === "landlord",
       };
 
-      await registerUser(payload);
+      // Same as Login: the auth cookie is httpOnly, so context needs the
+      // user handed to it or guarded routes redirect back to /login.
+      const user = await registerUser(payload);
+      applyAuthenticatedUser(user);
       navigate("/dashboard");
     } catch (err) {
       setError(err.message || "Registration failed");

@@ -7,10 +7,15 @@ const getProperties = async (req, res) => {
     const {
       page = 1,
       limit = 12,
+      q,
+      city,
+      thana,
+      post_code,
       min_rate,
       max_rate,
       bedroom,
       bathroom,
+      has_balcony,
       property_type,
       furnish_type,
       availability_status,
@@ -24,10 +29,38 @@ const getProperties = async (req, res) => {
     const values = [];
     let i = 1;
 
+    const addressSearch = (term) => {
+      where.push(`p.address ILIKE $${i++}`);
+      values.push(`%${term}%`);
+    };
+
+    if (q) {
+      where.push(`(
+        p.address ILIKE $${i}
+        OR COALESCE(p.details, '') ILIKE $${i}
+        OR COALESCE(p.property_type::text, '') ILIKE $${i}
+      )`);
+      values.push(`%${q}%`);
+      i += 1;
+    }
+    if (city) addressSearch(city);
+    if (thana) addressSearch(thana);
+    if (post_code) addressSearch(post_code);
     if (min_rate) { where.push(`p.rate >= $${i++}`); values.push(min_rate); }
     if (max_rate) { where.push(`p.rate <= $${i++}`); values.push(max_rate); }
     if (bedroom) { where.push(`p.bedroom = $${i++}`); values.push(bedroom); }
     if (bathroom) { where.push(`p.bathroom = $${i++}`); values.push(bathroom); }
+    if (has_balcony === "yes") {
+      where.push(`EXISTS (
+        SELECT 1 FROM unnest(COALESCE(p.facilities, ARRAY[]::text[])) facility
+        WHERE facility ILIKE '%balcony%'
+      )`);
+    } else if (has_balcony === "no") {
+      where.push(`NOT EXISTS (
+        SELECT 1 FROM unnest(COALESCE(p.facilities, ARRAY[]::text[])) facility
+        WHERE facility ILIKE '%balcony%'
+      )`);
+    }
     if (property_type) { where.push(`p.property_type = $${i++}`); values.push(property_type); }
     if (furnish_type) { where.push(`p.furnish_type = $${i++}`); values.push(furnish_type); }
     if (availability_status) { where.push(`p.availability_status = $${i++}`); values.push(availability_status); }
@@ -128,6 +161,13 @@ const getProperties = async (req, res) => {
 const getPropertyById = async (req, res) => {
   try {
     const { id } = req.params;
+    if (!/^[1-9]\d*$/.test(id)) {
+      return res.status(400).json({
+        success: false,
+        message: "Property id must be a positive integer",
+      });
+    }
+
     const propResult = await pool.query(
       `SELECT p.*, u.user_id AS owner_user_id, u.name AS owner_name,
               u.contact_number AS owner_contact_number, u.is_verified AS owner_is_verified,
@@ -217,10 +257,14 @@ const createProperty = async (req, res) => {
       }
     }
 
+    // RETURNING * so the caller gets a row the UI can render directly.
+    // Returning only the old five columns made every freshly created
+    // listing come back with no photos and no landlord, so the card the
+    // landlord lands on was blank until a full page reload.
     const query = `
       INSERT INTO properties (${columns.join(", ")})
       VALUES (${placeholders.join(", ")})
-      RETURNING property_id, owner_id, address, rate, availability_status, created_at`;
+      RETURNING *`;
 
     const result = await pool.query(query, values);
     return res.status(201).json(result.rows[0]);
@@ -270,8 +314,11 @@ const updateProperty = async (req, res) => {
 
     setClauses.push("updated_at = NOW()");
     values.push(id);
+    // RETURNING * for the same reason createProperty does: the thin
+    // response left the edited card rendering stale values, because the
+    // landlord's own listing still showed the old rate and status.
     const result = await pool.query(
-      `UPDATE properties SET ${setClauses.join(", ")} WHERE property_id = $${i} RETURNING property_id, rate, availability_status, updated_at`,
+      `UPDATE properties SET ${setClauses.join(", ")} WHERE property_id = $${i} RETURNING *`,
       values,
     );
     return res.status(200).json(result.rows[0]);
@@ -279,6 +326,45 @@ const updateProperty = async (req, res) => {
     console.error("updateProperty error: ", err);
     if (err.code === "22P02") return res.status(400).json({ success: false, message: "Invalid enum value" });
     return res.status(500).json({ success: false, message: "Failed to update property" });
+  }
+};
+
+// PATCH /properties/:id/visibility  { is_hidden }
+// The dashboard has always shipped a Hide/Show toggle that calls this,
+// but no route existed — the request 404'd and the listing never hid.
+// Kept off UPDATE_FIELDS on purpose: hiding a listing is a listing-level
+// action, not one of the editable listing details.
+const setPropertyVisibility = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const ownerId = req.user.user_id;
+
+    const ownCheck = await pool.query(
+      "SELECT owner_id FROM properties WHERE property_id = $1 AND availability_status != 'archived'",
+      [id],
+    );
+    if (ownCheck.rows.length === 0) {
+      return res.status(404).json({ success: false, message: `Property with id ${id} not found` });
+    }
+    if (ownCheck.rows[0].owner_id !== ownerId && !req.user.is_admin) {
+      return res.status(403).json({ success: false, message: "You do not own this property" });
+    }
+
+    // Absence is ambiguous — an omitted body could mean "leave it alone"
+    // or "unset it" — so require the flag explicitly rather than
+    // defaulting to one and silently flipping a listing.
+    if (typeof req.body?.is_hidden !== "boolean") {
+      return res.status(422).json({ success: false, message: "is_hidden must be a boolean" });
+    }
+
+    const result = await pool.query(
+      "UPDATE properties SET is_hidden = $1, updated_at = NOW() WHERE property_id = $2 RETURNING property_id, is_hidden",
+      [req.body.is_hidden, id],
+    );
+    return res.status(200).json(result.rows[0]);
+  } catch (err) {
+    console.error("setPropertyVisibility error: ", err);
+    return res.status(500).json({ success: false, message: "Failed to update visibility" });
   }
 };
 
@@ -394,12 +480,47 @@ const deletePropertyPhoto = async (req, res) => {
   }
 };
 
+// PATCH /properties/:id/visibility  [landlord only, must own the property]
+const updatePropertyVisibility = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const ownerId = req.user.user_id;
+    const { is_hidden } = req.body || {};
+
+    if (typeof is_hidden !== "boolean") {
+      return res.status(422).json({ success: false, message: "is_hidden (boolean) is required" });
+    }
+
+    const ownCheck = await pool.query(
+      "SELECT owner_id FROM properties WHERE property_id = $1 AND availability_status != 'archived'",
+      [id],
+    );
+    if (ownCheck.rows.length === 0) {
+      return res.status(404).json({ success: false, message: `Property with id ${id} not found` });
+    }
+    if (ownCheck.rows[0].owner_id !== ownerId && !req.user.is_admin) {
+      return res.status(403).json({ success: false, message: "You do not own this property" });
+    }
+
+    const result = await pool.query(
+      "UPDATE properties SET is_hidden = $1, updated_at = NOW() WHERE property_id = $2 RETURNING property_id, is_hidden",
+      [is_hidden, id],
+    );
+    return res.status(200).json(result.rows[0]);
+  } catch (err) {
+    console.error("updatePropertyVisibility error: ", err);
+    return res.status(500).json({ success: false, message: "Failed to update property visibility" });
+  }
+};
+
 module.exports = {
   getProperties,
   getPropertyById,
   createProperty,
   updateProperty,
   deleteProperty,
+  setPropertyVisibility,
   uploadPropertyPhotos,
   deletePropertyPhoto,
+  updatePropertyVisibility,
 };

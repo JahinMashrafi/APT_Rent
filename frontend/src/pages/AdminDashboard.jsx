@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useApp } from '../context/AppContext.jsx';
-import { mockAdminUsers, mockVerificationQueue, mockPlatformStats } from '../data/mockData.js';
 import AppNavbar from '../components/AppNavbar.jsx';
 import Modal from '../components/ui/Modal.jsx';
 import { Users, Building2, TrendingUp, CheckCircle, XCircle, AlertTriangle, Eye, Ban, FileText, Search, Lock } from 'lucide-react';
@@ -20,9 +19,9 @@ export default function AdminDashboard() {
   }, [role, navigate]);
 
   const [activeTab, setActiveTab] = useState('overview');
-  const [verificationQueue, setVerificationQueue] = useState(mockVerificationQueue || []);
-  const [usersList, setUsersList] = useState(mockAdminUsers || []);
-  const [platformStats, setPlatformStats] = useState(mockPlatformStats);
+  const [verificationQueue, setVerificationQueue] = useState([]);
+  const [usersList, setUsersList] = useState([]);
+  const [platformStats, setPlatformStats] = useState({});
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState('All');
   
@@ -38,12 +37,11 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     if (role !== 'admin') return;
-    // GET /admin/stats and GET /admin/verifications — fall back to mocks.
     api.admin.stats().then((data) => data && setPlatformStats(data)).catch(() => {});
     api.admin
       .verifications()
       .then((data) => {
-        if (data?.data?.length) setVerificationQueue(data.data);
+        setVerificationQueue(data?.data ?? []);
       })
       .catch(() => {});
   }, [role]);

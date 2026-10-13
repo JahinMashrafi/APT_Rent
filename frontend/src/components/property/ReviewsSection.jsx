@@ -1,12 +1,18 @@
-import React from 'react';
-import { mockReviews } from '../../data/mockData.js';
+import { useEffect, useState } from 'react';
+import api from '../../services/api';
 import StarRating from '../ui/StarRating.jsx';
 import { Star, MessageSquare } from 'lucide-react';
 import '../../css/modules.css';
 import '../../css/global.css';
 
 export default function ReviewsSection({ propertyId }) {
-  const reviews = mockReviews?.filter(r => r.propertyId === propertyId) || [];
+  const [reviews, setReviews] = useState([]);
+
+  useEffect(() => {
+    api.reviews.getForUser(propertyId)
+      .then((data) => setReviews(data?.data ?? data ?? []))
+      .catch(() => setReviews([]));
+  }, [propertyId]);
   
   return (
     <div style={{ marginTop: '40px' }}>

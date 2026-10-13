@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import AppNavbar from "../components/AppNavbar.jsx";
 import { fetchCurrentUser, logoutUser } from "../utils/auth";
+import { useApp } from "../context/AppContext.jsx";
 import api from "../services/api";
 
 const toFormState = (user) => ({
@@ -14,6 +15,7 @@ const toFormState = (user) => ({
 });
 
 export default function Profile() {
+  const { clearSession } = useApp();
   const navigate = useNavigate();
   const [form, setForm] = useState(() => toFormState(null));
   const [loading, setLoading] = useState(true);
@@ -68,9 +70,9 @@ export default function Profile() {
   const handleLogout = async () => {
     try {
       await logoutUser();
+    } finally {
+      clearSession();
       navigate("/login");
-    } catch (logoutError) {
-      setError(logoutError.message || "Logout failed.");
     }
   };
 

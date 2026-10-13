@@ -1,5 +1,6 @@
 require("dotenv").config();
 const express = require("express");
+const http = require("http");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
 const path = require("path");
@@ -14,16 +15,22 @@ const rentRoutes = require("./routes/rentRoutes");
 const paymentRoutes = require("./routes/paymentRoutes");
 const historyRoutes = require("./routes/historyRoutes");
 const landlordRoutes = require("./routes/landlordRoutes");
+const messageRoutes = require("./routes/messageRoutes");
+const notificationRoutes = require("./routes/notificationRoutes");
+const reviewRoutes = require("./routes/reviewRoutes");
+const adminRoutes = require("./routes/adminRoutes");
+const { initSocket } = require("./utils/socket.js");
 
 const app = express();
+const httpServer = http.createServer(app); // Express app wrapped so Socket.IO can share the same port
+initSocket(httpServer);
 
 app.use(cors({
-  origin: "http://localhost:5173",
+  origin: process.env.CORS_ORIGIN ?? "http://localhost:5173",
   credentials: true,
 }));
 app.use(express.json());
 app.use(cookieParser());
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
@@ -35,6 +42,10 @@ app.use("/api/rent", rentRoutes);
 app.use("/api/payments", paymentRoutes);
 app.use("/api/history", historyRoutes);
 app.use("/api/landlord", landlordRoutes);
+app.use("/api/conversations", messageRoutes);
+app.use("/api/notifications", notificationRoutes);
+app.use("/api/users", reviewRoutes);
+app.use("/api/admin", adminRoutes);
 //app,use(cors());
 
 app.get("/", (req, res) => {
@@ -49,6 +60,6 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
+httpServer.listen(PORT, () => {
   console.log(`Server running on port: ${PORT}`);
 });
