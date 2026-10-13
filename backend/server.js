@@ -20,6 +20,7 @@ const notificationRoutes = require("./routes/notificationRoutes");
 const reviewRoutes = require("./routes/reviewRoutes");
 const adminRoutes = require("./routes/adminRoutes");
 const { initSocket } = require("./utils/socket.js");
+const { envelopeLegacyResponses, notFoundHandler, errorHandler } = require("./middleware/errorEnvelope.js");
 
 const app = express();
 const httpServer = http.createServer(app); // Express app wrapped so Socket.IO can share the same port
@@ -31,6 +32,7 @@ app.use(cors({
 }));
 app.use(express.json());
 app.use(cookieParser());
+app.use(envelopeLegacyResponses);
 
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
@@ -51,6 +53,10 @@ app.use("/api/admin", adminRoutes);
 app.get("/", (req, res) => {
   res.status(200).json({ message: "API is running sucessfully," });
 });
+
+app.use(notFoundHandler);
+app.use(errorHandler);
+
 app.use((req, res, next) => {
   res.status(404).json({ statusCode: 404, message: "Endpoint not found" });
 });
