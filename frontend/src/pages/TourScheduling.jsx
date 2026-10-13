@@ -43,6 +43,7 @@ export default function TourScheduling() {
   const [note, setNote] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [actionError, setActionError] = useState("");
+  const [isRebooking, setIsRebooking] = useState(false);
 
   const { isLoading, openRequest, currentProposals, confirmed, reload } =
     useTourNegotiation({ propertyId });
@@ -75,6 +76,7 @@ export default function TourScheduling() {
         note: note.trim() || undefined,
       });
       setNote("");
+      setIsRebooking(false);
       await reload();
       showToast({ message: "Tour requested. The landlord has been notified.", type: "success" });
     } catch (error) {
@@ -138,6 +140,10 @@ export default function TourScheduling() {
     property?.landlord?.id != null &&
     currentUser?.id != null &&
     String(property.landlord.id) === String(currentUser.id);
+  const confirmedDateTime = confirmed
+    ? new Date(`${String(confirmed.appointment_date).slice(0, 10)}T${confirmed.appointment_time}`)
+    : null;
+  const confirmedPast = confirmedDateTime && confirmedDateTime < new Date();
 
   // ------------------------------------------------------------------ states
 
@@ -164,7 +170,7 @@ export default function TourScheduling() {
         <Link to="/tour-requests" className="btn btn-primary">Go to Tour Requests</Link>
       </>
     );
-  } else if (confirmed) {
+  } else if (confirmed && !isRebooking && !openRequest) {
     content = (
       <div className="success-screen">
         <div className="success-icon"><CheckCircle size={36} /></div>
@@ -172,6 +178,15 @@ export default function TourScheduling() {
         <p>{formatDateLong(confirmed.appointment_date)} at {formatTime(confirmed.appointment_time)}</p>
         <p>{property.title} — {property.address}</p>
         <div className="action-btns" style={{ display: 'flex', gap: '1rem', justifyContent: 'center', marginTop: '2rem', flexWrap: 'wrap' }}>
+          {confirmedPast && (
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={() => setIsRebooking(true)}
+            >
+              Request a new tour
+            </button>
+          )}
           <Link to={`/property/${property.id}`} className="btn btn-ghost">Back to Property</Link>
           <Link to="/inbox" className="btn btn-primary">Go to Inbox</Link>
         </div>
@@ -279,12 +294,12 @@ export default function TourScheduling() {
       </>
     );
   } else {
-    // No live request: show the ask form.
+    // No live request (or a past confirmed tour being rebooked): show the ask form.
     const canSubmit = !isSubmitting;
     content = (
       <>
         <span className="eyebrow" style={{ color: 'var(--color-blueprint)', fontFamily: 'var(--font-mono)', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Step 1 of 2</span>
-        <h1 className="module-title">Request a Tour</h1>
+        <h1 className="module-title">{isRebooking ? "Request a New Tour" : "Request a Tour"}</h1>
         <p className="module-subtitle">
           Send a viewing request with an optional note. The landlord will reply with 3 available times
           for you to choose from.

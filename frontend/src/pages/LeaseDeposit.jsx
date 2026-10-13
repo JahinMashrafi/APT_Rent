@@ -26,7 +26,13 @@ export default function LeaseDeposit() {
       .then((data) => setProperty(adaptProperty(data)))
       .catch(() => setProperty(null));
     api.applications.list()
-      .then((data) => setApprovedTenant((data?.data ?? []).find((application) => application.status === 'approved') ?? null))
+      .then((data) => setApprovedTenant(
+        (data?.data ?? []).find(
+          (application) =>
+            application.status === 'approved' &&
+            String(application.property_id) === String(propertyId),
+        ) ?? null,
+      ))
       .catch(() => setApprovedTenant(null));
   }, [propertyId]);
 
@@ -48,22 +54,36 @@ export default function LeaseDeposit() {
   const [paymentComplete, setPaymentComplete] = useState(false);
   const [paymentDetails, setPaymentDetails] = useState(null);
   const [contractId, setContractId] = useState(null);
+  const [offerError, setOfferError] = useState("");
 
-  const handleSendOffer = () => {
-    // POST /contracts — best-effort; the demo keeps working locally either way.
+  const handleSendOffer = async () => {
+    const tenantId =
+      approvedTenant?.tenant?.user_id ??
+      approvedTenant?.tenant_id ??
+      approvedTenant?.tenantId;
+    if (!tenantId) {
+      setOfferError("No approved tenant was found for this property.");
+      return;
+    }
+
+    setOfferError("");
     api.contracts
       .create({
         property_id: property?.id ?? propertyId,
-        tenant_id: approvedTenant?.tenantId ?? approvedTenant?.tenant_id,
+        tenant_id: tenantId,
         rate: property?.pricePerMonth,
-        deposit: property?.securityDeposit,
+        deposit: property?.securityDeposit ?? 0,
         start_date: '2026-10-01',
         end_date: '2027-09-30',
         terms_and_conditions: accordionItems.map((c) => c.content).join(' '),
       })
-      .then((created) => setContractId(created?.contract_id ?? null))
-      .catch(() => {});
-    setOfferSent(true);
+      .then((created) => {
+        setContractId(created?.contract_id ?? null);
+        setOfferSent(true);
+      })
+      .catch((error) => {
+        setOfferError(error.response?.data?.message || error.message || "Could not send the lease offer.");
+      });
   };
 
   const handlePaymentSuccess = (details) => {
@@ -124,6 +144,11 @@ export default function LeaseDeposit() {
                 <button className="btn btn-primary" onClick={handleSendOffer} style={{ padding: '0.75rem 1.5rem', background: 'var(--color-brass)', color: '#fff', border: 'none', borderRadius: 'var(--radius-sm)', fontWeight: 'bold', display: 'inline-flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '1rem' }}>
                   <FileText size={20} /> Send Lease Offer
                 </button>
+                {offerError && (
+                  <p role="alert" style={{ color: 'var(--color-error)', marginTop: '1rem', fontSize: '0.9rem' }}>
+                    {offerError}
+                  </p>
+                )}
               </div>
             ) : (
               <div className="success-screen" style={{ textAlign: 'center', padding: '3rem 1rem', background: 'var(--color-paper)', border: '1px solid var(--color-line)', borderRadius: 'var(--radius-md)' }}>
