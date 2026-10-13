@@ -14,21 +14,28 @@ const getTokenFromRequest = (req) =>
 
 const registerUser = async (req, res) => {
   const {
-    firstName,
-    lastName,
+    firstName: submittedFirstName,
+    lastName: submittedLastName,
+    name,
+    fullName,
     email,
-    phone,
+    phone: submittedPhone,
+    contact_number,
     password,
     is_landlord,
     is_tenant,
+    address,
+    occupation,
   } = req.body;
+  const submittedName =
+    name || fullName || [submittedFirstName, submittedLastName].filter(Boolean).join(" ");
+  const fullNameValue =
+    typeof submittedName === "string" ? submittedName.trim() : "";
+  const phone = submittedPhone || contact_number;
   let errors = [];
 
-  if (!firstName || firstName.length === 0) {
+  if (!fullNameValue) {
     errors.push({ field: "firstName", message: "First name is invalid" });
-  }
-  if (!lastName || lastName.length === 0) {
-    errors.push({ field: "lastName", message: "lastName name is invalid" });
   }
   if (!password || password.length === 0) {
     errors.push({ field: "password", message: "password is invalid" });
@@ -58,23 +65,24 @@ const registerUser = async (req, res) => {
   try {
     const saltRound = 10;
     const hashedPassword = await bcrypt.hash(password, saltRound);
-    const fullName = `${firstName.trim()} ${lastName.trim()}`;
     const isAdmin = false;
 
     const userResult = await pool.query(
       `
-      insert into users (name, email , password_hash, contact_number, is_landlord, is_tenant, is_admin)
-      values ($1, $2, $3, $4, $5, $6, $7)
-      returning user_id, name, email, contact_number, is_landlord, is_tenant, is_admin
+      insert into users (name, email, password_hash, contact_number, is_landlord, is_tenant, is_admin, address, occupation)
+      values ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      returning user_id, name, email, contact_number, is_landlord, is_tenant, is_admin, address, occupation
       `,
       [
-        fullName,
+        fullNameValue,
         email,
         hashedPassword,
         phone,
         Boolean(is_landlord),
         Boolean(is_tenant),
         isAdmin,
+        address,
+        occupation,
       ],
     );
     const newUser = userResult.rows[0];
@@ -85,26 +93,24 @@ const registerUser = async (req, res) => {
       is_landlord: newUser.is_landlord,
       is_admin: newUser.is_admin,
     });
-    const cookieOptions = {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: 7 * 24 * 60 * 60 * 1000 
-    };
+    const cookieOptions = getCookieOptions();
     res.cookie("accessToken", token, cookieOptions);
 
     return res.status(201).json({
       status: "success",
       message: "registration successful",
       data: {
+        accessToken: token,
         user: {
           userId: newUser.user_id,
           name: newUser.name,
           email: newUser.email,
-          phone: newUser.contact_number,
+          contact_number: newUser.contact_number,
           is_tenant: newUser.is_tenant,
           is_landlord: newUser.is_landlord,
           is_admin: newUser.is_admin,
+          address: newUser.address,
+          occupation: newUser.occupation,
         },
       },
     });
@@ -113,7 +119,7 @@ const registerUser = async (req, res) => {
     if (error.code === "23505") {
       return res.status(409).json({
         status: "error",
-        message: "Email or phoen number is already registered",
+        message: "Email or phone number is already registered",
         statusCode: 409,
       });
     }
@@ -124,6 +130,7 @@ const registerUser = async (req, res) => {
     });
   }
 };
+
 const loginUser = async (req, res) => {
   const { email, password } = req.body;
   if (
@@ -189,31 +196,54 @@ const loginUser = async (req, res) => {
 
 const getCurrentUser = async (req, res) => {
   try {
-    const result = await pool.query(
-      `select user_id, name, email, contact_number, address, occupation,
-              institution_name, workplace_name, profile_picture_url,
-              is_landlord, is_tenant, is_admin
-       from users where user_id = $1`,
-      [req.user.user_id],
-    );
-
-    if (result.rows.length === 0) {
-      return res.status(401).json({ success: false, message: "User not found" });
+    const token = getTokenFromRequest(req);
+    if (!token) {
+      return res.status(401).json({ success: false, message: "Unauthorized access. please log in" });
     }
 
-    return res.status(200).json({ success: true, user: result.rows[0] });
+    const decoded = await jwtService.verifyToken(token);
+    const userId = decoded.user_id || decoded.userId;
+    if (!userId) {
+      return res.status(401).json({ success: false, message: "Invalid auth token" });
+    }
+
+    const userResult = await pool.query(
+      `select user_id, name, email, contact_number, address, occupation, profile_picture_url, is_landlord, is_tenant, is_admin
+       from users
+       where user_id = $1`,
+      [userId],
+    );
+
+    if (userResult.rows.length === 0) {
+      return res.status(404).json({ success: false, message: "Authenticated user not found" });
+    }
+
+    const user = userResult.rows[0];
+    return res.status(200).json({
+      success: true,
+      user: {
+        id: user.user_id,
+        name: user.name,
+        email: user.email,
+        contact_number: user.contact_number,
+        address: user.address,
+        occupation: user.occupation,
+        profile_picture_url: user.profile_picture_url,
+        is_landlord: user.is_landlord,
+        is_tenant: user.is_tenant,
+        is_admin: user.is_admin,
+      },
+    });
   } catch (error) {
-    console.error("Current user error: ", error);
-    return res.status(500).json({ success: false, message: "Failed to load user" });
+    console.error("Get current user error:", error);
+    return res.status(403).json({ success: false, message: "Session expired or invalid token" });
   }
 };
 
-const logoutUser = (req, res) => {
-  res.clearCookie("accessToken", {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
-  });
+const logoutUser = async (req, res) => {
+  const cookieOptions = getCookieOptions();
+  res.clearCookie("accessToken", cookieOptions);
+  res.clearCookie("token", cookieOptions);
   return res.status(200).json({ success: true, message: "Logged out successfully" });
 };
 

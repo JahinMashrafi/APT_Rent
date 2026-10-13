@@ -1,14 +1,31 @@
 const express = require("express");
 const router = express.Router();
+const { requireAuth, requireLandlord } = require("../middleware/authMiddleware.js");
+const { upload } = require("../middleware/upload.js");
+const {
+  getProperties,
+  getPropertyById,
+  createProperty,
+  updateProperty,
+  deleteProperty,
+  uploadPropertyPhotos,
+  deletePropertyPhoto,
+} = require("../controllers/propertyController");
 
-const { requireAuth, requireLandlord } = requre(
-  "../middleware/authMiddleware.js",
+router.get("/", getProperties);
+router.get("/:id", getPropertyById);
+
+router.post("/", requireAuth, requireLandlord, createProperty);
+router.patch("/:id", requireAuth, requireLandlord, updateProperty);
+router.delete("/:id", requireAuth, requireLandlord, deleteProperty);
+
+router.post(
+  "/:id/photos",
+  requireAuth,
+  requireLandlord,
+  upload.array("photos", 10),
+  uploadPropertyPhotos,
 );
-
-router.get("/", (req, res) => {
-  res.json({ message: "List of all properties" });
-});
-
-router.post("/create", requireAuth, requireLandlord);
+router.delete("/:id/photos/:photo_id", requireAuth, requireLandlord, deletePropertyPhoto);
 
 module.exports = router;

@@ -28,6 +28,8 @@ import { useEffect, useState } from "react";
 import SearchFilterBar from "./SearchFilterBar.jsx";
 import ApartmentCard from "./ApartmentCard.jsx";
 import Pagination from "./Pagination.jsx";
+import api from "../services/api";
+import { adaptProperty } from "../services/adapters";
 
 const POSTS_PER_PAGE = 9;
 
@@ -116,7 +118,29 @@ export default function NewsFeed() {
  * thing you need to swap out.
  * ----------------------------------------------------------------------------
  */
+/**
+ * ----------------------------------------------------------------------------
+ * Tries GET /properties first; falls back to a generated mock page if the
+ * backend isn't reachable yet. Keeps the same return shape either way
+ * ({ items, totalPages }) so nothing else in this file needs to change once
+ * a real backend exists.
+ * ----------------------------------------------------------------------------
+ */
 async function fetchApartments(page, filters) {
+  try {
+    const data = await api.properties.search({ page, limit: POSTS_PER_PAGE, ...filters });
+    const items = (data?.data ?? []).map(adaptProperty);
+    if (items.length) {
+      return { items, totalPages: data?.meta?.total_pages ?? 1 };
+    }
+  } catch {
+    // No backend yet — fall through to the mock below.
+  }
+
+  return mockFetchApartments(page);
+}
+
+async function mockFetchApartments(page) {
   // Simulated network delay so the loading state is visible during testing.
   await new Promise((resolve) => setTimeout(resolve, 250));
 

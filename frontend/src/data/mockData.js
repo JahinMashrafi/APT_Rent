@@ -1,0 +1,561 @@
+// =============================================================================
+// mockData.js — APT Rent Frontend Mock Data
+// =============================================================================
+// Replace individual exports with real API calls when backend is ready.
+// All data is shaped to match the expected backend response format.
+// =============================================================================
+
+// --- Current logged-in user ---------------------------------------------------
+export const mockCurrentUser = {
+  id: "user-1",
+  name: "Rafiq Ahmed",
+  email: "rafiq@example.com",
+  phone: "01712-345678",
+  avatarInitials: "RA",
+  profilePictureUrl: null,
+  joinedAt: "2025-03-15T00:00:00Z",
+  isVerified: true,
+};
+
+// --- Notifications ------------------------------------------------------------
+export const mockNotifications = [
+  {
+    id: "notif-1",
+    type: "tour_request",
+    title: "Tour Requested",
+    message: "Tahmina Begum wants to tour Flat 4B, Dhanmondi.",
+    timestamp: new Date(Date.now() - 1000 * 60 * 20).toISOString(),
+    isRead: false,
+    link: "/tour/prop-2",
+  },
+  {
+    id: "notif-2",
+    type: "rent_due",
+    title: "Rent Due in 3 Days",
+    message: "Your rent of ৳35,000 for Banani Studio is due on the 8th.",
+    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(),
+    isRead: false,
+    link: "/rent",
+  },
+  {
+    id: "notif-3",
+    type: "lease_offered",
+    title: "Lease Offer Received",
+    message: "Landlord Karim Mia has offered you a lease for Gulshan Apt.",
+    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 5).toISOString(),
+    isRead: false,
+    link: "/lease/prop-1",
+  },
+  {
+    id: "notif-4",
+    type: "message",
+    title: "New Message",
+    message: "Sumaiya Islam: 'Is the apartment still available?'",
+    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(),
+    isRead: true,
+    link: "/inbox",
+  },
+  {
+    id: "notif-5",
+    type: "tour_confirmed",
+    title: "Tour Confirmed",
+    message: "Your tour for Mirpur Flat is confirmed for Sep 10 at 3:00 PM.",
+    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 36).toISOString(),
+    isRead: true,
+    link: "/tour/prop-4",
+  },
+];
+
+// --- Properties ---------------------------------------------------------------
+export const mockProperties = [
+  {
+    id: "prop-1",
+    title: "Luxury 3BR Apartment in Gulshan 2",
+    address: "House 14, Road 90, Gulshan 2, Dhaka",
+    pricePerMonth: 80000,
+    securityDeposit: 160000,
+    bedrooms: 3,
+    bathrooms: 3,
+    size: 2100,
+    floor: 8,
+    totalFloors: 12,
+    hasLift: true,
+    isOccupied: true,
+    isHidden: false,
+    status: "active",
+    lat: 23.7925,
+    lng: 90.4078,
+    listedAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 5).toISOString(),
+    photos: [
+      "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=800&q=80",
+      "https://images.unsplash.com/photo-1484154218962-a197022b5858?w=800&q=80",
+      "https://images.unsplash.com/photo-1502005229762-cf1b2da7c5d6?w=800&q=80",
+      "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=800&q=80",
+      "https://images.unsplash.com/photo-1564078516393-cf04bd966897?w=800&q=80",
+    ],
+    amenities: ["WiFi", "Parking", "Gym", "Swimming Pool", "Generator", "CCTV", "Air Conditioning", "Gas", "Water 24/7"],
+    description:
+      "A premium 3-bedroom apartment in the heart of Gulshan 2 with stunning city views. Features include a modern kitchen, marble flooring, and 24/7 security. Walking distance to embassies, restaurants, and shopping centres.",
+    landlord: {
+      id: "landlord-1",
+      name: "Karim Mia",
+      avatarInitials: "KM",
+      profilePictureUrl: null,
+      isVerified: true,
+      rating: 4.8,
+      totalReviews: 23,
+      responseTime: "Within 2 hours",
+      memberSince: "2022",
+    },
+    isWishlisted: false,
+  },
+  {
+    id: "prop-2",
+    title: "Cozy 2BR Flat in Dhanmondi",
+    address: "Flat 4B, House 32, Road 6A, Dhanmondi, Dhaka",
+    pricePerMonth: 45000,
+    securityDeposit: 90000,
+    bedrooms: 2,
+    bathrooms: 2,
+    size: 1350,
+    floor: 4,
+    totalFloors: 7,
+    hasLift: true,
+    isOccupied: false,
+    isHidden: false,
+    status: "active",
+    lat: 23.7461,
+    lng: 90.3742,
+    listedAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 12).toISOString(),
+    photos: [
+      "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&q=80",
+      "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&q=80",
+      "https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=800&q=80",
+      "https://images.unsplash.com/photo-1505691938895-1758d7feb511?w=800&q=80",
+    ],
+    amenities: ["WiFi", "Parking", "Generator", "CCTV", "Air Conditioning", "Gas"],
+    description:
+      "A well-maintained 2-bedroom flat in a quiet residential area of Dhanmondi. Close to Dhanmondi Lake, schools, and hospitals. Ideal for small families or young professionals.",
+    landlord: {
+      id: "landlord-2",
+      name: "Nasreen Akter",
+      avatarInitials: "NA",
+      profilePictureUrl: null,
+      isVerified: true,
+      rating: 4.5,
+      totalReviews: 11,
+      responseTime: "Within 6 hours",
+      memberSince: "2023",
+    },
+    isWishlisted: true,
+  },
+  {
+    id: "prop-3",
+    title: "Modern Studio in Banani",
+    address: "House 5, Road 11, Banani, Dhaka",
+    pricePerMonth: 35000,
+    securityDeposit: 70000,
+    bedrooms: 1,
+    bathrooms: 1,
+    size: 750,
+    floor: 5,
+    totalFloors: 10,
+    hasLift: true,
+    isOccupied: false,
+    isHidden: false,
+    status: "active",
+    lat: 23.794,
+    lng: 90.4043,
+    listedAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 3).toISOString(),
+    photos: [
+      "https://images.unsplash.com/photo-1536376072261-38c75010e6c9?w=800&q=80",
+      "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?w=800&q=80",
+      "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&q=80",
+    ],
+    amenities: ["WiFi", "Generator", "Air Conditioning", "Rooftop Access"],
+    description:
+      "A sleek and modern studio apartment perfect for single professionals. Located minutes from Banani commercial area and Gulshan 1 Circle. Smart storage solutions and a fully fitted kitchenette.",
+    landlord: {
+      id: "landlord-1",
+      name: "Karim Mia",
+      avatarInitials: "KM",
+      profilePictureUrl: null,
+      isVerified: true,
+      rating: 4.8,
+      totalReviews: 23,
+      responseTime: "Within 2 hours",
+      memberSince: "2022",
+    },
+    isWishlisted: false,
+  },
+  {
+    id: "prop-4",
+    title: "Spacious 3BR in Mirpur DOHS",
+    address: "House 37, Road 4, Mirpur DOHS, Dhaka",
+    pricePerMonth: 55000,
+    securityDeposit: 110000,
+    bedrooms: 3,
+    bathrooms: 2,
+    size: 1800,
+    floor: 2,
+    totalFloors: 5,
+    hasLift: false,
+    isOccupied: false,
+    isHidden: false,
+    status: "active",
+    lat: 23.8223,
+    lng: 90.3654,
+    listedAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 20).toISOString(),
+    photos: [
+      "https://images.unsplash.com/photo-1600566753190-17f0baa2a6c3?w=800&q=80",
+      "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?w=800&q=80",
+      "https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea?w=800&q=80",
+    ],
+    amenities: ["Parking", "Generator", "CCTV", "Gas", "Water 24/7", "Garden"],
+    description:
+      "A family-friendly 3-bedroom home in the secure and serene Mirpur DOHS. Features a large living room, dedicated dining space, and a small garden. Peaceful environment with easy access to military amenities.",
+    landlord: {
+      id: "landlord-3",
+      name: "Brigadier (Retd.) Rahman",
+      avatarInitials: "BR",
+      profilePictureUrl: null,
+      isVerified: true,
+      rating: 5.0,
+      totalReviews: 7,
+      responseTime: "Within 24 hours",
+      memberSince: "2024",
+    },
+    isWishlisted: false,
+  },
+  {
+    id: "prop-5",
+    title: "Budget 2BR in Mohammadpur",
+    address: "Flat 2A, Block C, Muhammadpur Housing, Dhaka",
+    pricePerMonth: 22000,
+    securityDeposit: 44000,
+    bedrooms: 2,
+    bathrooms: 1,
+    size: 900,
+    floor: 3,
+    totalFloors: 6,
+    hasLift: false,
+    isOccupied: true,
+    isHidden: false,
+    status: "active",
+    lat: 23.7644,
+    lng: 90.3571,
+    listedAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 45).toISOString(),
+    photos: [
+      "https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=800&q=80",
+      "https://images.unsplash.com/photo-1582268611958-ebfd161ef9cf?w=800&q=80",
+    ],
+    amenities: ["Gas", "Water 24/7"],
+    description:
+      "Affordable 2-bedroom flat in Mohammadpur. Simple but functional layout. Close to bus routes, markets, and schools. Ideal for budget-conscious families.",
+    landlord: {
+      id: "landlord-4",
+      name: "Jamal Uddin",
+      avatarInitials: "JU",
+      profilePictureUrl: null,
+      isVerified: false,
+      rating: 3.9,
+      totalReviews: 5,
+      responseTime: "Within 24 hours",
+      memberSince: "2025",
+    },
+    isWishlisted: false,
+  },
+];
+
+// --- Reviews ------------------------------------------------------------------
+export const mockReviews = [
+  {
+    id: "review-1",
+    propertyId: "prop-1",
+    tenantName: "Sadia Islam",
+    tenantInitials: "SI",
+    rating: 5,
+    date: "2026-07-12T00:00:00Z",
+    comment:
+      "Absolutely wonderful experience. The landlord, Mr. Karim, was extremely responsive and professional. The apartment was exactly as described, spotlessly clean on move-in, and all appliances worked perfectly. Highly recommend!",
+  },
+  {
+    id: "review-2",
+    propertyId: "prop-1",
+    tenantName: "Tanvir Hossain",
+    tenantInitials: "TH",
+    rating: 5,
+    date: "2026-04-20T00:00:00Z",
+    comment:
+      "Great location and well-maintained building. The digital lease process was smooth and modern — no paper hassle. Security deposit was returned promptly when I moved out.",
+  },
+  {
+    id: "review-3",
+    propertyId: "prop-1",
+    tenantName: "Farhana Begum",
+    tenantInitials: "FB",
+    rating: 4,
+    date: "2025-11-05T00:00:00Z",
+    comment:
+      "Good apartment overall. Minor maintenance issues were addressed quickly. The gym could use some upgrades, but the swimming pool is great. Would rent again.",
+  },
+  {
+    id: "review-4",
+    propertyId: "prop-2",
+    tenantName: "Arif Rahman",
+    tenantInitials: "AR",
+    rating: 4,
+    date: "2026-06-15T00:00:00Z",
+    comment:
+      "Nice flat in a quiet neighbourhood. The tour scheduling feature saved a lot of time — picked a slot and it was confirmed instantly. Landlady is polite and understanding.",
+  },
+];
+
+// --- Conversations / Inbox ----------------------------------------------------
+export const mockConversations = [
+  {
+    id: "conv-1",
+    participant: {
+      id: "landlord-1",
+      name: "Karim Mia",
+      initials: "KM",
+      role: "Landlord",
+      isOnline: true,
+    },
+    propertyTitle: "Luxury 3BR Apartment in Gulshan 2",
+    lastMessage: "I can arrange the tour for you this weekend.",
+    lastMessageTime: new Date(Date.now() - 1000 * 60 * 15).toISOString(),
+    unreadCount: 2,
+    messages: [
+      {
+        id: "msg-1",
+        senderId: "user-1",
+        text: "Hello! Is the Gulshan apartment still available?",
+        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 3).toISOString(),
+      },
+      {
+        id: "msg-2",
+        senderId: "landlord-1",
+        text: "Yes, it's still available! Are you interested in scheduling a tour?",
+        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2.5).toISOString(),
+      },
+      {
+        id: "msg-3",
+        senderId: "user-1",
+        text: "Definitely! What are the available slots?",
+        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(),
+      },
+      {
+        id: "msg-4",
+        senderId: "landlord-1",
+        text: "I've sent you 3 time options via the tour system. Please check and confirm the one that works best for you.",
+        timestamp: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
+      },
+      {
+        id: "msg-5",
+        senderId: "landlord-1",
+        text: "I can arrange the tour for you this weekend.",
+        timestamp: new Date(Date.now() - 1000 * 60 * 15).toISOString(),
+      },
+    ],
+  },
+  {
+    id: "conv-2",
+    participant: {
+      id: "landlord-2",
+      name: "Nasreen Akter",
+      initials: "NA",
+      role: "Landlord",
+      isOnline: false,
+    },
+    propertyTitle: "Cozy 2BR Flat in Dhanmondi",
+    lastMessage: "The deposit receipt has been sent to your email.",
+    lastMessageTime: new Date(Date.now() - 1000 * 60 * 60 * 5).toISOString(),
+    unreadCount: 0,
+    messages: [
+      {
+        id: "msg-6",
+        senderId: "landlord-2",
+        text: "Welcome! I've received your lease acceptance.",
+        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 6).toISOString(),
+      },
+      {
+        id: "msg-7",
+        senderId: "user-1",
+        text: "Thank you! I've completed the deposit payment via bKash.",
+        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 5.5).toISOString(),
+      },
+      {
+        id: "msg-8",
+        senderId: "landlord-2",
+        text: "The deposit receipt has been sent to your email.",
+        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 5).toISOString(),
+      },
+    ],
+  },
+  {
+    id: "conv-3",
+    participant: {
+      id: "tenant-5",
+      name: "Tahmina Begum",
+      initials: "TB",
+      role: "Tenant",
+      isOnline: true,
+    },
+    propertyTitle: "Cozy 2BR Flat in Dhanmondi",
+    lastMessage: "Can I bring my family for the viewing?",
+    lastMessageTime: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(),
+    unreadCount: 1,
+    messages: [
+      {
+        id: "msg-9",
+        senderId: "tenant-5",
+        text: "Hi, I'm very interested in the Dhanmondi flat.",
+        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 25).toISOString(),
+      },
+      {
+        id: "msg-10",
+        senderId: "user-1",
+        text: "Hello Tahmina! Of course, feel free to come have a look.",
+        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24.5).toISOString(),
+      },
+      {
+        id: "msg-11",
+        senderId: "tenant-5",
+        text: "Can I bring my family for the viewing?",
+        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(),
+      },
+    ],
+  },
+];
+
+// --- Tenant Applications (for Landlord Dashboard) ----------------------------
+export const mockApplications = [
+  {
+    id: "app-1",
+    propertyId: "prop-2",
+    propertyTitle: "Cozy 2BR Flat in Dhanmondi",
+    tenant: {
+      id: "tenant-5",
+      name: "Tahmina Begum",
+      initials: "TB",
+      email: "tahmina@example.com",
+      phone: "01812-654321",
+      occupation: "Teacher",
+      monthlyIncome: 55000,
+      familySize: 3,
+      message: "We are a small family looking for a long-term rental. We are quiet, responsible tenants and will take great care of the property.",
+    },
+    appliedAt: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(),
+    status: "pending",
+  },
+  {
+    id: "app-2",
+    propertyId: "prop-3",
+    propertyTitle: "Modern Studio in Banani",
+    tenant: {
+      id: "tenant-6",
+      name: "Mahfuz Alam",
+      initials: "MA",
+      email: "mahfuz@example.com",
+      phone: "01912-789012",
+      occupation: "Software Engineer",
+      monthlyIncome: 90000,
+      familySize: 1,
+      message: "Single professional, working at a tech company in Gulshan. Need a studio close to work. Non-smoker, no pets.",
+    },
+    appliedAt: new Date(Date.now() - 1000 * 60 * 60 * 18).toISOString(),
+    status: "reviewed",
+  },
+  {
+    id: "app-3",
+    propertyId: "prop-2",
+    propertyTitle: "Cozy 2BR Flat in Dhanmondi",
+    tenant: {
+      id: "tenant-7",
+      name: "Ruksana Khanam",
+      initials: "RK",
+      email: "ruksana@example.com",
+      phone: "01612-345098",
+      occupation: "Doctor",
+      monthlyIncome: 120000,
+      familySize: 2,
+      message: "My husband and I are looking for a comfortable flat near Dhanmondi. We both work at hospitals nearby.",
+    },
+    appliedAt: new Date(Date.now() - 1000 * 60 * 60 * 48).toISOString(),
+    status: "approved",
+  },
+];
+
+// --- Rent Payment History (for Tenant Rent Dashboard) ------------------------
+export const mockPaymentHistory = [
+  { id: "pay-1", month: "August 2026", amount: 45000, paidOn: "2026-08-03T10:30:00Z", method: "bKash", status: "paid" },
+  { id: "pay-2", month: "July 2026", amount: 45000, paidOn: "2026-07-02T09:15:00Z", method: "Card", status: "paid" },
+  { id: "pay-3", month: "June 2026", amount: 45000, paidOn: "2026-06-04T14:00:00Z", method: "Cash", status: "paid" },
+  { id: "pay-4", month: "May 2026", amount: 45000, paidOn: "2026-05-01T11:45:00Z", method: "bKash", status: "paid" },
+  { id: "pay-5", month: "April 2026", amount: 45000, paidOn: null, method: null, status: "overdue" },
+  { id: "pay-6", month: "September 2026", amount: 45000, paidOn: null, method: null, status: "due" },
+];
+
+// --- Admin: User Management --------------------------------------------------
+export const mockAdminUsers = [
+  { id: "user-1", name: "Rafiq Ahmed", email: "rafiq@example.com", role: "tenant", status: "active", joinedAt: "2025-03-15", reports: 0 },
+  { id: "landlord-1", name: "Karim Mia", email: "karim@example.com", role: "landlord", status: "active", joinedAt: "2022-06-01", reports: 0 },
+  { id: "landlord-2", name: "Nasreen Akter", email: "nasreen@example.com", role: "landlord", status: "active", joinedAt: "2023-01-20", reports: 1 },
+  { id: "tenant-5", name: "Tahmina Begum", email: "tahmina@example.com", role: "tenant", status: "active", joinedAt: "2026-08-10", reports: 0 },
+  { id: "user-bad", name: "Fraud Account", email: "scam@fake.com", role: "landlord", status: "banned", joinedAt: "2026-07-01", reports: 5 },
+  { id: "landlord-3", name: "Brigadier (Retd.) Rahman", email: "rahman@example.com", role: "landlord", status: "active", joinedAt: "2024-02-14", reports: 0 },
+];
+
+// --- Admin: Verification Queue -----------------------------------------------
+export const mockVerificationQueue = [
+  {
+    id: "verif-1",
+    userId: "landlord-4",
+    name: "Jamal Uddin",
+    email: "jamal@example.com",
+    initials: "JU",
+    submittedAt: new Date(Date.now() - 1000 * 60 * 60 * 6).toISOString(),
+    nidStatus: "pending",
+    deedStatus: "pending",
+    propertyTitle: "Budget 2BR in Mohammadpur",
+    nidNumber: "NID-1234-5678-90",
+    nidImageUrl: null,
+    deedImageUrl: null,
+  },
+  {
+    id: "verif-2",
+    userId: "landlord-new",
+    name: "Shirina Parvin",
+    email: "shirina@example.com",
+    initials: "SP",
+    submittedAt: new Date(Date.now() - 1000 * 60 * 60 * 30).toISOString(),
+    nidStatus: "pending",
+    deedStatus: "approved",
+    propertyTitle: "3BR Apartment in Uttara",
+    nidNumber: "NID-9876-5432-10",
+    nidImageUrl: null,
+    deedImageUrl: null,
+  },
+];
+
+// --- Platform Stats (for Admin) -----------------------------------------------
+export const mockPlatformStats = {
+  totalRevenue: 2850000,
+  activeLeases: 147,
+  registeredUsers: 1243,
+  propertiesListed: 312,
+  monthlyGrowth: 12.4,
+  pendingVerifications: 2,
+  activeDisputes: 3,
+};
+
+// --- Landlord Stats -----------------------------------------------------------
+export const mockLandlordStats = {
+  totalMonthlyRevenue: 160000,
+  occupiedUnits: 2,
+  totalUnits: 3,
+  vacantUnits: 1,
+  pendingMaintenance: 2,
+  pendingApplications: 2,
+};

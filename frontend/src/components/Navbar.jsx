@@ -59,7 +59,7 @@ export default function Navbar() {
   return (
     <header className="navbar">
       <div className="container">
-        <Link to="/" className="brand">
+        <Link to="/dashboard" className="brand">
           <img src="/assets/images/logo/apt-rent-logo.png" alt="APT Rent logo" className="brand-logo" />
         </Link>
 

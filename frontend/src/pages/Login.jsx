@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
-import Navbar from "../components/Navbar.jsx";
+import AppNavbar from "../components/AppNavbar.jsx";
+import { loginUser } from "../utils/auth";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -16,19 +16,16 @@ export default function Login() {
     setError("");
 
     try {
-      const response = await axios.post("http://localhost:5000/api/auth/login", { email, password }, { withCredentials: true });
-
-      if (response.data?.success) {
-        navigate("/dashboard");
-      }
+      await loginUser(email, password);
+      navigate("/dashboard");
     } catch (err) {
-      setError(err.response?.data?.message || "Something went wrong");
+      setError(err.message || "Something went wrong");
     }
   };
 
   return (
     <div className="page-shell">
-      <Navbar />
+      <AppNavbar />
 
       {/* AUTH LAYOUT (left brand + right form) */}
       <main className="auth-shell">
@@ -83,7 +80,7 @@ export default function Login() {
                 <label htmlFor="loginPassword">Password <span className="req">*</span></label>
                 <div className="input-shell">
                   <img src="/assets/icons/lock.svg" alt="" />
-                                   <input
+                  <input
                     type={showPassword ? "text" : "password"}
                     id="loginPassword"
                     name="password"
@@ -98,8 +95,18 @@ export default function Login() {
                     aria-label={showPassword ? "Hide password" : "Show password"}
                     onClick={() => setShowPassword((prev) => !prev)}
                   >
-                    <img className="icon-show" src="/assets/icons/eye.svg" alt="" style={{ display: showPassword ? "none" : "block" }} />
-                    <img className="icon-hide" src="/assets/icons/eye-off.svg" alt="" style={{ display: showPassword ? "block" : "none" }} />
+                    <img
+                      className="icon-show"
+                      src="/assets/icons/eye.svg"
+                      alt=""
+                      style={{ display: showPassword ? "none" : "block" }}
+                    />
+                    <img
+                      className="icon-hide"
+                      src="/assets/icons/eye-off.svg"
+                      alt=""
+                      style={{ display: showPassword ? "block" : "none" }}
+                    />
                   </button>
                 </div>
                 <span className="field-error"></span>

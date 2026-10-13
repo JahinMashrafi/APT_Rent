@@ -1,6 +1,4 @@
-import Navbar from "../components/Navbar.jsx";
-import PropertyMap from "../components/PropertyMap.jsx";
-import AuthNavbar from "../components/AuthNavbar.jsx";
+import AppNavbar from "../components/AppNavbar.jsx";
 import NewsFeed from "../components/NewsFeed.jsx";
 import useAuth from "../hooks/useAuth.js";
 
@@ -19,8 +17,7 @@ export default function Dashboard() {
       if (isAuthenticated) {
         return (
           <div className="page-shell">
-            {/* --- Navbar: same visual style as login/logout pages, minus "About" --- */}
-            <AuthNavbar />
+            <AppNavbar />
     
             <main>
               {/* --- Newsfeed: search/filter bar + apartment posts + pagination --- */}
@@ -38,8 +35,7 @@ export default function Dashboard() {
       if (!isAuthenticated) {
         return (
           <div className="page-shell">
-            {/* --- Navbar: same visual style as login/logout pages, minus "About" --- */}
-            <Navbar />
+            <AppNavbar />
     
             <main>
               {/* --- Newsfeed: search/filter bar + apartment posts + pagination --- */}

@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
-import Navbar from "../components/Navbar.jsx";
+import AppNavbar from "../components/AppNavbar.jsx";
 import { fetchCurrentUser, logoutUser } from "../utils/auth";
+import api from "../services/api";
 
 const toFormState = (user) => ({
   name: user?.name ?? "",
@@ -15,11 +15,9 @@ const toFormState = (user) => ({
 
 export default function Profile() {
   const navigate = useNavigate();
-  const [sessionUserId, setSessionUserId] = useState(null);
   const [form, setForm] = useState(() => toFormState(null));
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
@@ -32,15 +30,10 @@ export default function Profile() {
           navigate("/login");
           return;
         }
-        setSessionUserId(authUser.id);
-
-        const response = await axios.get(`http://localhost:5000/api/users/${authUser.id}`, {
-          withCredentials: true,
-        });
-        const fetchedUser = response.data?.data;
-        setForm(toFormState(fetchedUser));
+        // fetchCurrentUser already hits GET /users/me; reuse its shape.
+        setForm(toFormState(authUser));
       } catch (loadError) {
-        setError(loadError.response?.data?.message || "Failed to load profile.");
+        setError(loadError.message || "Failed to load profile.");
       } finally {
         setLoading(false);
       }
@@ -56,61 +49,28 @@ export default function Profile() {
 
   const handleUpdateProfile = async (event) => {
     event.preventDefault();
-    if (!sessionUserId) {
-      navigate("/login");
-      return;
-    }
 
     try {
       setSaving(true);
       setError("");
       setSuccess("");
-      const response = await axios.put(`http://localhost:5000/api/users/${sessionUserId}`, form, {
-        withCredentials: true,
-      });
-
-      const updated = response.data?.data;
+      // PATCH /users/me — the spec's own profile-mutation endpoint.
+      const updated = await api.users.updateMe(form);
       setForm(toFormState(updated));
       setSuccess("Profile updated successfully.");
     } catch (updateError) {
-      setError(updateError.response?.data?.message || "Failed to update profile.");
+      setError(updateError.message || "Failed to update profile.");
     } finally {
       setSaving(false);
     }
   };
 
-  const handleDeleteAccount = async () => {
-    if (!sessionUserId) {
-      navigate("/login");
-      return;
-    }
-
-    const confirmed = window.confirm("Are you sure you want to delete your account? This cannot be undone.");
-    if (!confirmed) {
-      return;
-    }
-
-    try {
-      setDeleting(true);
-      setError("");
-      await axios.delete(`http://localhost:5000/api/users/${sessionUserId}`, {
-        withCredentials: true,
-      });
-      await logoutUser();
-      navigate("/");
-    } catch (deleteError) {
-      setError(deleteError.response?.data?.message || "Failed to delete account.");
-    } finally {
-      setDeleting(false);
-    }
-  };
-
   const handleLogout = async () => {
     try {
-      await axios.post("http://localhost:5000/api/auth/logout", {}, { withCredentials: true });
+      await logoutUser();
       navigate("/login");
-    } catch (err) {
-      console.error("Logout failed:", err);
+    } catch (logoutError) {
+      setError(logoutError.message || "Logout failed.");
     }
   };
 
@@ -118,7 +78,7 @@ export default function Profile() {
 
   return (
     <div className="page-shell">
-      <Navbar />
+      <AppNavbar />
       <section className="profile-page">
         <div className="profile-container">
           <div className="profile-card">
@@ -177,12 +137,9 @@ export default function Profile() {
 
               <div className="profile-actions">
                 <button type="submit" className="btn btn-primary" disabled={saving || loading}>
-                  {saving ? "Saving..." : "Edit Profile"}
+                  {saving ? "Saving..." : "Save changes"}
                 </button>
-                <button type="button" className="btn btn-ghost" onClick={handleDeleteAccount} disabled={deleting || loading}>
-                  {deleting ? "Deleting..." : "Delete Account"}
-                </button>
-                <button type="button" className="btn btn-error" onClick={handleLogout} style={{ backgroundColor: "var(--color-error)", color: "white" }}>
+                <button type="button" className="btn btn-ghost" onClick={handleLogout}>
                   Logout
                 </button>
               </div>
