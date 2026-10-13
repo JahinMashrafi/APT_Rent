@@ -8,6 +8,73 @@ const { notify } = require("../utils/notify.js");
 const { buildContractPdfBuffer } = require("../utils/contractPdf.js");
 const { uploadToBucket } = require("../utils/storage.js");
 
+const negotiateContract = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const tenantId = req.user.user_id;
+    const { rate, deposit, message } = req.body || {};
+    const nextRate = Number(rate);
+    const nextDeposit = Number(deposit);
+
+    if (!Number.isFinite(nextRate) || nextRate <= 0 || !Number.isFinite(nextDeposit) || nextDeposit < 0) {
+      return res.status(422).json({ success: false, message: "A valid rent and non-negative deposit are required" });
+    }
+
+    const result = await pool.query(
+      `UPDATE contracts
+       SET rate = $1, deposit = $2, negotiation_message = $3, negotiation_status = 'proposed', updated_at = NOW()
+       WHERE contract_id = $4 AND tenant_id = $5 AND status = 'draft'
+       RETURNING contract_id, rate, deposit, negotiation_message, negotiation_status, status`,
+      [nextRate, nextDeposit, message?.trim() || null, id, tenantId],
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, message: "Draft contract not found for this tenant" });
+    }
+
+    const contract = await pool.query("SELECT owner_id FROM contracts WHERE contract_id = $1", [id]);
+    await notify({
+      userId: contract.rows[0].owner_id,
+      type: "contract_negotiation",
+      title: "Tenant proposed lease terms",
+      message: message?.trim() || `Tenant proposed rent ৳${nextRate} and deposit ৳${nextDeposit}.`,
+      linkUrl: "/contracts",
+    });
+    return res.status(200).json(result.rows[0]);
+  } catch (err) {
+    console.error("negotiateContract error: ", err);
+    return res.status(500).json({ success: false, message: "Failed to submit lease proposal" });
+  }
+};
+
+const acceptContract = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const tenantId = req.user.user_id;
+    const result = await pool.query(
+      `UPDATE contracts
+       SET negotiation_status = 'accepted', updated_at = NOW()
+       WHERE contract_id = $1 AND tenant_id = $2 AND status = 'draft'
+       RETURNING contract_id, rate, deposit, status, negotiation_status`,
+      [id, tenantId],
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, message: "Draft contract not found for this tenant" });
+    }
+    const owner = await pool.query("SELECT owner_id FROM contracts WHERE contract_id = $1", [id]);
+    await notify({
+      userId: owner.rows[0].owner_id,
+      type: "contract_accepted",
+      title: "Lease accepted",
+      message: `The tenant accepted contract #${id}.`,
+      linkUrl: "/contracts",
+    });
+    return res.status(200).json(result.rows[0]);
+  } catch (err) {
+    console.error("acceptContract error: ", err);
+    return res.status(500).json({ success: false, message: "Failed to accept lease" });
+  }
+};
+
 // POST /contracts  [landlord only]
 //
 // CHANGED: after inserting the contract row, this now also builds the
@@ -20,8 +87,7 @@ const { uploadToBucket } = require("../utils/storage.js");
 const createContract = async (req, res) => {
   try {
     const ownerId = req.user.user_id;
-    const { property_id, tenant_id, rate, start_date, end_date, terms_and_conditions, deposit_amount } =
-      req.body || {};
+    const { property_id, tenant_id, rate, deposit, start_date, end_date, terms_and_conditions } = req.body || {};
 
     if (!property_id || !tenant_id || !rate || !start_date || !end_date) {
       return res
@@ -50,10 +116,10 @@ const createContract = async (req, res) => {
     }
 
     const result = await pool.query(
-      `INSERT INTO contracts (owner_id, property_id, tenant_id, rate, start_date, end_date, terms_and_conditions)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)
-       RETURNING contract_id, owner_id, tenant_id, property_id, rate, start_date, end_date, status, created_at`,
-      [ownerId, property_id, tenant_id, rate, start_date, end_date, terms_and_conditions || null],
+      `INSERT INTO contracts (owner_id, property_id, tenant_id, rate, deposit, start_date, end_date, terms_and_conditions)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+       RETURNING contract_id, owner_id, tenant_id, property_id, rate, deposit, start_date, end_date, status, created_at`,
+      [ownerId, property_id, tenant_id, rate, deposit ?? 0, start_date, end_date, terms_and_conditions || null],
     );
     const contract = result.rows[0];
 
@@ -89,7 +155,7 @@ const createContract = async (req, res) => {
       type: "contract_issued",
       title: "New lease agreement",
       message: `A draft lease was issued for property #${property_id}. Please review and sign.`,
-      linkUrl: `/contracts/${contract.contract_id}`,
+      linkUrl: "/contracts",
     });
 
     return res.status(201).json({ ...contract, contract_pdf_url: contractPdfUrl });
@@ -112,12 +178,10 @@ const listContracts = async (req, res) => {
 
     const result = await pool.query(
       `SELECT c.contract_id, c.property_id, p.address AS property_address,
-              c.owner_id, c.tenant_id, c.rate, c.start_date, c.end_date,
+              c.owner_id, c.tenant_id, c.rate, c.deposit, c.start_date, c.end_date,
               c.owner_signature_url, c.tenant_signature_url, c.status, c.created_at,
-              c.contract_pdf_url,
-              owner.name AS owner_name, tenant.name AS tenant_name,
-              latest_payment.transaction_reference AS transaction_reference,
-              latest_payment.status AS payment_status
+              c.negotiation_status,
+              owner.name AS owner_name, tenant.name AS tenant_name
        FROM contracts c
        JOIN properties p ON p.property_id = c.property_id
        JOIN users owner ON owner.user_id = c.owner_id
@@ -141,11 +205,13 @@ const listContracts = async (req, res) => {
       owner: { user_id: row.owner_id, name: row.owner_name },
       tenant: { user_id: row.tenant_id, name: row.tenant_name },
       rate: row.rate,
+      deposit: row.deposit,
       start_date: row.start_date,
       end_date: row.end_date,
       owner_signature_url: row.owner_signature_url,
       tenant_signature_url: row.tenant_signature_url,
       status: row.status,
+      negotiation_status: row.negotiation_status,
       created_at: row.created_at,
       contract_pdf_url: row.contract_pdf_url,
       transaction_id: row.transaction_reference || null,
@@ -190,13 +256,15 @@ const getContractById = async (req, res) => {
       owner_id: signed.owner_id,
       tenant_id: signed.tenant_id,
       rate: signed.rate,
+      deposit: signed.deposit,
       start_date: signed.start_date,
       end_date: signed.end_date,
       terms_and_conditions: signed.terms_and_conditions,
       owner_signature_url: signed.owner_signature_url,
       tenant_signature_url: signed.tenant_signature_url,
       status: signed.status,
-      contract_pdf_url: signed.contract_pdf_url,
+      negotiation_message: signed.negotiation_message,
+      negotiation_status: signed.negotiation_status,
     });
   } catch (err) {
     console.error("getContractById error: ", err);
@@ -359,4 +427,4 @@ const payDeposit = async (req, res) => {
   }
 };
 
-module.exports = { createContract, listContracts, getContractById, signContract, payDeposit };
+module.exports = { createContract, listContracts, getContractById, signContract, payDeposit, negotiateContract, acceptContract };

@@ -26,7 +26,7 @@ import '../css/modules.css';
 
 export default function TourRequests() {
   const { showToast } = useToast();
-  const { isLoading, requests, currentProposals, confirmed, reload } = useTourNegotiation();
+  const { isLoading, requests, currentProposals, appointments, confirmed, reload } = useTourNegotiation();
 
   const [activeRequestId, setActiveRequestId] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -35,6 +35,11 @@ export default function TourRequests() {
   const pastRequests = requests.filter((row) => row.status !== 'pending');
 
   const activeRequest = openRequests.find((row) => String(row.appointment_id) === String(activeRequestId)) ?? null;
+  const confirmedByBatch = new Map(
+    appointments
+      .filter((row) => row.status === "confirmed")
+      .map((row) => [row.appointment_batch_id, row]),
+  );
 
   const handlePropose = async (slots) => {
     if (!activeRequest || isSubmitting) return;
@@ -56,7 +61,8 @@ export default function TourRequests() {
   };
 
   const renderStatus = (request) => {
-    if (request.status === "confirmed") {
+    const confirmedSlot = confirmedByBatch.get(request.appointment_batch_id);
+    if (request.status === "confirmed" || confirmedSlot) {
       return (
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem', color: 'var(--color-success, #2f7d5d)', fontSize: '0.8rem' }}>
           <CheckCircle size={14} /> Confirmed

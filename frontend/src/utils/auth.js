@@ -15,9 +15,9 @@ export const normalizeUserPayload = (user) => {
     institutionName: user.institution_name ?? "",
     workplaceName: user.workplace_name ?? "",
     profilePictureUrl: user.profile_picture_url ?? "",
-    isLandlord: Boolean(user.is_landlord),
-    isTenant: Boolean(user.is_tenant),
-    isAdmin: Boolean(user.is_admin),
+    isLandlord: Boolean(user.is_landlord ?? user.isLandlord ?? user.islandlord),
+    isTenant: Boolean(user.is_tenant ?? user.isTenant ?? user.istenant),
+    isAdmin: Boolean(user.is_admin ?? user.isAdmin ?? user.isadmin),
     isVerified: Boolean(user.is_verified),
   };
 };
@@ -40,8 +40,8 @@ export const registerUser = async (payload) => {
 // signed out, not a real error.
 export const fetchCurrentUser = async () => {
   try {
-    const user = await api.users.me();
-    return normalizeUserPayload(user);
+    const response = await api.users.me();
+    return normalizeUserPayload(response?.user ?? response);
   } catch (error) {
     if (error?.status === 401 || error?.status === 403) {
       return null;

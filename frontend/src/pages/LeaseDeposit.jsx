@@ -17,6 +17,8 @@ export default function LeaseDeposit() {
   const { currentUser } = useApp();
   const [property, setProperty] = useState(null);
   const [approvedTenant, setApprovedTenant] = useState(null);
+  const [contractId, setContractId] = useState(null);
+  const [existingContract, setExistingContract] = useState(null);
 
   useEffect(() => {
     // adaptProperty, not the raw row: ownership is read off
@@ -26,8 +28,24 @@ export default function LeaseDeposit() {
       .then((data) => setProperty(adaptProperty(data)))
       .catch(() => setProperty(null));
     api.applications.list()
-      .then((data) => setApprovedTenant((data?.data ?? []).find((application) => application.status === 'approved') ?? null))
+      .then((data) => setApprovedTenant(
+        (data?.data ?? []).find(
+          (application) =>
+            application.status === 'approved' &&
+            String(application.property_id) === String(propertyId),
+        ) ?? null,
+      ))
       .catch(() => setApprovedTenant(null));
+    api.contracts
+      .list()
+      .then((data) => {
+        const contract = (data?.data ?? []).find(
+          (item) => String(item.property_id) === String(propertyId),
+        );
+        setExistingContract(contract ?? null);
+        if (contract) setContractId(contract.contract_id);
+      })
+      .catch(() => setExistingContract(null));
   }, [propertyId]);
 
   // Which side of this lease you're on is a fact about the account,
@@ -47,23 +65,36 @@ export default function LeaseDeposit() {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentComplete, setPaymentComplete] = useState(false);
   const [paymentDetails, setPaymentDetails] = useState(null);
-  const [contractId, setContractId] = useState(null);
+  const [offerError, setOfferError] = useState("");
 
-  const handleSendOffer = () => {
-    // POST /contracts — best-effort; the demo keeps working locally either way.
+  const handleSendOffer = async () => {
+    const tenantId =
+      approvedTenant?.tenant?.user_id ??
+      approvedTenant?.tenant_id ??
+      approvedTenant?.tenantId;
+    if (!tenantId) {
+      setOfferError("No approved tenant was found for this property.");
+      return;
+    }
+
+    setOfferError("");
     api.contracts
       .create({
         property_id: property?.id ?? propertyId,
-        tenant_id: approvedTenant?.tenantId ?? approvedTenant?.tenant_id,
+        tenant_id: tenantId,
         rate: property?.pricePerMonth,
-        deposit: property?.securityDeposit,
+        deposit: property?.securityDeposit ?? 0,
         start_date: '2026-10-01',
         end_date: '2027-09-30',
         terms_and_conditions: accordionItems.map((c) => c.content).join(' '),
       })
-      .then((created) => setContractId(created?.contract_id ?? null))
-      .catch(() => {});
-    setOfferSent(true);
+      .then((created) => {
+        setContractId(created?.contract_id ?? null);
+        setOfferSent(true);
+      })
+      .catch((error) => {
+        setOfferError(error.response?.data?.message || error.message || "Could not send the lease offer.");
+      });
   };
 
   const handlePaymentSuccess = (details) => {
@@ -124,6 +155,11 @@ export default function LeaseDeposit() {
                 <button className="btn btn-primary" onClick={handleSendOffer} style={{ padding: '0.75rem 1.5rem', background: 'var(--color-brass)', color: '#fff', border: 'none', borderRadius: 'var(--radius-sm)', fontWeight: 'bold', display: 'inline-flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '1rem' }}>
                   <FileText size={20} /> Send Lease Offer
                 </button>
+                {offerError && (
+                  <p role="alert" style={{ color: 'var(--color-error)', marginTop: '1rem', fontSize: '0.9rem' }}>
+                    {offerError}
+                  </p>
+                )}
               </div>
             ) : (
               <div className="success-screen" style={{ textAlign: 'center', padding: '3rem 1rem', background: 'var(--color-paper)', border: '1px solid var(--color-line)', borderRadius: 'var(--radius-md)' }}>
@@ -142,6 +178,16 @@ export default function LeaseDeposit() {
           <>
             <span className="eyebrow" style={{ color: 'var(--color-blueprint)', fontFamily: 'var(--font-mono)', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>New Lease Offer</span>
             <h1 className="module-title">Review Your Lease Agreement</h1>
+
+            {existingContract && (
+              <div className="mod-card mod-card-pad" style={{ marginBottom: "1.5rem", border: "1px solid var(--color-line)", background: "var(--color-paper-dim)" }}>
+                <strong style={{ color: "var(--color-ink)" }}>You have a lease offer for this property.</strong>
+                <p style={{ color: "var(--color-charcoal)", margin: "0.5rem 0 1rem" }}>
+                  Open the contract to review the landlord&apos;s terms, bargain the rent or deposit, and accept the offer.
+                </p>
+                <Link to="/contracts" className="btn btn-primary">Open contract</Link>
+              </div>
+            )}
 
             {!paymentComplete ? (
               <>

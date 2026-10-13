@@ -47,6 +47,9 @@ export default function Contracts() {
   const [loadError, setLoadError] = useState("");
   const [openId, setOpenId] = useState(null);
   const [details, setDetails] = useState({});
+  const [negotiation, setNegotiation] = useState({});
+  const [negotiationError, setNegotiationError] = useState({});
+  const [acceptError, setAcceptError] = useState({});
 
   useEffect(() => {
     let cancelled = false;
@@ -92,6 +95,53 @@ export default function Contracts() {
     return isMine
       ? { label: "Tenant", name: contract.tenant?.name ?? "Tenant" }
       : { label: "Landlord", name: contract.owner?.name ?? "Landlord" };
+  };
+
+  const submitNegotiation = async (contract) => {
+    const values = negotiation[contract.contract_id] ?? {};
+    try {
+      setNegotiationError((prev) => ({ ...prev, [contract.contract_id]: "" }));
+      const updated = await api.contracts.negotiate(contract.contract_id, {
+        rate: values.rate,
+        deposit: values.deposit,
+        message: values.message,
+      });
+      setContracts((prev) => prev.map((item) =>
+        item.contract_id === contract.contract_id
+          ? { ...item, rate: updated.rate, deposit: updated.deposit, negotiation_status: updated.negotiation_status }
+          : item,
+      ));
+      setDetails((prev) => ({
+        ...prev,
+        [contract.contract_id]: { ...prev[contract.contract_id], ...updated },
+      }));
+    } catch (error) {
+      setNegotiationError((prev) => ({
+        ...prev,
+        [contract.contract_id]: error.response?.data?.message || error.message || "Could not submit proposal.",
+      }));
+    }
+  };
+
+  const acceptContract = async (contract) => {
+    try {
+      setAcceptError((prev) => ({ ...prev, [contract.contract_id]: "" }));
+      const updated = await api.contracts.accept(contract.contract_id);
+      setContracts((prev) => prev.map((item) =>
+        item.contract_id === contract.contract_id
+          ? { ...item, negotiation_status: updated.negotiation_status }
+          : item,
+      ));
+      setDetails((prev) => ({
+        ...prev,
+        [contract.contract_id]: { ...prev[contract.contract_id], ...updated },
+      }));
+    } catch (error) {
+      setAcceptError((prev) => ({
+        ...prev,
+        [contract.contract_id]: error.response?.data?.message || error.message || "Could not accept lease.",
+      }));
+    }
   };
 
   return (
@@ -180,7 +230,11 @@ export default function Contracts() {
                     </div>
 
                     <span className={`badge ${STATUS_BADGE[contract.status] ?? "badge-neutral"}`}>
-                      {STATUS_LABEL[contract.status] ?? contract.status}
+                      {contract.negotiation_status === "accepted"
+                        ? "Lease accepted"
+                        : contract.negotiation_status === "proposed"
+                          ? "Tenant proposal sent"
+                          : STATUS_LABEL[contract.status] ?? contract.status}
                     </span>
                     {isOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
                   </button>
@@ -198,6 +252,7 @@ export default function Contracts() {
                           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: "1rem", marginBottom: "1rem" }}>
                             {[
                               { label: "Monthly Rent", value: `৳${Number(contract.rate ?? 0).toLocaleString("en-BD")}` },
+                              { label: "Security Deposit", value: `৳${Number(contract.deposit ?? 0).toLocaleString("en-BD")}` },
                               { label: "Start Date", value: formatDateLong(contract.start_date) },
                               { label: "End Date", value: formatDateLong(contract.end_date) },
                             ].map((item) => (
@@ -207,6 +262,41 @@ export default function Contracts() {
                               </div>
                             ))}
                           </div>
+
+                          {String(contract.tenant?.user_id) === String(currentUser?.id) && contract.status === "draft" && (
+                            <form
+                              onSubmit={(event) => {
+                                event.preventDefault();
+                                submitNegotiation(contract);
+                              }}
+                              style={{ borderTop: "1px solid var(--color-line)", paddingTop: "1rem", marginBottom: "1rem" }}
+                            >
+                              <strong style={{ display: "block", marginBottom: "0.75rem", color: "var(--color-ink)" }}>
+                                Bargain lease terms
+                              </strong>
+                              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "0.75rem" }}>
+                                <label>
+                                  <span className="eyebrow">Monthly rent</span>
+                                  <input type="number" min="1" value={negotiation[contract.contract_id]?.rate ?? contract.rate ?? ""} onChange={(event) => setNegotiation((prev) => ({ ...prev, [contract.contract_id]: { ...prev[contract.contract_id], rate: event.target.value } }))} />
+                                </label>
+                                <label>
+                                  <span className="eyebrow">Security deposit</span>
+                                  <input type="number" min="0" value={negotiation[contract.contract_id]?.deposit ?? contract.deposit ?? ""} onChange={(event) => setNegotiation((prev) => ({ ...prev, [contract.contract_id]: { ...prev[contract.contract_id], deposit: event.target.value } }))} />
+                                </label>
+                              </div>
+                              <textarea placeholder="Optional message to the landlord" value={negotiation[contract.contract_id]?.message ?? ""} onChange={(event) => setNegotiation((prev) => ({ ...prev, [contract.contract_id]: { ...prev[contract.contract_id], message: event.target.value } }))} style={{ width: "100%", marginTop: "0.75rem", minHeight: "70px" }} />
+                              <button type="submit" className="btn btn-primary" style={{ marginTop: "0.75rem" }}>Send bargaining proposal</button>
+                              {negotiationError[contract.contract_id] && <p role="alert" style={{ color: "var(--color-error)", marginTop: "0.5rem" }}>{negotiationError[contract.contract_id]}</p>}
+                              {detail.negotiation_status === "proposed" && <p style={{ color: "var(--color-blueprint)", marginTop: "0.5rem" }}>Your proposed terms were sent to the landlord.</p>}
+                              {detail.negotiation_status !== "accepted" && (
+                                <button type="button" className="btn btn-primary" onClick={() => acceptContract(contract)} style={{ marginTop: "0.75rem" }}>
+                                  Accept these lease terms
+                                </button>
+                              )}
+                              {detail.negotiation_status === "accepted" && <p style={{ color: "var(--color-success)", marginTop: "0.5rem" }}>Lease accepted. The landlord has been notified.</p>}
+                              {acceptError[contract.contract_id] && <p role="alert" style={{ color: "var(--color-error)", marginTop: "0.5rem" }}>{acceptError[contract.contract_id]}</p>}
+                            </form>
+                          )}
 
                           {detail.terms_and_conditions && (
                             <div style={{ marginBottom: "1rem" }}>
