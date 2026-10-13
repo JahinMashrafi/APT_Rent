@@ -17,6 +17,8 @@ export default function LeaseDeposit() {
   const { currentUser } = useApp();
   const [property, setProperty] = useState(null);
   const [approvedTenant, setApprovedTenant] = useState(null);
+  const [contractId, setContractId] = useState(null);
+  const [existingContract, setExistingContract] = useState(null);
 
   useEffect(() => {
     // adaptProperty, not the raw row: ownership is read off
@@ -34,6 +36,16 @@ export default function LeaseDeposit() {
         ) ?? null,
       ))
       .catch(() => setApprovedTenant(null));
+    api.contracts
+      .list()
+      .then((data) => {
+        const contract = (data?.data ?? []).find(
+          (item) => String(item.property_id) === String(propertyId),
+        );
+        setExistingContract(contract ?? null);
+        if (contract) setContractId(contract.contract_id);
+      })
+      .catch(() => setExistingContract(null));
   }, [propertyId]);
 
   // Which side of this lease you're on is a fact about the account,
@@ -53,7 +65,6 @@ export default function LeaseDeposit() {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentComplete, setPaymentComplete] = useState(false);
   const [paymentDetails, setPaymentDetails] = useState(null);
-  const [contractId, setContractId] = useState(null);
   const [offerError, setOfferError] = useState("");
 
   const handleSendOffer = async () => {
@@ -167,6 +178,16 @@ export default function LeaseDeposit() {
           <>
             <span className="eyebrow" style={{ color: 'var(--color-blueprint)', fontFamily: 'var(--font-mono)', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>New Lease Offer</span>
             <h1 className="module-title">Review Your Lease Agreement</h1>
+
+            {existingContract && (
+              <div className="mod-card mod-card-pad" style={{ marginBottom: "1.5rem", border: "1px solid var(--color-line)", background: "var(--color-paper-dim)" }}>
+                <strong style={{ color: "var(--color-ink)" }}>You have a lease offer for this property.</strong>
+                <p style={{ color: "var(--color-charcoal)", margin: "0.5rem 0 1rem" }}>
+                  Open the contract to review the landlord&apos;s terms, bargain the rent or deposit, and accept the offer.
+                </p>
+                <Link to="/contracts" className="btn btn-primary">Open contract</Link>
+              </div>
+            )}
 
             {!paymentComplete ? (
               <>
