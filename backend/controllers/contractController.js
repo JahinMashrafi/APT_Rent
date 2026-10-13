@@ -3,25 +3,49 @@ const { saveBase64Signature } = require("../utils/signature.js");
 const { generateReceipt } = require("../utils/receipt.js");
 const { signFields, CONTRACT_SIGNED_FIELDS, PAYMENT_SIGNED_FIELDS } = require("../utils/signFields.js");
 const { notify } = require("../utils/notify.js");
+// --- NEW: lease PDF generation + the same bucket-upload helper
+// --- propertyController.js already uses for photos.
+const { buildContractPdfBuffer } = require("../utils/contractPdf.js");
+const { uploadToBucket } = require("../utils/storage.js");
 
 // POST /contracts  [landlord only]
+//
+// CHANGED: after inserting the contract row, this now also builds the
+// lease PDF (one shared template, filled in with this contract's
+// landlord/tenant names, address and dates) and uploads it to the
+// "contract-pdfs" bucket, saving the resulting URL on the contract row.
+// If the PDF step fails for any reason, the contract itself still gets
+// created — the PDF can be missing and regenerated later rather than the
+// whole lease creation failing over a formatting issue.
 const createContract = async (req, res) => {
   try {
     const ownerId = req.user.user_id;
-    const { property_id, tenant_id, rate, start_date, end_date, terms_and_conditions } = req.body || {};
+    const { property_id, tenant_id, rate, start_date, end_date, terms_and_conditions, deposit_amount } =
+      req.body || {};
 
     if (!property_id || !tenant_id || !rate || !start_date || !end_date) {
-      return res.status(422).json({ success: false, message: "property_id, tenant_id, rate, start_date, and end_date are required" });
+      return res
+        .status(422)
+        .json({ success: false, message: "property_id, tenant_id, rate, start_date, and end_date are required" });
     }
 
-    const propCheck = await pool.query(
-      "SELECT owner_id FROM properties WHERE property_id = $1 AND availability_status != 'archived'",
-      [property_id],
+    // Pull everything the PDF template needs in one query: the property's
+    // owner + address + default deposit, and both parties' display names.
+    const infoResult = await pool.query(
+      `SELECT p.owner_id, p.address, p.deposit,
+              owner.name AS owner_name,
+              tenant.name AS tenant_name
+       FROM properties p
+       JOIN users owner ON owner.user_id = p.owner_id
+       JOIN users tenant ON tenant.user_id = $2
+       WHERE p.property_id = $1 AND p.availability_status != 'archived'`,
+      [property_id, tenant_id],
     );
-    if (propCheck.rows.length === 0) {
-      return res.status(404).json({ success: false, message: "Property not found" });
+    if (infoResult.rows.length === 0) {
+      return res.status(404).json({ success: false, message: "Property or tenant not found" });
     }
-    if (propCheck.rows[0].owner_id !== ownerId && !req.user.is_admin) {
+    const info = infoResult.rows[0];
+    if (info.owner_id !== ownerId && !req.user.is_admin) {
       return res.status(403).json({ success: false, message: "You do not own this property" });
     }
 
@@ -31,16 +55,44 @@ const createContract = async (req, res) => {
        RETURNING contract_id, owner_id, tenant_id, property_id, rate, start_date, end_date, status, created_at`,
       [ownerId, property_id, tenant_id, rate, start_date, end_date, terms_and_conditions || null],
     );
+    const contract = result.rows[0];
+
+    // --- Generate + store the lease PDF ------------------------------------
+    let contractPdfUrl = null;
+    try {
+      const pdfBuffer = await buildContractPdfBuffer({
+        landlordName: info.owner_name,
+        tenantName: info.tenant_name,
+        propertyAddress: info.address,
+        rate,
+        depositAmount: deposit_amount ?? info.deposit,
+        startDate: start_date,
+        endDate: end_date,
+        contractId: contract.contract_id,
+        termsAndConditions: terms_and_conditions,
+      });
+
+      const path = `contracts/${contract.contract_id}.pdf`;
+      const { url } = await uploadToBucket("contract-pdfs", path, pdfBuffer, "application/pdf");
+      contractPdfUrl = url;
+
+      await pool.query("UPDATE contracts SET contract_pdf_url = $1 WHERE contract_id = $2", [
+        url,
+        contract.contract_id,
+      ]);
+    } catch (pdfErr) {
+      console.error("Lease PDF generation failed (contract still created): ", pdfErr);
+    }
 
     await notify({
       userId: tenant_id,
       type: "contract_issued",
       title: "New lease agreement",
       message: `A draft lease was issued for property #${property_id}. Please review and sign.`,
-      linkUrl: `/contracts/${result.rows[0].contract_id}`,
+      linkUrl: `/contracts/${contract.contract_id}`,
     });
 
-    return res.status(201).json(result.rows[0]);
+    return res.status(201).json({ ...contract, contract_pdf_url: contractPdfUrl });
   } catch (err) {
     console.error("createContract error: ", err);
     return res.status(500).json({ success: false, message: "Failed to create contract" });
@@ -48,9 +100,12 @@ const createContract = async (req, res) => {
 };
 
 // GET /contracts  [auth required] — every lease the caller is a party to.
-// The by-id endpoint already gates on party membership; this lists them up
-// front so tenant and landlord can pull their contracts up at any time
-// without having to remember a contract id.
+//
+// CHANGED: now also returns contract_pdf_url, plus the most recent
+// payment's transaction_reference and status for that contract — this is
+// what powers the "transaction id / payment status yes-no" list on the
+// Contracts page. A contract with no payment yet simply comes back with
+// transaction_id: null and payment_status: "no".
 const listContracts = async (req, res) => {
   try {
     const userId = req.user.user_id;
@@ -59,11 +114,21 @@ const listContracts = async (req, res) => {
       `SELECT c.contract_id, c.property_id, p.address AS property_address,
               c.owner_id, c.tenant_id, c.rate, c.start_date, c.end_date,
               c.owner_signature_url, c.tenant_signature_url, c.status, c.created_at,
-              owner.name AS owner_name, tenant.name AS tenant_name
+              c.contract_pdf_url,
+              owner.name AS owner_name, tenant.name AS tenant_name,
+              latest_payment.transaction_reference AS transaction_reference,
+              latest_payment.status AS payment_status
        FROM contracts c
        JOIN properties p ON p.property_id = c.property_id
        JOIN users owner ON owner.user_id = c.owner_id
        JOIN users tenant ON tenant.user_id = c.tenant_id
+       LEFT JOIN LATERAL (
+         SELECT transaction_reference, status
+         FROM payments
+         WHERE payments.contract_id = c.contract_id
+         ORDER BY payment_date DESC
+         LIMIT 1
+       ) latest_payment ON TRUE
        WHERE c.owner_id = $1 OR c.tenant_id = $1
        ORDER BY c.created_at DESC`,
       [userId],
@@ -82,6 +147,9 @@ const listContracts = async (req, res) => {
       tenant_signature_url: row.tenant_signature_url,
       status: row.status,
       created_at: row.created_at,
+      contract_pdf_url: row.contract_pdf_url,
+      transaction_id: row.transaction_reference || null,
+      payment_status: row.payment_status === "paid" ? "yes" : "no",
     }));
 
     return res.status(200).json({ data });
@@ -92,6 +160,9 @@ const listContracts = async (req, res) => {
 };
 
 // GET /contracts/:id  [auth required — owner or tenant on the contract]
+//
+// CHANGED: includes contract_pdf_url in the response so the "View details"
+// panel can embed/link the PDF.
 const getContractById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -125,6 +196,7 @@ const getContractById = async (req, res) => {
       owner_signature_url: signed.owner_signature_url,
       tenant_signature_url: signed.tenant_signature_url,
       status: signed.status,
+      contract_pdf_url: signed.contract_pdf_url,
     });
   } catch (err) {
     console.error("getContractById error: ", err);
@@ -133,6 +205,7 @@ const getContractById = async (req, res) => {
 };
 
 // PATCH /contracts/:id/sign  [auth required — auto-detects owner vs tenant]
+// Unchanged from what you already had.
 const signContract = async (req, res) => {
   try {
     const { id } = req.params;
@@ -162,9 +235,8 @@ const signContract = async (req, res) => {
     }
 
     const column = role === "owner" ? "owner_signature_url" : "tenant_signature_url";
-    const otherPartyAlreadySigned = role === "owner"
-      ? Boolean(contract.tenant_signature_url)
-      : Boolean(contract.owner_signature_url);
+    const otherPartyAlreadySigned =
+      role === "owner" ? Boolean(contract.tenant_signature_url) : Boolean(contract.owner_signature_url);
     const newStatus = otherPartyAlreadySigned ? "fully_signed" : `signed_by_${role}`;
 
     const updateResult = await pool.query(
@@ -190,9 +262,10 @@ const signContract = async (req, res) => {
       owner_signature_url: signed.owner_signature_url,
       tenant_signature_url: signed.tenant_signature_url,
       status: signed.status,
-      message: signed.status === "fully_signed"
-        ? "Both parties have signed. Proceed to security deposit payment."
-        : "Signature registered. Waiting on the other party to sign.",
+      message:
+        signed.status === "fully_signed"
+          ? "Both parties have signed. Proceed to security deposit payment."
+          : "Signature registered. Waiting on the other party to sign.",
     });
   } catch (err) {
     console.error("signContract error: ", err);
@@ -201,6 +274,8 @@ const signContract = async (req, res) => {
 };
 
 // POST /contracts/:id/deposit  [tenant only]
+// Unchanged from what you already had — this is what sets the transaction
+// reference + payment status that listContracts now surfaces.
 const payDeposit = async (req, res) => {
   try {
     const { id } = req.params;
