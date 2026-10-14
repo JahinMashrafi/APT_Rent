@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AppNavbar from '../components/AppNavbar.jsx';
 import Modal from '../components/ui/Modal.jsx';
-import { TrendingUp, Users, Wrench, Edit3, Eye, EyeOff, Trash2, ChevronRight, Building2, DollarSign, AlertTriangle, Calendar, User, FileText, MessageSquare } from 'lucide-react';
+import { TrendingUp, Users, Calendar, Edit3, Eye, EyeOff, Trash2, ChevronRight, Building2, DollarSign, AlertTriangle, User, FileText, MessageSquare, Wallet } from 'lucide-react';
 import PropertyFormModal from '../components/property/PropertyFormModal.jsx';
 import { useToast } from '../components/ui/Toast.jsx';
 import api from '../services/api';
@@ -12,8 +12,24 @@ import '../css/navbar.css';
 import '../css/newsfeed-home.css';
 import '../css/modules.css';
 
-// The listing form's defaults live in PropertyFormModal now, so add and
-// edit can't end up with different empty states.
+// ---------------------------------------------------------------------------
+// helpers
+// ---------------------------------------------------------------------------
+const taka = (n) => `৳${Number(n ?? 0).toLocaleString('en-BD')}`;
+
+// Local-time YYYY-MM-DD (toISOString would shift the day for UTC+6).
+const toLocalISODate = (d) => {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+};
+
+const emptySlots = () => [
+  { appointment_date: '', appointment_time: '' },
+  { appointment_date: '', appointment_time: '' },
+  { appointment_date: '', appointment_time: '' },
+];
 
 export default function LandlordDashboard() {
   const navigate = useNavigate();
@@ -23,21 +39,46 @@ export default function LandlordDashboard() {
   const [properties, setProperties] = useState([]);
   const [applications, setApplications] = useState([]);
 
+  // GET /landlord/stats and GET /landlord/rent-ledger
+  const [stats, setStats] = useState(null);
+  const [ledger, setLedger] = useState(null);
+
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [propertyToDelete, setPropertyToDelete] = useState(null);
 
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [selectedApplicant, setSelectedApplicant] = useState(null);
+  const [decisionBusy, setDecisionBusy] = useState(false);
+
+  // POST /appointments — landlord proposes 3 tour slots
+  const [tourTarget, setTourTarget] = useState(null);
+  const [tourSlots, setTourSlots] = useState(emptySlots());
+  const [tourBusy, setTourBusy] = useState(false);
+  const [tourDateRange] = useState(() => {
+    const today = new Date();
+    const maxDate = new Date(today);
+    maxDate.setDate(maxDate.getDate() + 14);
+    return {
+      todayISO: toLocalISODate(today),
+      maxTourISO: toLocalISODate(maxDate),
+    };
+  });
 
   const [showAddModal, setShowAddModal] = useState(false);
-  // Edit reuses the same modal as Add, so the form lives in one place
-  // instead of drifting between two copies. editTarget holds the raw
-  // property row because photo_id is needed to delete a photo and the
-  // adapter keeps only URLs.
+  // Edit reuses the same modal as Add. editTarget holds the property row;
+  // editPhotos holds the full photo rows (photo_id is needed to delete one).
   const [editTarget, setEditTarget] = useState(null);
   const [editPhotos, setEditPhotos] = useState([]);
 
   const [appFilter, setAppFilter] = useState('All');
+
+  const loadStats = () => {
+    api.landlord.stats().then(setStats).catch(() => setStats(null));
+  };
+
+  const loadLedger = () => {
+    api.landlord.rentLedger().then(setLedger).catch(() => setLedger(null));
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -46,8 +87,7 @@ export default function LandlordDashboard() {
       .properties()
       .then((data) => {
         if (cancelled) return;
-        const items = (data?.data ?? []).map(adaptProperty);
-        setProperties(items);
+        setProperties((data?.data ?? []).map(adaptProperty));
       })
       .catch(() => setProperties([]));
 
@@ -55,52 +95,71 @@ export default function LandlordDashboard() {
       .list()
       .then((data) => {
         if (cancelled) return;
-        const items = (data?.data ?? []).map(adaptApplication).map(flattenApplication);
-        setApplications(items);
+        setApplications((data?.data ?? []).map(adaptApplication).map(flattenApplication));
       })
       .catch(() => setApplications([]));
+
+    api.landlord
+      .stats()
+      .then((data) => { if (!cancelled) setStats(data); })
+      .catch(() => { if (!cancelled) setStats(null); });
+
+    api.landlord
+      .rentLedger()
+      .then((data) => { if (!cancelled) setLedger(data); })
+      .catch(() => { if (!cancelled) setLedger(null); });
 
     return () => {
       cancelled = true;
     };
   }, []);
 
+  // -------------------------------------------------------------------------
+  // Properties
+  // -------------------------------------------------------------------------
   const handleDeleteClick = (prop) => {
     setPropertyToDelete(prop);
     setShowDeleteModal(true);
   };
 
-  const confirmDelete = () => {
-    // DELETE /properties/:id — best-effort; the listing already updates
-    // locally so the UI stays responsive even before a backend exists.
-    api.properties.remove(propertyToDelete.id).catch(() => {});
-    setProperties(properties.filter(p => p.id !== propertyToDelete.id));
-    setShowDeleteModal(false);
-    setPropertyToDelete(null);
+  // DELETE /properties/:id (soft archive). Only removes the card once the
+  // server confirms, so a failed delete no longer looks like it worked.
+  const confirmDelete = async () => {
+    const target = propertyToDelete;
+    if (!target) return;
+    try {
+      await api.properties.remove(target.id);
+      setProperties((prev) => prev.filter((p) => p.id !== target.id));
+      showToast({ message: 'Listing deleted.', type: 'success' });
+      loadStats();
+      loadLedger();
+    } catch (error) {
+      showToast({ message: error.message || 'Could not delete the listing.', type: 'error' });
+    } finally {
+      setShowDeleteModal(false);
+      setPropertyToDelete(null);
+    }
   };
 
+  // PATCH /properties/:id/visibility. Optimistic with rollback; functional
+  // updates so the rollback can't clobber other changes made meanwhile.
   const toggleVisibility = (id) => {
     const current = properties.find((p) => p.id === id);
     if (!current) return;
     const next = !current.isHidden;
-    // Optimistic, but rolled back if the server disagrees — this used to
-    // fire-and-forget against a route that didn't exist, so the UI could
-    // claim a listing was hidden while nothing had actually changed.
-    setProperties(properties.map(p => (p.id === id ? { ...p, isHidden: next } : p)));
+    setProperties((prev) => prev.map((p) => (p.id === id ? { ...p, isHidden: next } : p)));
     api.properties
       .setVisibility(id, next)
       .then(() => showToast({ message: next ? 'Listing hidden from search.' : 'Listing is visible again.', type: 'success' }))
       .catch((error) => {
-        setProperties(properties.map(p => (p.id === id ? { ...p, isHidden: current.isHidden } : p)));
+        setProperties((prev) => prev.map((p) => (p.id === id ? { ...p, isHidden: current.isHidden } : p)));
         showToast({ message: error.message || 'Could not change visibility.', type: 'error' });
       });
   };
 
   const handleEditClick = async (property) => {
-    // Fetch the full row before opening rather than reusing the list
-    // entry: the list query returns photos as bare URLs, and removing
-    // one needs its photo_id. Opening after the fetch avoids the dialog
-    // flashing an empty gallery before the images arrive.
+    // GET /properties/:id returns photos with photo_id, which the edit
+    // form needs for DELETE /properties/:id/photos/:photo_id.
     let photos = [];
     try {
       const full = await api.properties.getById(property.id);
@@ -118,90 +177,187 @@ export default function LandlordDashboard() {
       const exists = prev.some((p) => p.id === saved.id);
       return exists ? prev.map((p) => (p.id === saved.id ? saved : p)) : [saved, ...prev];
     });
+    loadStats();
   };
+
+  // -------------------------------------------------------------------------
+  // Applications — PATCH /applications/:id/status (approved | reviewed | rejected)
+  // -------------------------------------------------------------------------
+  const setLocalStatus = (id, status) =>
+    setApplications((prev) => prev.map((app) => (app.id === id ? { ...app, status } : app)));
 
   const handleReviewProfile = (app) => {
     setSelectedApplicant(app);
     setShowProfileModal(true);
+
+    // Opening a pending application moves it to "reviewed" (spec status).
+    if (app.status === 'pending') {
+      setLocalStatus(app.id, 'reviewed');
+      setSelectedApplicant({ ...app, status: 'reviewed' });
+      api.applications.updateStatus(app.id, 'reviewed').catch(() => {
+        setLocalStatus(app.id, 'pending');
+      });
+    }
   };
 
-  // ============================================================================
-  // CHANGED: handleApproveApplicant
-  // ============================================================================
-  // This used to only PATCH the application's status to "approved". Per your
-  // request — "when the landlord approves the application of the tenant for
-  // house rent, the contract bar will appear" — it now ALSO creates the lease
-  // contract right after approval, by calling POST /contracts (createContract
-  // in contractController.js). That backend call:
-  //   1. inserts the contracts row
-  //   2. builds the lease PDF from the one shared template (landlord/tenant
-  //      names + address + dates filled in automatically)
-  //   3. uploads the PDF to the "contract-pdfs" bucket and saves its URL
-  // So nothing here needs to know about PDF layout — it just sends the
-  // property/tenant/rate/dates, and the contract (with its PDF) shows up in
-  // the tenant's and landlord's Contracts page right after.
-  //
-  // rate comes from the property's own stored price, start_date is today,
-  // end_date defaults to a 1-year lease — adjust those two lines if you want
-  // a different default term or to let the landlord pick dates first.
-  // ============================================================================
-  const handleApproveApplicant = async () => {
-    if (!selectedApplicant) return;
+  const handleDeclineApplicant = async () => {
+    if (!selectedApplicant || decisionBusy) return;
+    setDecisionBusy(true);
+    try {
+      await api.applications.updateStatus(selectedApplicant.id, 'rejected');
+      setLocalStatus(selectedApplicant.id, 'rejected');
+      showToast({ message: 'Application declined. The tenant has been notified.', type: 'success' });
+      loadStats();
+      setShowProfileModal(false);
+    } catch (error) {
+      showToast({ message: error.message || 'Could not decline the application.', type: 'error' });
+    } finally {
+      setDecisionBusy(false);
+    }
+  };
 
+  // Approve, then issue the lease via POST /contracts (created as "draft").
+  // The two steps fail independently, so each gets its own message.
+  const handleApproveApplicant = async () => {
+    if (!selectedApplicant || decisionBusy) return;
+    setDecisionBusy(true);
+
+    const applicationId = selectedApplicant.id;
     const propertyId = selectedApplicant.propertyId;
     const tenantId = selectedApplicant.tenant?.id;
     const property = properties.find((p) => p.id === propertyId);
 
     try {
-      // 1) Mark the application approved (unchanged from before)
-      await api.applications.updateStatus(selectedApplicant.id, 'approved');
-      setApplications((prev) =>
-        prev.map((app) => (app.id === selectedApplicant.id ? { ...app, status: 'approved' } : app))
-      );
-
-      // 2) NEW: auto-create the lease contract (+ PDF) for this tenant.
-      if (tenantId && property) {
-        const today = new Date();
-        const oneYearLater = new Date(today);
-        oneYearLater.setFullYear(oneYearLater.getFullYear() + 1);
-
-        await api.contracts.create({
-          property_id: propertyId,
-          tenant_id: tenantId,
-          rate: property.pricePerMonth,
-          start_date: today.toISOString().slice(0, 10),
-          end_date: oneYearLater.toISOString().slice(0, 10),
-        });
-
-        showToast({
-          message: 'Lease contract created — the tenant can review, sign, and download it from Contracts.',
-          type: 'success',
-        });
-      } else {
-        showToast({
-          message: 'Application approved, but a contract could not be created (missing tenant or property).',
-          type: 'error',
-        });
-      }
+      await api.applications.updateStatus(applicationId, 'approved');
+      setLocalStatus(applicationId, 'approved');
+      loadStats();
     } catch (error) {
-      showToast({ message: error.message || 'Approved, but the lease contract could not be created automatically.', type: 'error' });
+      showToast({ message: error.message || 'Could not approve the application.', type: 'error' });
+      setDecisionBusy(false);
+      return;
+    }
+
+    try {
+      if (!tenantId || !property) {
+        throw new Error('Application approved, but a contract could not be created (missing tenant or property).');
+      }
+
+      const today = new Date();
+      const oneYearLater = new Date(today);
+      oneYearLater.setFullYear(oneYearLater.getFullYear() + 1);
+
+      const payload = {
+        property_id: propertyId,
+        tenant_id: tenantId,
+        rate: property.pricePerMonth,
+        start_date: toLocalISODate(today),
+        end_date: toLocalISODate(oneYearLater),
+      };
+      // Spec also takes deposit; send it when the listing has one.
+      if (property.deposit != null) payload.deposit = property.deposit;
+
+      await api.contracts.create(payload);
+      showToast({
+        message: 'Lease contract created — the tenant can review, sign, and pay the deposit from Contracts.',
+        type: 'success',
+      });
+      loadLedger();
+    } catch (error) {
+      showToast({
+        message: error.message || 'Application approved, but the lease contract could not be created.',
+        type: 'error',
+      });
     } finally {
+      setDecisionBusy(false);
       setShowProfileModal(false);
     }
   };
 
   const handleMessageApplicant = () => {
-    // flattenApplication spreads the adapted application, so the nested
-    // tenant object (and its id) survives onto selectedApplicant.
     const tenantId = selectedApplicant?.tenant?.id;
     if (!tenantId) return;
     setShowProfileModal(false);
     navigate(`/inbox?contact=${tenantId}&property=${selectedApplicant.propertyId}`);
   };
 
+  // -------------------------------------------------------------------------
+  // Tours — POST /appointments with exactly 3 distinct slots in the next 14 days
+  // -------------------------------------------------------------------------
+  const openTourModal = (app) => {
+    setTourTarget(app);
+    setTourSlots(emptySlots());
+  };
+
+  const updateSlot = (index, field, value) => {
+    setTourSlots((prev) => prev.map((s, i) => (i === index ? { ...s, [field]: value } : s)));
+  };
+
+  const { todayISO, maxTourISO } = tourDateRange;
+
+  const submitTourSlots = async () => {
+    if (!tourTarget || tourBusy) return;
+
+    const tenantId = tourTarget.tenant?.id;
+    if (!tenantId) {
+      showToast({ message: 'This application has no tenant attached.', type: 'error' });
+      return;
+    }
+    if (tourSlots.some((s) => !s.appointment_date || !s.appointment_time)) {
+      showToast({ message: 'Fill in a date and time for all 3 slots.', type: 'error' });
+      return;
+    }
+    if (tourSlots.some((s) => s.appointment_date < todayISO || s.appointment_date > maxTourISO)) {
+      showToast({ message: 'Every slot must fall within the next 14 days.', type: 'error' });
+      return;
+    }
+    const keys = tourSlots.map((s) => `${s.appointment_date}T${s.appointment_time}`);
+    if (new Set(keys).size !== 3) {
+      showToast({ message: 'The 3 slots must be distinct.', type: 'error' });
+      return;
+    }
+
+    setTourBusy(true);
+    try {
+      await api.appointments.propose({
+        property_id: tourTarget.propertyId,
+        tenant_id: tenantId,
+        slots: tourSlots.map((s) => ({
+          appointment_date: s.appointment_date,
+          // Spec uses HH:MM:SS; <input type="time"> yields HH:MM.
+          appointment_time: s.appointment_time.length === 5 ? `${s.appointment_time}:00` : s.appointment_time,
+        })),
+      });
+      showToast({ message: 'Tour slots sent. The tenant can now pick one.', type: 'success' });
+      setTourTarget(null);
+      loadStats();
+    } catch (error) {
+      showToast({ message: error.message || 'Could not send tour slots.', type: 'error' });
+    } finally {
+      setTourBusy(false);
+    }
+  };
+
+  // -------------------------------------------------------------------------
+  // derived
+  // -------------------------------------------------------------------------
   const filteredApps = appFilter === 'All'
     ? applications
-    : applications.filter(a => a.status.toLowerCase() === appFilter.toLowerCase());
+    : applications.filter((a) => (a.status || '').toLowerCase() === appFilter.toLowerCase());
+
+  const pendingApps = stats?.pending_applications ?? 0;
+  const upcomingTours = stats?.upcoming_tours ?? 0;
+  const pendingRent = stats?.pending_rent_amount ?? 0;
+
+  const statusBadgeProps = (status) => {
+    if (status === 'approved') return { className: 'badge badge-success' };
+    if (status === 'reviewed') return { className: 'badge badge-ink' };
+    if (status === 'rejected') {
+      return { className: 'badge', style: { background: 'rgba(181,83,60,0.12)', color: 'var(--color-error)' } };
+    }
+    return { className: 'badge badge-warn' };
+  };
+
+  const applicantLocked = selectedApplicant && ['approved', 'rejected'].includes(selectedApplicant.status);
 
   return (
     <div className="module-shell">
@@ -234,6 +390,12 @@ export default function LandlordDashboard() {
           >
             Applications ({applications.length})
           </button>
+          <button
+            className={`pill-tab ${activeTab === 'ledger' ? 'is-active' : ''}`}
+            onClick={() => { setActiveTab('ledger'); loadLedger(); }}
+          >
+            Rent Ledger
+          </button>
         </div>
 
         {/* TAB: Overview */}
@@ -245,58 +407,87 @@ export default function LandlordDashboard() {
                   <TrendingUp size={24} />
                 </div>
                 <p className="stat-card-label">Monthly Revenue</p>
-                <h3 className="stat-card-num">৳1,60,000</h3>
-                <p className="stat-card-sub">+8% vs last month</p>
+                <h3 className="stat-card-num">{stats ? taka(stats.monthly_gross_revenue) : '—'}</h3>
+                <p className="stat-card-sub">{stats ? `${taka(pendingRent)} still pending this month` : 'Loading…'}</p>
               </div>
               <div className="stat-card">
                 <div className="stat-card-icon" style={{ background: 'rgba(76,122,93,0.12)', color: 'var(--color-success)' }}>
                   <DollarSign size={24} />
                 </div>
                 <p className="stat-card-label">Occupied Units</p>
-                <h3 className="stat-card-num">2 / 3</h3>
-                <p className="stat-card-sub">67% occupancy rate</p>
+                <h3 className="stat-card-num">{stats ? `${stats.occupied_units} / ${stats.total_units}` : '—'}</h3>
+                <p className="stat-card-sub">{stats ? `${stats.occupancy_rate_pct}% occupancy rate` : 'Loading…'}</p>
               </div>
               <div className="stat-card">
                 <div className="stat-card-icon" style={{ background: 'rgba(47,93,138,0.1)', color: 'var(--color-blueprint)' }}>
                   <Building2 size={24} />
                 </div>
                 <p className="stat-card-label">Vacant Units</p>
-                <h3 className="stat-card-num">1</h3>
-                <p className="stat-card-sub">Dhanmondi flat</p>
+                <h3 className="stat-card-num">{stats ? stats.vacant_units : '—'}</h3>
+                <p className="stat-card-sub">{stats?.vacant_units ? 'Ready for new tenants' : 'Fully occupied'}</p>
               </div>
               <div className="stat-card">
-                <div className="stat-card-icon" style={{ background: 'rgba(181,83,60,0.1)', color: 'var(--color-error)' }}>
-                  <Wrench size={24} />
+                <div className="stat-card-icon" style={{ background: 'rgba(47,93,138,0.1)', color: 'var(--color-blueprint)' }}>
+                  <Calendar size={24} />
                 </div>
-                <p className="stat-card-label">Maintenance Requests</p>
-                <h3 className="stat-card-num">2</h3>
-                <p className="stat-card-sub">Needs attention</p>
+                <p className="stat-card-label">Upcoming Tours</p>
+                <h3 className="stat-card-num">{stats ? upcomingTours : '—'}</h3>
+                <p className="stat-card-sub">Pending or confirmed</p>
               </div>
             </div>
 
             <h2 className="section-heading" style={{ marginTop: '2rem' }}>Action Needed</h2>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <div
-                className="mod-card mod-card-pad"
-                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}
-                onClick={() => setActiveTab('applications')}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <Users size={20} color="#f59e0b" />
-                  <span style={{ color: 'var(--color-ink)', fontWeight: 500 }}>2 new tenant applications awaiting review</span>
+              {pendingApps > 0 && (
+                <div
+                  className="mod-card mod-card-pad"
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}
+                  onClick={() => { setAppFilter('Pending'); setActiveTab('applications'); }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <Users size={20} color="#f59e0b" />
+                    <span style={{ color: 'var(--color-ink)', fontWeight: 500 }}>
+                      {pendingApps} new tenant application{pendingApps === 1 ? '' : 's'} awaiting review
+                    </span>
+                  </div>
+                  <ChevronRight size={20} color="var(--color-line-strong)" />
                 </div>
-                <ChevronRight size={20} color="var(--color-line-strong)" />
-              </div>
-              <div
-                className="mod-card mod-card-pad"
-                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <Wrench size={20} color="var(--color-error)" />
-                  <span style={{ color: 'var(--color-ink)', fontWeight: 500 }}>2 maintenance requests pending</span>
+              )}
+              {upcomingTours > 0 && (
+                <div
+                  className="mod-card mod-card-pad"
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}
+                  onClick={() => navigate('/tour-requests')}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <Calendar size={20} color="var(--color-blueprint)" />
+                    <span style={{ color: 'var(--color-ink)', fontWeight: 500 }}>
+                      {upcomingTours} upcoming tour{upcomingTours === 1 ? '' : 's'}
+                    </span>
+                  </div>
+                  <ChevronRight size={20} color="var(--color-line-strong)" />
                 </div>
-                <ChevronRight size={20} color="var(--color-line-strong)" />
-              </div>
+              )}
+              {pendingRent > 0 && (
+                <div
+                  className="mod-card mod-card-pad"
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}
+                  onClick={() => { setActiveTab('ledger'); loadLedger(); }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <Wallet size={20} color="var(--color-error)" />
+                    <span style={{ color: 'var(--color-ink)', fontWeight: 500 }}>
+                      {taka(pendingRent)} rent still to collect this month
+                    </span>
+                  </div>
+                  <ChevronRight size={20} color="var(--color-line-strong)" />
+                </div>
+              )}
+              {stats && pendingApps === 0 && upcomingTours === 0 && pendingRent === 0 && (
+                <div className="mod-card mod-card-pad" style={{ color: 'var(--color-charcoal)' }}>
+                  You're all caught up.
+                </div>
+              )}
             </div>
 
             <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '1.5rem' }}>
@@ -350,38 +541,35 @@ export default function LandlordDashboard() {
 
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '12px' }}>
                       <div>
-                        <span style={{ fontFamily: 'var(--font-stencil)', fontSize: '1.3rem', color: 'var(--color-ink)' }}>৳{(property.pricePerMonth ?? 0).toLocaleString()}</span>
+                        <span style={{ fontFamily: 'var(--font-stencil)', fontSize: '1.3rem', color: 'var(--color-ink)' }}>{taka(property.pricePerMonth)}</span>
                         <span style={{ fontSize: '0.85rem', color: 'var(--color-charcoal)' }}>/month</span>
                       </div>
                       <span style={{ fontSize: '0.85rem', color: 'var(--color-charcoal)' }}>{property.bedrooms} Bed • {property.bathrooms} Bath</span>
                     </div>
 
                     <div style={{ display: 'flex', gap: '6px', paddingTop: '0.75rem', borderTop: '1px solid var(--color-line)', justifyContent: 'flex-end' }}>
-                      <button
-                        className="icon-action-btn"
-                        title="Edit"
-                        onClick={() => handleEditClick(property)}
-                      >
+                      <button className="icon-action-btn" title="Edit" onClick={() => handleEditClick(property)}>
                         <Edit3 size={18} /> Edit
                       </button>
                       <button
                         className="icon-action-btn"
-                        title={property.isHidden ? "Show" : "Hide"}
+                        title={property.isHidden ? 'Show' : 'Hide'}
                         onClick={() => toggleVisibility(property.id)}
                       >
-                        {property.isHidden ? <Eye size={18} /> : <EyeOff size={18} />} {property.isHidden ? "Show" : "Hide"}
+                        {property.isHidden ? <Eye size={18} /> : <EyeOff size={18} />} {property.isHidden ? 'Show' : 'Hide'}
                       </button>
-                      <button
-                        className="icon-action-btn danger"
-                        title="Delete"
-                        onClick={() => handleDeleteClick(property)}
-                      >
+                      <button className="icon-action-btn danger" title="Delete" onClick={() => handleDeleteClick(property)}>
                         <Trash2 size={18} /> Delete
                       </button>
                     </div>
                   </div>
                 </div>
               ))}
+              {properties.length === 0 && (
+                <div className="mod-card mod-card-pad" style={{ textAlign: 'center', color: 'var(--color-charcoal)', gridColumn: '1 / -1' }}>
+                  You haven't listed any properties yet.
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -391,7 +579,7 @@ export default function LandlordDashboard() {
           <div>
             <h2 className="section-heading">Tenant Applications</h2>
             <div className="pill-tabs" style={{ marginBottom: '1rem' }}>
-              {['All', 'Pending', 'Reviewed', 'Approved'].map(f => (
+              {['All', 'Pending', 'Reviewed', 'Approved', 'Rejected'].map(f => (
                 <button
                   key={f}
                   className={`pill-tab ${appFilter === f ? 'is-active' : ''}`}
@@ -407,41 +595,38 @@ export default function LandlordDashboard() {
                 <div key={app.id} className="mod-card mod-card-pad" style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '1rem', justifyContent: 'space-between' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: '1 1 200px' }}>
                     <div className="landlord-avatar" style={{ width: '44px', height: '44px', fontSize: '1.2rem' }}>
-                      {app.tenantName?.charAt(0) || 'T'}
+                      {app.tenantName?.charAt(0) || '—'}
                     </div>
                     <div>
-                      <div style={{ fontWeight: 600, color: 'var(--color-ink)' }}>{app.tenantName || 'Unknown Tenant'}</div>
-                      <div style={{ fontSize: '0.85rem', color: 'var(--color-charcoal)' }}>{app.occupation || 'Professional'}</div>
+                      <div style={{ fontWeight: 600, color: 'var(--color-ink)' }}>{app.tenantName || '—'}</div>
+                      <div style={{ fontSize: '0.85rem', color: 'var(--color-charcoal)' }}>{app.occupation || '—'}</div>
                     </div>
                   </div>
 
                   <div style={{ flex: '1 1 150px' }}>
-                    <div style={{ fontSize: '0.9rem', color: 'var(--color-blueprint)' }}>{app.propertyTitle || 'Dhanmondi 2BR'}</div>
+                    <div style={{ fontSize: '0.9rem', color: 'var(--color-blueprint)' }}>{app.propertyTitle || app.propertyAddress || '—'}</div>
                   </div>
 
                   <div style={{ flex: '0 0 auto' }}>
-                    <span className={`badge ${
-                      app.status === 'approved' ? 'badge-success' :
-                      app.status === 'reviewed' ? 'badge-ink' : 'badge-warn'
-                    }`}>
-                      {app.status || 'pending'}
-                    </span>
+                    <span {...statusBadgeProps(app.status)}>{app.status || 'pending'}</span>
                   </div>
 
                   <div style={{ flex: '0 0 auto', fontSize: '0.85rem', color: 'var(--color-charcoal)' }}>
-                    {app.appliedAt || '2h ago'}
+                    {app.appliedAt || '—'}
                   </div>
 
                   <div className="action-btns" style={{ flex: '0 0 auto' }}>
                     <button className="icon-action-btn" onClick={() => handleReviewProfile(app)}>
                       <User size={18} /> Review Profile
                     </button>
-                    {/* Tour times are offered from the dedicated requests
-                        page, which is tenant-initiated. Sending a landlord
-                        to /tour/:propertyId landed them on a page that
-                        correctly refuses to let them request their own flat. */}
-                    <button className="icon-action-btn" onClick={() => navigate('/tour-requests')}>
-                      <Calendar size={18} /> Tour Requests
+                    {/* Proposes 3 tour slots via POST /appointments. Tenant-
+                        initiated requests are still handled on /tour-requests. */}
+                    <button
+                      className="icon-action-btn"
+                      onClick={() => openTourModal(app)}
+                      style={app.status === 'rejected' ? { opacity: 0.4, pointerEvents: 'none' } : {}}
+                    >
+                      <Calendar size={18} /> Propose Tour
                     </button>
                     <button
                       className="icon-action-btn primary"
@@ -461,6 +646,60 @@ export default function LandlordDashboard() {
             </div>
           </div>
         )}
+
+        {/* TAB: Rent Ledger — GET /landlord/rent-ledger */}
+        {activeTab === 'ledger' && (
+          <div>
+            <h2 className="section-heading">Rent Ledger</h2>
+            {!ledger ? (
+              <div className="mod-card mod-card-pad" style={{ textAlign: 'center', color: 'var(--color-charcoal)' }}>
+                Rent ledger unavailable right now.
+              </div>
+            ) : (
+              <>
+                <div className="stat-grid" style={{ marginBottom: '1.5rem' }}>
+                  <div className="stat-card">
+                    <p className="stat-card-label">Receivable This Month</p>
+                    <h3 className="stat-card-num">{taka(ledger.summary?.total_monthly_receivable)}</h3>
+                  </div>
+                  <div className="stat-card">
+                    <p className="stat-card-label">Collected</p>
+                    <h3 className="stat-card-num">{taka(ledger.summary?.total_collected)}</h3>
+                  </div>
+                  <div className="stat-card">
+                    <p className="stat-card-label">Pending</p>
+                    <h3 className="stat-card-num">{taka(ledger.summary?.total_pending)}</h3>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  {(ledger.records ?? []).map((rec) => (
+                    <div
+                      key={rec.contract_id}
+                      className="mod-card mod-card-pad"
+                      style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '1rem', justifyContent: 'space-between' }}
+                    >
+                      <div style={{ flex: '1 1 200px' }}>
+                        <div style={{ fontWeight: 600, color: 'var(--color-ink)' }}>{rec.tenant_name}</div>
+                        <div style={{ fontSize: '0.85rem', color: 'var(--color-blueprint)' }}>{rec.property_address}</div>
+                      </div>
+                      <div style={{ fontFamily: 'var(--font-stencil)', color: 'var(--color-ink)' }}>{taka(rec.amount)}</div>
+                      <div style={{ fontSize: '0.85rem', color: 'var(--color-charcoal)' }}>
+                        Due by {rec.deadline}
+                      </div>
+                      <span className={`badge ${rec.status === 'paid' ? 'badge-success' : 'badge-warn'}`}>{rec.status}</span>
+                    </div>
+                  ))}
+                  {(ledger.records ?? []).length === 0 && (
+                    <div className="mod-card mod-card-pad" style={{ textAlign: 'center', color: 'var(--color-charcoal)' }}>
+                      No active contracts yet.
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
+        )}
       </main>
 
       {/* Delete Modal */}
@@ -473,7 +712,7 @@ export default function LandlordDashboard() {
             <p style={{ color: 'var(--color-charcoal)', fontSize: '0.95rem', textAlign: 'center' }}>
               Are you sure you want to delete <strong>{propertyToDelete?.title}</strong>?
             </p>
-            <p style={{ color: '#8a8f85', fontSize: '0.82rem', textAlign: 'center', marginBottom: '1.5rem' }}>This action cannot be undone.</p>
+            <p style={{ color: '#8a8f85', fontSize: '0.82rem', textAlign: 'center', marginBottom: '1.5rem' }}>The listing will be archived and removed from search.</p>
             <div style={{ display: 'flex', gap: '10px', marginTop: '0.5rem' }}>
               <button className="btn btn-ghost" style={{ flex: 1 }} onClick={() => setShowDeleteModal(false)}>Cancel</button>
               <button className="btn btn-dark" style={{ flex: 1, background: 'var(--color-error)', borderColor: 'var(--color-error)' }} onClick={confirmDelete}>Delete Listing</button>
@@ -487,14 +726,14 @@ export default function LandlordDashboard() {
         <Modal isOpen={showProfileModal} onClose={() => setShowProfileModal(false)} title="Applicant Profile" size="lg">
           <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center', marginBottom: '1.5rem' }}>
             <div className="landlord-avatar" style={{ width: '64px', height: '64px', background: 'var(--color-ink)', color: '#fff', border: '2px solid var(--color-brass)', fontSize: '1.8rem' }}>
-              {selectedApplicant.tenantName?.charAt(0) || 'T'}
+              {selectedApplicant.tenantName?.charAt(0) || '—'}
             </div>
             <div>
               <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.3rem', margin: '0 0 4px 0', color: 'var(--color-ink)' }}>
-                {selectedApplicant.tenantName || 'Tahmina B.'}
+                {selectedApplicant.tenantName || '—'}
               </h2>
               <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.85rem', color: 'var(--color-blueprint)' }}>
-                {selectedApplicant.email || 'tahmina@example.com'} • {selectedApplicant.phone || '01712345678'}
+                {[selectedApplicant.email, selectedApplicant.phone].filter(Boolean).join(' • ') || '—'}
               </div>
             </div>
           </div>
@@ -503,24 +742,31 @@ export default function LandlordDashboard() {
             <div className="mod-card mod-card-pad">
               <span className="mod-label">Occupation & Income</span>
               <div style={{ fontWeight: 500, color: 'var(--color-ink)', marginTop: '4px' }}>
-                {selectedApplicant.occupation || 'Software Engineer'} • ৳{selectedApplicant.monthlyIncome?.toLocaleString() || '55,000'}/mo
+                {selectedApplicant.occupation || '—'} • {selectedApplicant.monthlyIncome != null ? `${taka(selectedApplicant.monthlyIncome)}/mo` : '—'}
               </div>
             </div>
             <div className="mod-card mod-card-pad">
               <span className="mod-label">Family Size</span>
               <div style={{ fontWeight: 500, color: 'var(--color-ink)', marginTop: '4px' }}>
-                {selectedApplicant.familySize || 2} members
+                {selectedApplicant.familySize != null ? `${selectedApplicant.familySize} members` : '—'}
               </div>
             </div>
           </div>
 
           <span className="mod-label">Cover Letter</span>
           <blockquote style={{ background: 'var(--color-paper-dim)', borderLeft: '3px solid var(--color-brass)', padding: '12px 16px', borderRadius: 'var(--radius-sm)', fontStyle: 'italic', color: 'var(--color-charcoal)', fontSize: '0.9rem', margin: '0.5rem 0 1.5rem 0' }}>
-            {selectedApplicant.message || 'I am very interested in this apartment. We are a small, quiet family and have stable income. We can move in by next month.'}
+            {selectedApplicant.message || 'The applicant did not include a message.'}
           </blockquote>
 
           <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', paddingTop: '1rem', borderTop: '1px solid var(--color-line)' }}>
-            <button className="btn btn-ghost" style={{ color: 'var(--color-error)', borderColor: 'var(--color-error)' }} onClick={() => setShowProfileModal(false)}>Decline</button>
+            <button
+              className="btn btn-ghost"
+              style={{ color: 'var(--color-error)', borderColor: 'var(--color-error)' }}
+              disabled={decisionBusy || applicantLocked}
+              onClick={handleDeclineApplicant}
+            >
+              Decline
+            </button>
             <button
               className="btn btn-ghost"
               style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
@@ -529,7 +775,51 @@ export default function LandlordDashboard() {
               <MessageSquare size={15} />
               Message
             </button>
-            <button className="btn btn-primary" onClick={handleApproveApplicant}>Approve Applicant</button>
+            <button
+              className="btn btn-primary"
+              disabled={decisionBusy || applicantLocked}
+              onClick={handleApproveApplicant}
+            >
+              {selectedApplicant.status === 'approved' ? 'Approved' : decisionBusy ? 'Working…' : 'Approve Applicant'}
+            </button>
+          </div>
+        </Modal>
+      )}
+
+      {/* Propose Tour Modal */}
+      {tourTarget && (
+        <Modal isOpen onClose={() => setTourTarget(null)} title="Propose Tour Times" size="md">
+          <p style={{ color: 'var(--color-charcoal)', fontSize: '0.9rem', marginTop: 0 }}>
+            Offer {tourTarget.tenantName || 'the tenant'} three different slots within the next 14 days. They'll confirm one.
+          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', margin: '1rem 0 1.5rem' }}>
+            {tourSlots.map((slot, i) => (
+              <div key={i} style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                <span className="mod-label" style={{ minWidth: 52 }}>Slot {i + 1}</span>
+                <input
+                  type="date"
+                  className="mod-input"
+                  min={todayISO}
+                  max={maxTourISO}
+                  value={slot.appointment_date}
+                  onChange={(e) => updateSlot(i, 'appointment_date', e.target.value)}
+                  style={{ flex: 1 }}
+                />
+                <input
+                  type="time"
+                  className="mod-input"
+                  value={slot.appointment_time}
+                  onChange={(e) => updateSlot(i, 'appointment_time', e.target.value)}
+                  style={{ flex: 1 }}
+                />
+              </div>
+            ))}
+          </div>
+          <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+            <button className="btn btn-ghost" onClick={() => setTourTarget(null)}>Cancel</button>
+            <button className="btn btn-primary" disabled={tourBusy} onClick={submitTourSlots}>
+              {tourBusy ? 'Sending…' : 'Send Slots'}
+            </button>
           </div>
         </Modal>
       )}
