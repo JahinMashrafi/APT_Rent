@@ -178,16 +178,22 @@ export const landlord = {
 export const admin = {
   stats: () => apiClient.get("/admin/stats").then((r) => r.data),
   verifications: () => apiClient.get("/admin/verifications").then((r) => r.data),
-  approveVerification: (userId) =>
-    apiClient.patch(`/admin/verifications/${userId}/approve`).then((r) => r.data),
-  rejectVerification: (userId, rejectionReason) =>
+  approveVerification: (id) =>
+    apiClient.patch(`/admin/verifications/${id}/approve`).then((r) => r.data),
+  rejectVerification: (id, rejection_reason) =>
     apiClient
-      .patch(`/admin/verifications/${userId}/reject`, { rejection_reason: rejectionReason })
+      .patch(`/admin/verifications/${id}/reject`, { rejection_reason })
       .then((r) => r.data),
-  createDispute: (payload) => apiClient.post("/admin/disputes", payload).then((r) => r.data),
-  resolveDispute: (disputeId, resolutionNotes) =>
+  users: () => apiClient.get("/admin/users").then((r) => r.data),
+  createUser: (payload) =>
+    apiClient.post("/admin/users", payload).then((r) => r.data),
+  toggleAdminRole: (id) =>
+    apiClient.patch(`/admin/users/${id}/admin`).then((r) => r.data),
+  toggleBanUser: (id) =>
+    apiClient.patch(`/admin/users/${id}/ban`).then((r) => r.data),
+  resolveDispute: (id, resolution_notes) =>
     apiClient
-      .patch(`/admin/disputes/${disputeId}/resolve`, { resolution_notes: resolutionNotes })
+      .patch(`/admin/disputes/${id}/resolve`, { resolution_notes })
       .then((r) => r.data),
 };
 

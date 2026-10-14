@@ -8,7 +8,10 @@ const getLandlordProperties = async (req, res) => {
       `SELECT p.*,
               u.user_id AS owner_user_id, u.name AS owner_name,
               u.is_verified AS owner_is_verified,
-              COALESCE(r.avg_rating, 0)::float AS owner_rating,
+             tu.user_id AS tenant_user_id, tu.name AS tenant_name,
+             (SELECT COUNT(*)::int FROM appointments ap
+              WHERE ap.property_id = p.property_id AND ap.status = 'pending') AS pending_tour_requests,
+             COALESCE(r.avg_rating, 0)::float AS owner_rating,
               COALESCE(
                 (SELECT array_agg(pp.photo_url ORDER BY pp.photo_id)
                  FROM property_photos pp
@@ -17,6 +20,7 @@ const getLandlordProperties = async (req, res) => {
               ) AS photos
        FROM properties p
        JOIN users u ON u.user_id = p.owner_id
+       LEFT JOIN users tu ON tu.user_id = p.tenant_id
        LEFT JOIN (
          SELECT reviewed_user_id, AVG(rating) AS avg_rating
          FROM reviews
@@ -51,6 +55,11 @@ const getLandlordProperties = async (req, res) => {
       nearest_transport: row.nearest_transport,
       created_at: row.created_at,
       photos: row.photos,
+      tenant_id: row.tenant_id,
+      active_tenant: row.tenant_user_id
+        ? { user_id: row.tenant_user_id, name: row.tenant_name }
+        : null,
+      pending_tour_requests: row.pending_tour_requests,
       owner: {
         user_id: row.owner_user_id,
         name: row.owner_name,

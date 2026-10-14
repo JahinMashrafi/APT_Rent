@@ -1,4 +1,5 @@
 const jwtService = require("../config/JWT.js");
+const pool = require("../config/db.js");
 
 const requireAuth = async (req, res, next) => {
   try {
@@ -46,14 +47,34 @@ const requireTenant = (req, res, next) => {
   next();
 };
 
-const requireAdmin = (req, res, next) => {
-  if (!req.user || !req.user.is_admin) {
+const requireAdmin = async (req, res, next) => {
+  if (!req.user?.user_id) {
     return res.status(403).json({
       status: "error",
       message: "Access denied. Admins only",
     });
   }
-  next();
+
+  try {
+    // Check the current database value instead of trusting a potentially
+    // stale JWT claim after an account is promoted or demoted.
+    const result = await pool.query(
+      "SELECT is_admin FROM users WHERE user_id = $1",
+      [req.user.user_id],
+    );
+
+    if (!result.rows[0]?.is_admin) {
+      return res.status(403).json({
+        status: "error",
+        message: "Access denied. Admins only",
+      });
+    }
+
+    next();
+  } catch (error) {
+    console.error("Admin authorization lookup error", error.message);
+    next(error);
+  }
 };
 
 module.exports = { requireAuth, requireLandlord, requireTenant, requireAdmin };
