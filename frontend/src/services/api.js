@@ -191,6 +191,12 @@ export const landlord = {
 // ---------------------------------------------------------------------------
 export const admin = {
   stats: () => apiClient.get("/admin/stats").then((r) => r.data),
+  users: () => apiClient.get("/admin/users").then((r) => r.data),
+  createUser: (payload) => apiClient.post("/admin/users", payload).then((r) => r.data),
+  toggleAdminRole: (userId) =>
+    apiClient.patch(`/admin/users/${userId}/admin`).then((r) => r.data),
+  toggleBanUser: (userId) =>
+    apiClient.patch(`/admin/users/${userId}/ban`).then((r) => r.data),
   verifications: () => apiClient.get("/admin/verifications").then((r) => r.data),
   approveVerification: (userId) =>
     apiClient.patch(`/admin/verifications/${userId}/approve`).then((r) => r.data),
