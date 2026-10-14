@@ -66,6 +66,25 @@ function timeAgo(iso) {
   return `${Math.floor(h / 24)}d ago`;
 }
 
+function notificationDestination(notification, role) {
+  const link = notification?.link;
+  if (!link || !link.startsWith("/")) {
+    return role === "landlord" ? "/landlord" : "/inbox";
+  }
+
+  if (link === "/notifications") return role === "landlord" ? "/landlord" : "/inbox";
+  if (link.startsWith("/applications/")) return "/applications";
+  if (link === "/appointments" || link.startsWith("/appointments/")) {
+    return role === "landlord" ? "/tour-requests" : "/dashboard";
+  }
+  if (link.startsWith("/landlord/")) return "/landlord";
+  if (link.startsWith("/admin/")) return "/admin";
+  if (link.startsWith("/disputes/")) return "/admin";
+  if (link.startsWith("/users/")) return "/profile";
+  if (link.startsWith("/conversations/")) return "/inbox";
+  return link;
+}
+
 export default function AppNavbar() {
   const { role, currentUser, notifications, unreadCount, messageUnreadCount, switchRole, markNotificationRead, markAllNotificationsRead, clearSession } = useApp();
   const isDualRole = Boolean(currentUser?.isLandlord && currentUser?.isTenant);
@@ -213,7 +232,7 @@ export default function AppNavbar() {
                           onClick={() => {
                             markNotificationRead(n.id);
                             setNotifOpen(false);
-                            navigate(n.link);
+                            navigate(notificationDestination(n, role));
                           }}
                         >
                           {!n.isRead && <span className="notif-dot" />}

@@ -62,6 +62,9 @@ function normalizeLegacy(status, body) {
     if (status === 403 && /session expired|invalid token|please log ?in|log in again/i.test(message || "")) finalStatus = 401;
     if (status === 422 && !BUSINESS_RULE_RE.test(message || "")) finalStatus = 400;
     if (finalStatus === 400) details = detailsFromMessage(message);
+    if (typeof b.details === "string" && b.details) {
+      details.push({ field: null, issue: b.details });
+    }
     if (Array.isArray(b.allowedFields)) details.push({ field: null, issue: `Allowed fields: ${b.allowedFields.join(", ")}` });
   }
 

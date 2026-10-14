@@ -16,7 +16,7 @@
  * ============================================================================
  */
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 // Shape of an "empty" filter set — kept in one place so it's easy to extend.
 const EMPTY_FILTERS = {
@@ -30,10 +30,25 @@ const EMPTY_FILTERS = {
   priceMax: "",
 };
 
-export default function SearchFilterBar({ onSearch }) {
-  const [searchText, setSearchText] = useState("");
-  const [filters, setFilters] = useState(EMPTY_FILTERS);
+export default function SearchFilterBar({ onSearch, liveSearch = false, initialFilters = EMPTY_FILTERS }) {
+  const [searchText, setSearchText] = useState(initialFilters.searchText ?? "");
+  const [filters, setFilters] = useState(initialFilters);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const skipInitialLiveSearch = useRef(true);
+
+  useEffect(() => {
+    if (!liveSearch) return undefined;
+    if (skipInitialLiveSearch.current) {
+      skipInitialLiveSearch.current = false;
+      return undefined;
+    }
+
+    const timer = setTimeout(() => {
+      onSearch?.({ searchText, ...filters });
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [filters, liveSearch, onSearch, searchText]);
 
   // --- Generic handler for all filter form fields ---------------------------
   function updateFilter(field, value) {

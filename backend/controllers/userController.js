@@ -469,6 +469,26 @@ const getProfileDetail = async (req, res) => {
   });
 };
 
+const uploadAvatar = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ success: false, message: "Profile picture is required" });
+    }
+    const userId = req.user.user_id;
+    const ext = req.file.originalname.split(".").pop();
+    const path = `users/${userId}/profile-${Date.now()}.${ext}`;
+    const { url } = await uploadToBucket("avatars", path, req.file.buffer, req.file.mimetype);
+    await pool.query(
+      "UPDATE users SET profile_picture_url = $1, updated_at = NOW() WHERE user_id = $2",
+      [url, userId],
+    );
+    return res.status(200).json({ profile_picture_url: url });
+  } catch (err) {
+    console.error("uploadAvatar error: ", err);
+    return res.status(500).json({ success: false, message: "Failed to upload profile picture" });
+  }
+};
+
 // GET /users/:id  — public profile
 const getPublicProfile = async (req, res) => {
   try {
@@ -513,6 +533,7 @@ module.exports = {
   getMe,
   updateMe,
   uploadDocuments,
+  uploadAvatar,
   uploadAvatarImage,
   removeAvatar,
   getProfileDetail,
