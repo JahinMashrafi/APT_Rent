@@ -30,6 +30,15 @@ export const users = {
         headers: { "Content-Type": "multipart/form-data" },
       })
       .then((r) => r.data),
+  uploadAvatar: (file) => {
+    const formData = new FormData();
+    formData.append("profile_picture", file);
+    return apiClient
+      .post("/users/me/avatar", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      })
+      .then((r) => r.data);
+  },
   getPublicProfile: (userId) => apiClient.get(`/users/${userId}`).then((r) => r.data),
 };
 

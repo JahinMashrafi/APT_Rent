@@ -50,6 +50,8 @@ export default function Contracts() {
   const [negotiation, setNegotiation] = useState({});
   const [negotiationError, setNegotiationError] = useState({});
   const [acceptError, setAcceptError] = useState({});
+  const [signatureBusy, setSignatureBusy] = useState({});
+  const [signatureError, setSignatureError] = useState({});
 
   useEffect(() => {
     let cancelled = false;
@@ -144,6 +146,32 @@ export default function Contracts() {
     }
   };
 
+  const uploadSignature = (contract) => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "image/png,image/jpeg";
+    input.onchange = () => {
+      const file = input.files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = async () => {
+        try {
+          setSignatureBusy((prev) => ({ ...prev, [contract.contract_id]: true }));
+          setSignatureError((prev) => ({ ...prev, [contract.contract_id]: "" }));
+          const updated = await api.contracts.sign(contract.contract_id, reader.result);
+          setDetails((prev) => ({ ...prev, [contract.contract_id]: { ...prev[contract.contract_id], ...updated } }));
+          setContracts((prev) => prev.map((item) => item.contract_id === contract.contract_id ? { ...item, status: updated.status } : item));
+        } catch (error) {
+          setSignatureError((prev) => ({ ...prev, [contract.contract_id]: error.message || "Could not upload signature." }));
+        } finally {
+          setSignatureBusy((prev) => ({ ...prev, [contract.contract_id]: false }));
+        }
+      };
+      reader.readAsDataURL(file);
+    };
+    input.click();
+  };
+
   return (
     <div className="module-shell">
       <AppNavbar />
@@ -186,6 +214,7 @@ export default function Contracts() {
               const isOpen = openId === contract.contract_id;
               const detail = details[contract.contract_id];
               const other = counterparty(contract);
+              const isOwner = String(contract.owner?.user_id) === String(currentUser?.id);
               // These two fields come straight off the list row — see
               // "transaction id / payment status yes-no" in the ask.
               const transactionId = contract.transaction_id;
@@ -263,7 +292,7 @@ export default function Contracts() {
                             ))}
                           </div>
 
-                          {String(contract.tenant?.user_id) === String(currentUser?.id) && contract.status === "draft" && (
+                          {contract.status === "draft" && (!isOwner || detail.negotiation_status === "proposed") && (
                             <form
                               onSubmit={(event) => {
                                 event.preventDefault();
@@ -284,19 +313,35 @@ export default function Contracts() {
                                   <input type="number" min="0" value={negotiation[contract.contract_id]?.deposit ?? contract.deposit ?? ""} onChange={(event) => setNegotiation((prev) => ({ ...prev, [contract.contract_id]: { ...prev[contract.contract_id], deposit: event.target.value } }))} />
                                 </label>
                               </div>
-                              <textarea placeholder="Optional message to the landlord" value={negotiation[contract.contract_id]?.message ?? ""} onChange={(event) => setNegotiation((prev) => ({ ...prev, [contract.contract_id]: { ...prev[contract.contract_id], message: event.target.value } }))} style={{ width: "100%", marginTop: "0.75rem", minHeight: "70px" }} />
-                              <button type="submit" className="btn btn-primary" style={{ marginTop: "0.75rem" }}>Send bargaining proposal</button>
+                              <textarea placeholder={`Optional message to the ${isOwner ? "tenant" : "landlord"}`} value={negotiation[contract.contract_id]?.message ?? ""} onChange={(event) => setNegotiation((prev) => ({ ...prev, [contract.contract_id]: { ...prev[contract.contract_id], message: event.target.value } }))} style={{ width: "100%", marginTop: "0.75rem", minHeight: "70px" }} />
+                              <button type="submit" className="btn btn-primary" style={{ marginTop: "0.75rem" }}>{isOwner ? "Send counter-offer" : "Send bargaining proposal"}</button>
                               {negotiationError[contract.contract_id] && <p role="alert" style={{ color: "var(--color-error)", marginTop: "0.5rem" }}>{negotiationError[contract.contract_id]}</p>}
                               {detail.negotiation_status === "proposed" && <p style={{ color: "var(--color-blueprint)", marginTop: "0.5rem" }}>Your proposed terms were sent to the landlord.</p>}
-                              {detail.negotiation_status !== "accepted" && (
+                              {detail.negotiation_status === "proposed" && (
                                 <button type="button" className="btn btn-primary" onClick={() => acceptContract(contract)} style={{ marginTop: "0.75rem" }}>
-                                  Accept these lease terms
+                                  Accept {isOwner ? "tenant's proposal" : "these lease terms"}
                                 </button>
                               )}
-                              {detail.negotiation_status === "accepted" && <p style={{ color: "var(--color-success)", marginTop: "0.5rem" }}>Lease accepted. The landlord has been notified.</p>}
+
                               {acceptError[contract.contract_id] && <p role="alert" style={{ color: "var(--color-error)", marginTop: "0.5rem" }}>{acceptError[contract.contract_id]}</p>}
                             </form>
                           )}
+
+                          {detail.negotiation_status === "accepted" && (
+                            <div style={{ borderTop: "1px solid var(--color-line)", paddingTop: "1rem", marginBottom: "1rem" }}>
+                              <strong style={{ display: "block", marginBottom: "0.5rem", color: "var(--color-ink)" }}>Sign final lease</strong>
+                              <p style={{ color: "var(--color-charcoal)", fontSize: "0.85rem" }}>
+                                Negotiation is accepted. Upload your signature image to complete the lease.
+                              </p>
+                              {((isOwner && !detail.owner_signature_url) || (!isOwner && !detail.tenant_signature_url)) && (
+                                <button type="button" className="btn btn-primary" disabled={signatureBusy[contract.contract_id]} onClick={() => uploadSignature(contract)}>
+                                  {signatureBusy[contract.contract_id] ? "Uploading…" : "Upload signature"}
+                                </button>
+                              )}
+                              {signatureError[contract.contract_id] && <p role="alert" style={{ color: "var(--color-error)" }}>{signatureError[contract.contract_id]}</p>}
+                            </div>
+                          )}
+                          {detail.negotiation_status === "accepted" && <p style={{ color: "var(--color-success)", marginTop: "0.5rem" }}>Lease accepted. Both parties can now sign.</p>}
 
                           {detail.terms_and_conditions && (
                             <div style={{ marginBottom: "1rem" }}>

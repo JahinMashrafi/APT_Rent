@@ -9,6 +9,7 @@ const {
   getMe,
   updateMe,
   uploadDocuments,
+  uploadAvatar,
   getPublicProfile,
 } = require("../controllers/userController");
 
@@ -27,6 +28,7 @@ router.post(
   ]),
   uploadDocuments,
 );
+router.post("/me/avatar", requireAuth, upload.single("profile_picture"), uploadAvatar);
 
 router.get("/", getUsers);
 router.get("/:id", getPublicProfile);

@@ -1,7 +1,8 @@
 import AppNavbar from "../components/AppNavbar.jsx";
 import PropertyMap from "../components/PropertyMap.jsx";
-import NewsFeed from "../components/NewsFeed.jsx";
+import SearchFilterBar from "../components/SearchFilterBar.jsx";
 import useAuth from "../hooks/useAuth.js";
+import { useNavigate } from "react-router-dom";
 
 /**
  * ============================================================================
@@ -21,7 +22,36 @@ import useAuth from "../hooks/useAuth.js";
 export default function Home() {
   // isAuthenticated flips the whole page between the two experiences.
   // See src/hooks/useAuth.js — swap its internals for your real auth check.
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isLoading } = useAuth();
+  const navigate = useNavigate();
+
+  function handleSearch(filters) {
+    const params = new URLSearchParams();
+    const mappings = {
+      searchText: "q",
+      city: "city",
+      thana: "thana",
+      postCode: "post_code",
+      rooms: "bedroom",
+      bathrooms: "bathroom",
+      priceMin: "min_rate",
+      priceMax: "max_rate",
+    };
+
+    Object.entries(mappings).forEach(([field, parameter]) => {
+      const value = filters?.[field];
+      if (typeof value === "string" ? value.trim() : value != null) {
+        const normalized = typeof value === "string" ? value.trim() : value;
+        if (normalized) params.set(parameter, normalized);
+      }
+    });
+    if (filters?.hasBalcony && filters.hasBalcony !== "any") {
+      params.set("has_balcony", filters.hasBalcony);
+    }
+
+    const query = params.toString();
+    navigate(query ? `/dashboard?${query}` : "/dashboard");
+  }
 
   // Avoid a flash of the wrong UI while we're still checking auth state.
   if (isLoading) {
@@ -54,29 +84,7 @@ export default function Home() {
               <em>Find Your Next Home</em>
             </h1>
 
-            <form
-              className="search-tag"
-              role="search"
-              aria-label="Search apartments"
-            >
-              <span className="search-icon">
-                <img
-                  src="/assets/icons/search.svg"
-                  alt=""
-                  width="16"
-                  height="16"
-                />
-              </span>
-              <span className="search-tag-seam" aria-hidden="true"></span>
-              <input
-                type="search"
-                placeholder="Search by area, e.g. Gulshan, Dhanmondi..."
-                aria-label="Search apartments by area"
-              />
-              <button type="submit" className="btn btn-primary">
-                Search
-              </button>
-            </form>
+            <SearchFilterBar onSearch={handleSearch} />
             <p className="hero-note">
               Sign in to unlock live listings, filters, and saved searches.
             </p>

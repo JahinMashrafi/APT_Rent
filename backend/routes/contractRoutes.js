@@ -14,8 +14,8 @@ const {
 router.post("/", requireAuth, requireLandlord, createContract);
 router.get("/", requireAuth, listContracts);
 router.get("/:id", requireAuth, getContractById);
-router.patch("/:id/negotiate", requireAuth, requireTenant, negotiateContract);
-router.patch("/:id/accept", requireAuth, requireTenant, acceptContract);
+router.patch("/:id/negotiate", requireAuth, negotiateContract);
+router.patch("/:id/accept", requireAuth, acceptContract);
 router.patch("/:id/sign", requireAuth, signContract);
 router.post("/:id/deposit", requireAuth, requireTenant, payDeposit);
 
