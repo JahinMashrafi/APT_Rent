@@ -1,47 +1,71 @@
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import AppNavbar from "../components/AppNavbar.jsx";
-import { fetchCurrentUser, logoutUser } from "../utils/auth";
+import VerificationCard from "../components/profile/VerificationCard.jsx";
+import { logoutUser, normalizeUserPayload } from "../utils/auth";
+import { OCCUPATIONS, takesInstitution, takesWorkplace, workplaceLabel } from "../utils/occupations";
 import { useApp } from "../context/AppContext.jsx";
 import api from "../services/api";
+
+const AVATAR_TYPES = ["image/jpeg", "image/png", "image/webp"];
+const AVATAR_MAX_BYTES = 2 * 1024 * 1024;
 
 const toFormState = (user) => ({
   name: user?.name ?? "",
   email: user?.email ?? "",
-  contact_number: user?.contact_number ?? user?.phone ?? "",
+  contact_number: user?.contact_number ?? "",
   address: user?.address ?? "",
   occupation: user?.occupation ?? "",
-  profile_picture_url: user?.profile_picture_url ?? user?.profilePictureUrl ?? "",
+  institution_name: user?.institution_name ?? "",
+  workplace_name: user?.workplace_name ?? "",
 });
 
+const errorMessage = (err, fallback) => err?.details?.[0]?.issue || err?.message || fallback;
+
 export default function Profile() {
-  const { clearSession } = useApp();
+  const { role, clearSession, applyAuthenticatedUser, switchRole } = useApp();
   const navigate = useNavigate();
+  const fileInputRef = useRef(null);
+
+  const [me, setMe] = useState(null);
   const [form, setForm] = useState(() => toFormState(null));
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [avatarBusy, setAvatarBusy] = useState(false);
+  const [avatarError, setAvatarError] = useState("");
+
+  // Keep the navbar (which reads the app context) in step with what was just saved,
+  // without disturbing the role the person is currently viewing the app as.
+  const syncContext = useCallback(
+    (data) => {
+      const currentRole = role;
+      applyAuthenticatedUser(normalizeUserPayload(data));
+      switchRole(currentRole);
+    },
+    [role, applyAuthenticatedUser, switchRole],
+  );
 
   useEffect(() => {
-    const loadProfile = async () => {
-      try {
-        setLoading(true);
-        const authUser = await fetchCurrentUser();
-        if (!authUser?.id) {
-          navigate("/login");
-          return;
-        }
-        // fetchCurrentUser already hits GET /users/me; reuse its shape.
-        setForm(toFormState(authUser));
-      } catch (loadError) {
-        setError(loadError.message || "Failed to load profile.");
-      } finally {
-        setLoading(false);
-      }
+    let alive = true;
+    api.users
+      .getMe()
+      .then((data) => {
+        if (!alive) return;
+        setMe(data);
+        setForm(toFormState(data));
+      })
+      .catch((err) => {
+        if (!alive) return;
+        const status = err?.status ?? err?.response?.status;
+        if (status === 401 || status === 403) navigate("/login");
+        else setError(errorMessage(err, "Failed to load profile."));
+      })
+      .finally(() => alive && setLoading(false));
+    return () => {
+      alive = false;
     };
-
-    loadProfile();
   }, [navigate]);
 
   const handleInputChange = (event) => {
@@ -51,19 +75,74 @@ export default function Profile() {
 
   const handleUpdateProfile = async (event) => {
     event.preventDefault();
-
     try {
       setSaving(true);
       setError("");
       setSuccess("");
-      // PATCH /users/me — the spec's own profile-mutation endpoint.
-      const updated = await api.users.updateMe(form);
+      const payload = {
+        name: form.name,
+        contact_number: form.contact_number,
+        address: form.address,
+        occupation: form.occupation,
+      };
+      if (takesInstitution(form.occupation)) payload.institution_name = form.institution_name;
+      if (takesWorkplace(form.occupation)) payload.workplace_name = form.workplace_name;
+
+      const updated = await api.users.updateMe(payload);
+      setMe(updated);
       setForm(toFormState(updated));
+      syncContext(updated);
       setSuccess("Profile updated successfully.");
-    } catch (updateError) {
-      setError(updateError.message || "Failed to update profile.");
+    } catch (err) {
+      setError(errorMessage(err, "Failed to update profile."));
     } finally {
       setSaving(false);
+    }
+  };
+
+  const applyAvatar = (profile_picture_url) => {
+    const next = { ...me, profile_picture_url };
+    setMe(next);
+    syncContext(next);
+  };
+
+  const handleAvatarPick = async (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = ""; // lets the same file be chosen again later
+    if (!file) return;
+    setAvatarError("");
+    if (!AVATAR_TYPES.includes(file.type)) {
+      setAvatarError("Please choose a JPG, PNG or WebP image.");
+      return;
+    }
+    if (file.size > AVATAR_MAX_BYTES) {
+      setAvatarError("The image must be 2 MB or smaller.");
+      return;
+    }
+    try {
+      setAvatarBusy(true);
+      const body = new FormData();
+      body.append("avatar", file);
+      const result = await api.users.uploadAvatar(body);
+      applyAvatar(result.profile_picture_url);
+    } catch (err) {
+      setAvatarError(errorMessage(err, "Could not upload the picture."));
+    } finally {
+      setAvatarBusy(false);
+    }
+  };
+
+  const handleAvatarRemove = async () => {
+    if (!window.confirm("Remove your profile picture?")) return;
+    try {
+      setAvatarBusy(true);
+      setAvatarError("");
+      await api.users.removeAvatar();
+      applyAvatar(null);
+    } catch (err) {
+      setAvatarError(errorMessage(err, "Could not remove the picture."));
+    } finally {
+      setAvatarBusy(false);
     }
   };
 
@@ -77,6 +156,7 @@ export default function Profile() {
   };
 
   const avatarInitial = (form.name?.trim()?.[0] || "U").toUpperCase();
+  const pictureUrl = me?.profile_picture_url;
 
   return (
     <div className="page-shell">
@@ -85,14 +165,37 @@ export default function Profile() {
         <div className="profile-container">
           <div className="profile-card">
             <div className="profile-header">
-              {form.profile_picture_url ? (
-                <img src={form.profile_picture_url} alt="Profile" className="profile-avatar" referrerPolicy="no-referrer" />
+              {pictureUrl ? (
+                <img src={pictureUrl} alt="Profile" className="profile-avatar profile-avatar-lg" referrerPolicy="no-referrer" />
               ) : (
-                <span className="profile-avatar">{avatarInitial}</span>
+                <span className="profile-avatar profile-avatar-lg">{avatarInitial}</span>
               )}
-              <div>
+              <div className="profile-header-text">
                 <h1>My Profile</h1>
                 <p>View and manage your account information.</p>
+                <div className="avatar-actions">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    onChange={handleAvatarPick}
+                    hidden
+                  />
+                  <button
+                    type="button"
+                    className="btn btn-ghost btn-sm"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={avatarBusy || loading}
+                  >
+                    {avatarBusy ? "Working..." : pictureUrl ? "Change photo" : "Upload photo"}
+                  </button>
+                  {pictureUrl ? (
+                    <button type="button" className="btn btn-ghost btn-sm" onClick={handleAvatarRemove} disabled={avatarBusy}>
+                      Remove
+                    </button>
+                  ) : null}
+                </div>
+                {avatarError ? <p className="profile-error">{avatarError}</p> : null}
               </div>
             </div>
 
@@ -107,46 +210,78 @@ export default function Profile() {
               </label>
               <label className="field">
                 <span>Email</span>
-                <input type="email" name="email" value={form.email} onChange={handleInputChange} required />
+                <input type="email" name="email" value={form.email} readOnly disabled />
+                <small className="field-hint">Email can't be changed here.</small>
               </label>
               <label className="field">
                 <span>Contact Number</span>
-                <input type="text" name="contact_number" value={form.contact_number} onChange={handleInputChange} />
+                <input type="text" name="contact_number" value={form.contact_number} onChange={handleInputChange} required />
               </label>
               <label className="field">
                 <span>Occupation</span>
                 <select name="occupation" value={form.occupation} onChange={handleInputChange}>
                   <option value="">Select occupation</option>
-                  <option value="student">Student</option>
-                  <option value="service">Service holder</option>
-                  <option value="business">Businessman</option>
+                  {OCCUPATIONS.map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
                 </select>
               </label>
-              <label className="field">
+
+              {takesInstitution(form.occupation) ? (
+                <label className="field">
+                  <span>Institution name</span>
+                  <input
+                    type="text"
+                    name="institution_name"
+                    value={form.institution_name}
+                    onChange={handleInputChange}
+                    placeholder="e.g. University of Dhaka"
+                  />
+                </label>
+              ) : null}
+              {takesWorkplace(form.occupation) ? (
+                <label className="field">
+                  <span>{workplaceLabel(form.occupation)}</span>
+                  <input
+                    type="text"
+                    name="workplace_name"
+                    value={form.workplace_name}
+                    onChange={handleInputChange}
+                    placeholder={form.occupation === "businessman" ? "Your business name" : "Where you work"}
+                  />
+                </label>
+              ) : null}
+
+              <label className="field field-wide">
                 <span>Address</span>
                 <input type="text" name="address" value={form.address} onChange={handleInputChange} />
-              </label>
-              <label className="field">
-                <span>Profile Photo URL</span>
-                <input
-                  type="url"
-                  name="profile_picture_url"
-                  value={form.profile_picture_url}
-                  onChange={handleInputChange}
-                  placeholder="https://example.com/my-photo.jpg"
-                />
               </label>
 
               <div className="profile-actions">
                 <button type="submit" className="btn btn-primary" disabled={saving || loading}>
                   {saving ? "Saving..." : "Save changes"}
                 </button>
+                {me ? (
+                  <Link className="btn btn-ghost" to={`/users/${me.user_id}`}>
+                    View public profile
+                  </Link>
+                ) : null}
                 <button type="button" className="btn btn-ghost" onClick={handleLogout}>
                   Logout
                 </button>
               </div>
             </form>
           </div>
+
+          {me ? (
+            <VerificationCard
+              me={me}
+              occupationChanged={form.occupation !== (me.occupation ?? "")}
+              onUpdated={(user) => setMe((prev) => ({ ...prev, ...user }))}
+            />
+          ) : null}
         </div>
       </section>
     </div>

@@ -163,8 +163,8 @@ export default function Register() {
                   <select id="occupation" name="occupation" value={occupation} onChange={(e) => setOccupation(e.target.value)}>
                     <option value="" disabled>Select occupation</option>
                     <option value="student">Student</option>
-                    <option value="service">Service holder</option>
-                    <option value="business">Businessman</option>
+                    <option value="service_holder">Service holder</option>
+                    <option value="businessman">Businessman</option>
                   </select>
                 </div>
                 <span className="field-error"></span>
