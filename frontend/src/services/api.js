@@ -40,6 +40,17 @@ export const users = {
       .then((r) => r.data);
   },
   getPublicProfile: (userId) => apiClient.get(`/users/${userId}`).then((r) => r.data),
+  // Full record of the signed-in user (includes verification status and signed document links).
+  getMe: () => apiClient.get("/users/me").then((r) => r.data),
+  // Detailed profile page: what you can see depends on your relationship to the user.
+  getProfile: (userId) => apiClient.get(`/users/${userId}/profile`).then((r) => r.data),
+  uploadAvatar: (formData) =>
+    apiClient
+      .post("/users/me/avatar", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      })
+      .then((r) => r.data),
+  removeAvatar: () => apiClient.delete("/users/me/avatar").then((r) => r.data),
 };
 
 // ---------------------------------------------------------------------------
@@ -113,9 +124,6 @@ export const contracts = {
   // Every lease the signed-in user is a party to (owner or tenant).
   list: () => apiClient.get("/contracts").then((r) => r.data),
   getById: (contractId) => apiClient.get(`/contracts/${contractId}`).then((r) => r.data),
-  negotiate: (contractId, payload) =>
-    apiClient.patch(`/contracts/${contractId}/negotiate`, payload).then((r) => r.data),
-  accept: (contractId) => apiClient.patch(`/contracts/${contractId}/accept`).then((r) => r.data),
   sign: (contractId, signatureImageBase64) =>
     apiClient
       .patch(`/contracts/${contractId}/sign`, { signature_image_base64: signatureImageBase64 })
@@ -187,22 +195,16 @@ export const landlord = {
 export const admin = {
   stats: () => apiClient.get("/admin/stats").then((r) => r.data),
   verifications: () => apiClient.get("/admin/verifications").then((r) => r.data),
-  approveVerification: (id) =>
-    apiClient.patch(`/admin/verifications/${id}/approve`).then((r) => r.data),
-  rejectVerification: (id, rejection_reason) =>
+  approveVerification: (userId) =>
+    apiClient.patch(`/admin/verifications/${userId}/approve`).then((r) => r.data),
+  rejectVerification: (userId, rejectionReason) =>
     apiClient
-      .patch(`/admin/verifications/${id}/reject`, { rejection_reason })
+      .patch(`/admin/verifications/${userId}/reject`, { rejection_reason: rejectionReason })
       .then((r) => r.data),
-  users: () => apiClient.get("/admin/users").then((r) => r.data),
-  createUser: (payload) =>
-    apiClient.post("/admin/users", payload).then((r) => r.data),
-  toggleAdminRole: (id) =>
-    apiClient.patch(`/admin/users/${id}/admin`).then((r) => r.data),
-  toggleBanUser: (id) =>
-    apiClient.patch(`/admin/users/${id}/ban`).then((r) => r.data),
-  resolveDispute: (id, resolution_notes) =>
+  createDispute: (payload) => apiClient.post("/admin/disputes", payload).then((r) => r.data),
+  resolveDispute: (disputeId, resolutionNotes) =>
     apiClient
-      .patch(`/admin/disputes/${id}/resolve`, { resolution_notes })
+      .patch(`/admin/disputes/${disputeId}/resolve`, { resolution_notes: resolutionNotes })
       .then((r) => r.data),
 };
 

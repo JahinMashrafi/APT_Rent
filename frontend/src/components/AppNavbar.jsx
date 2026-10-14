@@ -16,6 +16,7 @@ import {
   FileText,
   FileSignature,
   Calendar,
+  Pencil,
 } from "lucide-react";
 import { useApp } from "../context/AppContext.jsx";
 import { logoutUser } from "../utils/auth";
@@ -278,7 +279,13 @@ export default function AppNavbar() {
               className="user-chip-btn"
               aria-label="User menu"
             >
-              <span className="user-chip-avatar">{initials}</span>
+              <span className="user-chip-avatar">
+                {currentUser?.profilePictureUrl ? (
+                  <img src={currentUser.profilePictureUrl} alt="" referrerPolicy="no-referrer" />
+                ) : (
+                  initials
+                )}
+              </span>
               <span className="user-chip-name">{currentUser?.name?.split(" ")[0]}</span>
               <ChevronDown size={14} />
             </button>
@@ -290,8 +297,11 @@ export default function AppNavbar() {
                   <p className="user-dropdown-email">{currentUser?.email}</p>
                   <span className="badge badge-neutral">{roleLabels[role]}</span>
                 </div>
-                <Link to="/profile" className="app-dropdown-item" onClick={() => setUserMenuOpen(false)}>
+                <Link to={`/users/${currentUser?.id}`} className="app-dropdown-item" onClick={() => setUserMenuOpen(false)}>
                   <User size={15} /> View profile
+                </Link>
+                <Link to="/profile" className="app-dropdown-item" onClick={() => setUserMenuOpen(false)}>
+                  <Pencil size={15} /> Edit profile
                 </Link>
                 <Link to="/inbox" className="app-dropdown-item" onClick={() => setUserMenuOpen(false)}>
                   <MessageSquare size={15} /> Inbox

@@ -80,3 +80,230 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* ---- Cards stack with space between them ---- */
+.profile-container {
+  display: grid;
+  gap: 20px;
+}
+
+/* ---- Avatar editor ---- */
+.profile-header .profile-avatar.profile-avatar-lg {
+  width: 88px;
+  height: 88px;
+  font-size: 1.8rem;
+  flex-shrink: 0;
+}
+
+.profile-header-text h1,
+.profile-header-text p {
+  margin: 0;
+}
+
+.avatar-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+.btn-sm {
+  padding: 6px 14px;
+  font-size: 0.85rem;
+}
+
+/* ---- Form extras ---- */
+.profile-grid .field-wide {
+  grid-column: 1 / -1;
+}
+
+.profile-grid .field input:disabled {
+  background: var(--color-paper-dim);
+  color: var(--color-blueprint);
+  cursor: not-allowed;
+}
+
+.field-hint {
+  font-size: 0.78rem;
+  color: var(--color-blueprint);
+}
+
+/* ---- Verification card ---- */
+.verification-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.verification-head h2,
+.verification-head p {
+  margin: 0;
+}
+
+.verification-note {
+  font-size: 0.9rem;
+  color: var(--color-blueprint);
+  margin: 0;
+}
+
+.verification-docs {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.verification-docs li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+}
+
+.verification-doc-info {
+  display: grid;
+  gap: 2px;
+  font-size: 0.88rem;
+}
+
+.verification-doc-info span {
+  color: var(--color-blueprint);
+}
+
+.doc-on-file { color: var(--color-success) !important; }
+.doc-missing { color: var(--color-error) !important; }
+
+.doc-picker {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+}
+
+.doc-picker input[type="file"] {
+  /* The styled button is the visible control; the real input stays reachable by keyboard. */
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  overflow: hidden;
+}
+
+.doc-picker:focus-within .btn {
+  outline: 2px solid var(--color-ink);
+  outline-offset: 2px;
+}
+
+.doc-filename {
+  font-size: 0.82rem;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ---- Public profile view ---- */
+.profile-card h2 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.pv-header {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.profile-avatar.profile-avatar-xl {
+  width: 104px;
+  height: 104px;
+  font-size: 2.2rem;
+  flex-shrink: 0;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--color-paper-dim);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  color: var(--color-ink);
+}
+
+.pv-header-text { display: grid; gap: 6px; }
+.pv-header-text h1 { margin: 0; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.pv-header-text p { margin: 0; }
+.pv-badge { font-size: 0.75rem; }
+
+.pv-roles {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: 0.88rem;
+  color: var(--color-blueprint);
+}
+
+.pv-rating { font-size: 0.92rem; }
+
+.pv-details {
+  margin: 12px 0 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 14px;
+}
+
+.pv-details dt { font-size: 0.78rem; color: var(--color-blueprint); }
+.pv-details dd { margin: 2px 0 0; font-weight: 600; }
+
+.pv-listings {
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 14px;
+}
+
+.pv-listing {
+  display: grid;
+  gap: 4px;
+  text-decoration: none;
+  color: inherit;
+  font-size: 0.86rem;
+}
+
+.pv-listing img,
+.pv-listing-empty {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+  background: var(--color-paper-dim);
+}
+
+.pv-reviews {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 14px;
+}
+
+.pv-review-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  font-size: 0.9rem;
+}
+
+.pv-review-head time { color: var(--color-blueprint); font-size: 0.8rem; }
+.pv-reviews p { margin: 4px 0 0; }
+
+@media (max-width: 700px) {
+  .pv-header { flex-direction: column; align-items: flex-start; }
+}
