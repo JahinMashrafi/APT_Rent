@@ -32,7 +32,7 @@ export const loginUser = async (email, password) => {
 // Registers against POST /auth/register (same cookie behavior as login).
 export const registerUser = async (payload) => {
   const data = await api.auth.register(payload);
-  return normalizeUserPayload(data.user);
+  return normalizeUserPayload(data.user ?? data.data?.user);
 };
 
 // Source of truth for "am I logged in": ask the server, since the auth

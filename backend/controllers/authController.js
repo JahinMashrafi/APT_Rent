@@ -33,6 +33,11 @@ const registerUser = async (req, res) => {
     name || fullName || [submittedFirstName, submittedLastName].filter(Boolean).join(" ");
   const fullNameValue = typeof submittedName === "string" ? submittedName.trim() : "";
   const phone = submittedPhone || contact_number;
+  const occupationAliases = {
+    service: "service_holder",
+    business: "businessman",
+  };
+  const normalizedOccupation = occupationAliases[occupation] || occupation;
   let errors = [];
 
   if (!fullNameValue) {
@@ -46,6 +51,9 @@ const registerUser = async (req, res) => {
   }
   if (typeof phone !== "string" || !phone.trim()) {
     errors.push({ field: "contact_number", message: "Contact number is invalid" });
+  }
+  if (!["student", "service_holder", "businessman"].includes(normalizedOccupation)) {
+    errors.push({ field: "occupation", message: "Occupation is required and must be valid" });
   }
   if (!is_landlord && !is_tenant) {
     errors.push({ field: "role", message: "You must register as a tenant or a landlord" });
@@ -73,7 +81,7 @@ const registerUser = async (req, res) => {
         Boolean(is_tenant),
         isAdmin,
         address,
-        occupation || null,
+        normalizedOccupation || null,
         institution_name || null,
         workplace_name || null,
       ],
@@ -101,7 +109,12 @@ const registerUser = async (req, res) => {
     if (error.code === "22P02") {
       return res.status(422).json({ status: "error", message: "Invalid value provided for occupation", statusCode: 422 });
     }
-    return res.status(400).json({ status: "Bad request", message: "Registration unsuccessful", statusCode: 400 });
+    return res.status(400).json({
+      status: "Bad request",
+      message: "Registration unsuccessful",
+      details: process.env.NODE_ENV === "production" ? undefined : error.detail || error.message,
+      statusCode: 400,
+    });
   }
 };
 

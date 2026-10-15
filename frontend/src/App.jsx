@@ -6,6 +6,7 @@ import Home from "./pages/Home.jsx";
 import Login from "./pages/Login.jsx";
 import Register from "./pages/Register.jsx";
 import Profile from "./pages/Profile.jsx";
+import ProfileView from "./pages/ProfileView.jsx";
 import Dashboard from "./pages/dashboard.jsx";
 
 // New pages
@@ -65,6 +66,7 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/profile" element={<Profile />} />
+        <Route path="/users/:id" element={<RequireAuth><ProfileView /></RequireAuth>} />
         <Route path="/dashboard" element={<Dashboard />} />
 
         {/* Property browsing */}

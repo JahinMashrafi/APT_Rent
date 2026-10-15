@@ -20,6 +20,8 @@ const notificationRoutes = require("./routes/notificationRoutes");
 const reviewRoutes = require("./routes/reviewRoutes");
 const adminRoutes = require("./routes/adminRoutes");
 const { initSocket } = require("./utils/socket.js");
+const appointmentRescheduleRoutes = require("./routes/appointmentRescheduleRoutes");
+const { startAppointmentSweeper } = require("./services/appointmentLifecycle.js");
 const { envelopeLegacyResponses, notFoundHandler, errorHandler } = require("./middleware/errorEnvelope.js");
 
 const app = express();
@@ -39,6 +41,7 @@ app.use("/api/users", userRoutes);
 app.use("/api/properties", propertyRoutes);
 app.use("/api/applications", applicationRoutes);
 app.use("/api/appointments", appointmentRoutes);
+app.use("/api/appointments", appointmentRescheduleRoutes);
 app.use("/api/contracts", contractRoutes);
 app.use("/api/rent", rentRoutes);
 app.use("/api/payments", paymentRoutes);
@@ -68,4 +71,6 @@ app.use((err, req, res, next) => {
 const PORT = process.env.PORT || 5000;
 httpServer.listen(PORT, () => {
   console.log(`Server running on port: ${PORT}`);
+  startAppointmentSweeper();
+
 });

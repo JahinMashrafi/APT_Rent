@@ -16,6 +16,7 @@ import {
   FileText,
   FileSignature,
   Calendar,
+  Pencil,
 } from "lucide-react";
 import { useApp } from "../context/AppContext.jsx";
 import { logoutUser } from "../utils/auth";
@@ -63,6 +64,25 @@ function timeAgo(iso) {
   const h = Math.floor(m / 60);
   if (h < 24) return `${h}h ago`;
   return `${Math.floor(h / 24)}d ago`;
+}
+
+function notificationDestination(notification, role) {
+  const link = notification?.link;
+  if (!link || !link.startsWith("/")) {
+    return role === "landlord" ? "/landlord" : "/inbox";
+  }
+
+  if (link === "/notifications") return role === "landlord" ? "/landlord" : "/inbox";
+  if (link.startsWith("/applications/")) return "/applications";
+  if (link === "/appointments" || link.startsWith("/appointments/")) {
+    return role === "landlord" ? "/tour-requests" : "/dashboard";
+  }
+  if (link.startsWith("/landlord/")) return "/landlord";
+  if (link.startsWith("/admin/")) return "/admin";
+  if (link.startsWith("/disputes/")) return "/admin";
+  if (link.startsWith("/users/")) return "/profile";
+  if (link.startsWith("/conversations/")) return "/inbox";
+  return link;
 }
 
 export default function AppNavbar() {
@@ -212,7 +232,7 @@ export default function AppNavbar() {
                           onClick={() => {
                             markNotificationRead(n.id);
                             setNotifOpen(false);
-                            navigate(n.link);
+                            navigate(notificationDestination(n, role));
                           }}
                         >
                           {!n.isRead && <span className="notif-dot" />}
@@ -259,7 +279,13 @@ export default function AppNavbar() {
               className="user-chip-btn"
               aria-label="User menu"
             >
-              <span className="user-chip-avatar">{initials}</span>
+              <span className="user-chip-avatar">
+                {currentUser?.profilePictureUrl ? (
+                  <img src={currentUser.profilePictureUrl} alt="" referrerPolicy="no-referrer" />
+                ) : (
+                  initials
+                )}
+              </span>
               <span className="user-chip-name">{currentUser?.name?.split(" ")[0]}</span>
               <ChevronDown size={14} />
             </button>
@@ -271,8 +297,11 @@ export default function AppNavbar() {
                   <p className="user-dropdown-email">{currentUser?.email}</p>
                   <span className="badge badge-neutral">{roleLabels[role]}</span>
                 </div>
-                <Link to="/profile" className="app-dropdown-item" onClick={() => setUserMenuOpen(false)}>
+                <Link to={`/users/${currentUser?.id}`} className="app-dropdown-item" onClick={() => setUserMenuOpen(false)}>
                   <User size={15} /> View profile
+                </Link>
+                <Link to="/profile" className="app-dropdown-item" onClick={() => setUserMenuOpen(false)}>
+                  <Pencil size={15} /> Edit profile
                 </Link>
                 <Link to="/inbox" className="app-dropdown-item" onClick={() => setUserMenuOpen(false)}>
                   <MessageSquare size={15} /> Inbox

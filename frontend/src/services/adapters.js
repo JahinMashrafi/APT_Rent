@@ -17,6 +17,7 @@ export function adaptProperty(p) {
     title: p.title ?? p.address,
     address: p.address,
     pricePerMonth: p.rate ?? p.pricePerMonth,
+    deposit: p.deposit ?? p.securityDeposit,
     securityDeposit: p.deposit ?? p.securityDeposit,
     bedrooms: p.bedroom ?? p.bedrooms,
     bathrooms: p.bathroom ?? p.bathrooms,
@@ -51,6 +52,7 @@ export function adaptApplication(a) {
     id: String(a.application_id ?? a.id),
     propertyId: String(a.property_id ?? a.propertyId),
     propertyTitle: a.property_address ?? a.propertyTitle,
+    propertyAddress: a.property_address ?? a.propertyAddress,
     tenant: {
       id: tenant.user_id ?? tenant.id,
       name: tenant.name,
@@ -81,5 +83,6 @@ export function flattenApplication(a) {
     monthlyIncome: tenant.monthlyIncome ?? a.monthlyIncome,
     familySize: tenant.familySize ?? a.familySize,
     message: tenant.message ?? a.message,
+    propertyAddress: a.propertyAddress ?? a.property_address,
   };
 }

@@ -27,7 +27,8 @@
  * ============================================================================
  */
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import SearchFilterBar from "./SearchFilterBar.jsx";
 import ApartmentCard from "./ApartmentCard.jsx";
 import Pagination from "./Pagination.jsx";
@@ -37,6 +38,7 @@ import { adaptProperty } from "../services/adapters";
 const POSTS_PER_PAGE = 12;
 
 export default function NewsFeed() {
+  const [searchParams] = useSearchParams();
   const [apartments, setApartments] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -46,7 +48,7 @@ export default function NewsFeed() {
   // This is what makes listings show up immediately on page load,
   // without the user ever touching the search bar.
   // --------------------------------------------------------------------
-  const [activeFilters, setActiveFilters] = useState({});
+  const [activeFilters, setActiveFilters] = useState(() => filtersFromSearchParams(searchParams));
 
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
@@ -86,10 +88,10 @@ export default function NewsFeed() {
   }, [currentPage, activeFilters]);
 
   // --- New search/filter submission always resets back to page 1 -----------
-  function handleSearch(filters) {
+  const handleSearch = useCallback((filters) => {
     setActiveFilters(filters || {});
     setCurrentPage(1);
-  }
+  }, []);
 
   // --- Optimistic wishlist toggle --------------------------------------------
   // NOTE: your schema (the one you pasted) has no wishlist table yet, so
@@ -107,7 +109,11 @@ export default function NewsFeed() {
   return (
     <section className="newsfeed-section">
       {/* ===================== SEARCH + FILTER BAR ===================== */}
-      <SearchFilterBar onSearch={handleSearch} />
+      <SearchFilterBar
+        onSearch={handleSearch}
+        liveSearch
+        initialFilters={filtersFromSearchParams(searchParams)}
+      />
 
       {/* ===================== APARTMENT POSTS GRID ===================== */}
       {isLoading ? (
@@ -173,4 +179,19 @@ function toApiFilters(filters) {
   }
 
   return apiFilters;
+}
+
+function filtersFromSearchParams(params) {
+  if (!params) return {};
+  return {
+    searchText: params.get("q") || "",
+    city: params.get("city") || "",
+    thana: params.get("thana") || "",
+    postCode: params.get("post_code") || "",
+    rooms: params.get("bedroom") || "",
+    bathrooms: params.get("bathroom") || "",
+    hasBalcony: params.get("has_balcony") || "any",
+    priceMin: params.get("min_rate") || "",
+    priceMax: params.get("max_rate") || "",
+  };
 }

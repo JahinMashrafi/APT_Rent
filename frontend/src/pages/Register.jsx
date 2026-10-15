@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import AppNavbar from "../components/AppNavbar.jsx";
 import { registerUser } from "../utils/auth";
+import api from "../services/api";
 import { useApp } from "../context/AppContext.jsx";
 
 export default function Register() {
@@ -10,8 +11,12 @@ export default function Register() {
   const [formData, setFormData] = useState({
     fullName: "", userId: "", phone: "", email: "", password: "", confirmPassword: "", address: ""
   });
+  const [profilePhoto, setProfilePhoto] = useState(null);
+  const [nidPhoto, setNidPhoto] = useState(null);
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const navigate = useNavigate();
   const { applyAuthenticatedUser } = useApp();
 
@@ -25,7 +30,7 @@ export default function Register() {
     setError("");
 
     // Basic front-end validation similar to original HTML preview
-    if (!formData.fullName || !formData.email || !formData.phone || !formData.password || !formData.confirmPassword) {
+    if (!formData.fullName || !formData.email || !formData.phone || !formData.password || !formData.confirmPassword || !occupation) {
       setError("Please fill in all required fields.");
       return;
     }
@@ -52,10 +57,24 @@ export default function Register() {
       // Same as Login: the auth cookie is httpOnly, so context needs the
       // user handed to it or guarded routes redirect back to /login.
       const user = await registerUser(payload);
+      if (profilePhoto || nidPhoto) {
+        const documents = new FormData();
+        if (nidPhoto) documents.append("nid_photo", nidPhoto);
+        try {
+          if (nidPhoto) await api.users.uploadDocuments(documents);
+          if (profilePhoto) await api.users.uploadAvatar(profilePhoto);
+        } catch (uploadError) {
+          setError(`Account created, but document upload failed: ${uploadError.message}`);
+          applyAuthenticatedUser(user);
+          navigate("/dashboard");
+          return;
+        }
+      }
       applyAuthenticatedUser(user);
       navigate("/dashboard");
     } catch (err) {
-      setError(err.message || "Registration failed");
+      const detail = err.details?.find?.((item) => item.issue)?.issue;
+      setError(detail ? `${err.message || "Registration failed"}: ${detail}` : (err.message || "Registration failed"));
     } finally {
       setIsSubmitting(false);
     }
@@ -131,7 +150,7 @@ export default function Register() {
                       <span>JPG or PNG</span>
                     </span>
                     <span className="file-name"></span>
-                    <input type="file" id="profilePhoto" name="profilePhoto" accept="image/*" />
+                    <input type="file" id="profilePhoto" name="profilePhoto" accept="image/*" onChange={(e) => setProfilePhoto(e.target.files?.[0] ?? null)} />
                   </label>
                 </div>
 
@@ -144,7 +163,7 @@ export default function Register() {
                       <span>Front side, clear scan</span>
                     </span>
                     <span className="file-name"></span>
-                    <input type="file" id="nidPhoto" name="nidPhoto" accept="image/*" />
+                    <input type="file" id="nidPhoto" name="nidPhoto" accept="image/*" onChange={(e) => setNidPhoto(e.target.files?.[0] ?? null)} />
                   </label>
                 </div>
               </div>
@@ -163,8 +182,8 @@ export default function Register() {
                   <select id="occupation" name="occupation" value={occupation} onChange={(e) => setOccupation(e.target.value)}>
                     <option value="" disabled>Select occupation</option>
                     <option value="student">Student</option>
-                    <option value="service">Service holder</option>
-                    <option value="business">Businessman</option>
+                    <option value="service_holder">Service holder</option>
+                    <option value="businessman">Businessman</option>
                   </select>
                 </div>
                 <span className="field-error"></span>

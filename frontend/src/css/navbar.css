@@ -446,3 +446,12 @@
   color: var(--color-blueprint);
   margin-bottom: 8px;
 }
+
+/* Profile picture inside the user chip */
+.user-chip-avatar { overflow: hidden; }
+.user-chip-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}

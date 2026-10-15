@@ -48,6 +48,7 @@ export function AppProvider({ children }) {
   // tenant and keep the switcher — for them it is a genuine choice, not
   // a correction.
   const roleFor = useCallback((user) => {
+    if (user?.isAdmin) return "admin";
     if (user?.isLandlord && !user.isTenant) return "landlord";
     return "tenant";
   }, []);

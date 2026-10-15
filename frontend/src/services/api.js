@@ -30,7 +30,27 @@ export const users = {
         headers: { "Content-Type": "multipart/form-data" },
       })
       .then((r) => r.data),
+  uploadAvatar: (file) => {
+    const formData = new FormData();
+    formData.append("profile_picture", file);
+    return apiClient
+      .post("/users/me/avatar", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      })
+      .then((r) => r.data);
+  },
   getPublicProfile: (userId) => apiClient.get(`/users/${userId}`).then((r) => r.data),
+  // Full record of the signed-in user (includes verification status and signed document links).
+  getMe: () => apiClient.get("/users/me").then((r) => r.data),
+  // Detailed profile page: what you can see depends on your relationship to the user.
+  getProfile: (userId) => apiClient.get(`/users/${userId}/profile`).then((r) => r.data),
+  uploadAvatar: (formData) =>
+    apiClient
+      .post("/users/me/avatar", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      })
+      .then((r) => r.data),
+  removeAvatar: () => apiClient.delete("/users/me/avatar").then((r) => r.data),
 };
 
 // ---------------------------------------------------------------------------
@@ -104,9 +124,6 @@ export const contracts = {
   // Every lease the signed-in user is a party to (owner or tenant).
   list: () => apiClient.get("/contracts").then((r) => r.data),
   getById: (contractId) => apiClient.get(`/contracts/${contractId}`).then((r) => r.data),
-  negotiate: (contractId, payload) =>
-    apiClient.patch(`/contracts/${contractId}/negotiate`, payload).then((r) => r.data),
-  accept: (contractId) => apiClient.patch(`/contracts/${contractId}/accept`).then((r) => r.data),
   sign: (contractId, signatureImageBase64) =>
     apiClient
       .patch(`/contracts/${contractId}/sign`, { signature_image_base64: signatureImageBase64 })
