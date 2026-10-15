@@ -124,7 +124,7 @@ export default function Navbar() {
                   }}
                 >
                   <Link
-                    to="/profile"
+                    to={`/users/${user.id}`}
                     className="menu-item"
                     style={{
                       display: "block",
