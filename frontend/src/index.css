@@ -27,3 +27,14 @@
   background-color: var(--color-line-strong);
   border-radius: 999px;
 }
+/* ---- PWA / mobile polish ---- */
+html { -webkit-text-size-adjust: 100%; }
+body {
+  -webkit-tap-highlight-color: transparent;
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+button, a, [role="button"] { touch-action: manipulation; }
+@media (max-width: 768px) {
+  input, select, textarea { font-size: 16px; } /* iOS zooms in on anything smaller */
+}

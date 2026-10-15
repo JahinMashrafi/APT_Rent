@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import Modal from '../ui/Modal.jsx';
 import PhotoUploader from './PhotoUploader.jsx';
+import LocationPicker from './LocationPicker.jsx';
 import api from '../../services/api';
 import { adaptProperty } from '../../services/adapters';
 
@@ -22,6 +23,8 @@ import { adaptProperty } from '../../services/adapters';
 
 const EMPTY_FORM = {
   address: '',
+  latitude: '',
+  longitude: '',
   rate: '',
   deposit: '',
   bedroom: '',
@@ -31,7 +34,7 @@ const EMPTY_FORM = {
   furnish_type: 'unfurnished',
 };
 
-const NUMERIC = ['rate', 'deposit', 'bedroom', 'bathroom', 'size_sqft'];
+const NUMERIC = ['latitude', 'longitude', 'rate', 'deposit', 'bedroom', 'bathroom', 'size_sqft'];
 
 // Postgres rejects '' for an integer column, and an empty <input> hands
 // us exactly that. Blank means "don't send this field", not "set to 0".
@@ -67,6 +70,8 @@ export default function PropertyFormModal({
     if (!isEdit) return EMPTY_FORM;
     return {
       address: property.address ?? '',
+      latitude: property.latitude ?? property.lat ?? '',
+      longitude: property.longitude ?? property.lng ?? '',
       rate: property.rate ?? '',
       deposit: property.deposit ?? '',
       bedroom: property.bedroom ?? '',
@@ -139,7 +144,7 @@ export default function PropertyFormModal({
       isOpen={isOpen}
       onClose={isSaving ? () => {} : onClose}
       title={isEdit ? 'Edit Listing' : 'Add New Property'}
-      size="md"
+      size="lg"
     >
       <form onSubmit={handleSubmit} className="property-form">
         <label className="field">
@@ -179,6 +184,14 @@ export default function PropertyFormModal({
             <input type="number" name="size_sqft" value={form.size_sqft} onChange={handleChange} required min="0" />
           </label>
         </div>
+          <LocationPicker
+          latitude={form.latitude}
+          longitude={form.longitude}
+          address={form.address}
+          onChange={(latitude, longitude) => setForm((prev) => ({ ...prev, latitude, longitude }))}
+          disabled={isSaving}
+        />
+
 
         <div className="property-form-row">
           <label className="field">
