@@ -30,26 +30,23 @@ export const users = {
         headers: { "Content-Type": "multipart/form-data" },
       })
       .then((r) => r.data),
-  uploadAvatar: (file) => {
-    const formData = new FormData();
-    formData.append("profile_picture", file);
+  getPublicProfile: (userId) => apiClient.get(`/users/${userId}`).then((r) => r.data),
+  // Full record of the signed-in user (includes verification status and signed document links).
+  getMe: () => apiClient.get("/users/me").then((r) => r.data),
+  // Detailed profile page: what you can see depends on your relationship to the user.
+  getProfile: (userId) => apiClient.get(`/users/${userId}/profile`).then((r) => r.data),
+  uploadAvatar: (fileOrFormData) => {
+    const formData = fileOrFormData instanceof FormData ? fileOrFormData : (() => {
+      const next = new FormData();
+      next.append("avatar", fileOrFormData);
+      return next;
+    })();
     return apiClient
       .post("/users/me/avatar", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       })
       .then((r) => r.data);
   },
-  getPublicProfile: (userId) => apiClient.get(`/users/${userId}`).then((r) => r.data),
-  // Full record of the signed-in user (includes verification status and signed document links).
-  getMe: () => apiClient.get("/users/me").then((r) => r.data),
-  // Detailed profile page: what you can see depends on your relationship to the user.
-  getProfile: (userId) => apiClient.get(`/users/${userId}/profile`).then((r) => r.data),
-  uploadAvatar: (formData) =>
-    apiClient
-      .post("/users/me/avatar", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      })
-      .then((r) => r.data),
   removeAvatar: () => apiClient.delete("/users/me/avatar").then((r) => r.data),
 };
 
@@ -194,6 +191,12 @@ export const landlord = {
 // ---------------------------------------------------------------------------
 export const admin = {
   stats: () => apiClient.get("/admin/stats").then((r) => r.data),
+  users: () => apiClient.get("/admin/users").then((r) => r.data),
+  createUser: (payload) => apiClient.post("/admin/users", payload).then((r) => r.data),
+  toggleAdminRole: (userId) =>
+    apiClient.patch(`/admin/users/${userId}/admin`).then((r) => r.data),
+  toggleBanUser: (userId) =>
+    apiClient.patch(`/admin/users/${userId}/ban`).then((r) => r.data),
   verifications: () => apiClient.get("/admin/verifications").then((r) => r.data),
   approveVerification: (userId) =>
     apiClient.patch(`/admin/verifications/${userId}/approve`).then((r) => r.data),
