@@ -121,6 +121,10 @@ export const contracts = {
   // Every lease the signed-in user is a party to (owner or tenant).
   list: () => apiClient.get("/contracts").then((r) => r.data),
   getById: (contractId) => apiClient.get(`/contracts/${contractId}`).then((r) => r.data),
+  negotiate: (contractId, payload) =>
+    apiClient.patch(`/contracts/${contractId}/negotiate`, payload).then((r) => r.data),
+  accept: (contractId) =>
+    apiClient.patch(`/contracts/${contractId}/accept`).then((r) => r.data),
   sign: (contractId, signatureImageBase64) =>
     apiClient
       .patch(`/contracts/${contractId}/sign`, { signature_image_base64: signatureImageBase64 })
