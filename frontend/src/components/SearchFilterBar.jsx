@@ -18,7 +18,7 @@
 
 import { useEffect, useRef, useState } from "react";
 
-// Shape of an "empty" filter set — kept in one place so it's easy to extend.
+
 const EMPTY_FILTERS = {
   city: "",
   thana: "",
@@ -31,11 +31,27 @@ const EMPTY_FILTERS = {
 };
 
 export default function SearchFilterBar({ onSearch, liveSearch = false, initialFilters = EMPTY_FILTERS }) {
-  const [searchText, setSearchText] = useState(initialFilters.searchText ?? "");
-  const [filters, setFilters] = useState(initialFilters);
+  const { searchText: initialSearchText = "", ...initialRest } = initialFilters;
+  const [searchText, setSearchText] = useState(initialSearchText);
+  const [filters, setFilters] = useState({ ...EMPTY_FILTERS, ...initialRest });
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const skipInitialLiveSearch = useRef(true);
 
+  // --- NEW: keep the input in sync when the URL changes from outside -------
+  // (e.g. Home hero -> /browse?search=Gulshan, or browser back/forward).
+  // While typing, the value coming back from the URL equals local state,
+  // so these setters are no-ops and the cursor is not disturbed.
+  const incomingKey = JSON.stringify(initialFilters);
+  useEffect(() => {
+    const { searchText: incomingText = "", ...incomingRest } = JSON.parse(incomingKey);
+    setSearchText((prev) => (prev === incomingText ? prev : incomingText));
+    setFilters((prev) => {
+      const next = { ...EMPTY_FILTERS, ...incomingRest };
+      return JSON.stringify(prev) === JSON.stringify(next) ? prev : next;
+    });
+  }, [incomingKey]);
+
+  // --- Live filtering (debounced 300ms) -------------------------------------
   useEffect(() => {
     if (!liveSearch) return undefined;
     if (skipInitialLiveSearch.current) {
@@ -50,19 +66,24 @@ export default function SearchFilterBar({ onSearch, liveSearch = false, initialF
     return () => clearTimeout(timer);
   }, [filters, liveSearch, onSearch, searchText]);
 
-  // --- Generic handler for all filter form fields ---------------------------
+
   function updateFilter(field, value) {
     setFilters((prev) => ({ ...prev, [field]: value }));
   }
 
-  // --- Fired when the search form is submitted (search icon / Enter) -------
+  // Search button / Enter key
   function handleSubmit(event) {
     event.preventDefault();
-    onSearch?.({ searchText, ...filters });
+    onSearch?.({ searchText: searchText.trim(), ...filters });
     setIsFilterOpen(false);
   }
 
-  // --- "Clear filters" convenience action -----------------------------------
+  // --- NEW: clear ("X") button inside the search input ----------------------
+  function handleClearSearch() {
+    setSearchText("");
+    onSearch?.({ searchText: "", ...filters });
+  }
+
   function handleClearFilters() {
     setFilters(EMPTY_FILTERS);
     setSearchText("");
@@ -83,13 +104,23 @@ export default function SearchFilterBar({ onSearch, liveSearch = false, initialF
           <img src="/assets/icons/search.svg" alt="" width="16" height="16" />
         </span>
         <span className="search-tag-seam" aria-hidden="true"></span>
-        <input
+                  <input
           type="search"
           placeholder="Search by area, e.g. Gulshan, Dhanmondi..."
           aria-label="Search apartments by area"
           value={searchText}
           onChange={(e) => setSearchText(e.target.value)}
         />
+        {searchText && (
+          <button
+            type="button"
+            className="search-clear-btn"
+            aria-label="Clear search"
+            onClick={handleClearSearch}
+          >
+            ×
+          </button>
+        )}
         <button type="submit" className="btn btn-primary">
           Search
         </button>

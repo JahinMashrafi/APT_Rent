@@ -86,7 +86,9 @@ function notificationDestination(notification, role) {
 }
 
 export default function AppNavbar() {
-  const { role, currentUser, notifications, unreadCount, messageUnreadCount, switchRole, markNotificationRead, markAllNotificationsRead, clearSession } = useApp();
+  const { role, currentUser, authReady, notifications, unreadCount, messageUnreadCount, switchRole, markNotificationRead, markAllNotificationsRead, clearSession } = useApp();
+  const isAuthenticated = Boolean(currentUser);
+  const isGuest = authReady && !currentUser; // settled AND signed out
   const isDualRole = Boolean(currentUser?.isLandlord && currentUser?.isTenant);
   const isAdmin = Boolean(currentUser?.isAdmin);
   const navigate = useNavigate();
@@ -126,7 +128,8 @@ export default function AppNavbar() {
     setMobileOpen(false);
   }, [location.pathname]);
 
-  const links = navLinks[role] ?? navLinks.tenant;
+  const guestLinks = [{ label: "Browse", to: "/dashboard", icon: Home }];
+  const links = isAuthenticated ? (navLinks[role] ?? navLinks.tenant) : guestLinks;
   const initials =
     currentUser?.name
       ?.split(" ")
@@ -158,165 +161,182 @@ export default function AppNavbar() {
         </nav>
 
         <div className="app-navbar-actions">
-          {/* Role switcher — only for accounts that really are both.
-              A tenant-only or landlord-only user has nothing to switch
-              between, and offering it let anyone impersonate the other
-              side just by clicking. */}
-          {(isDualRole || isAdmin) && (
-            <div className="role-switch">
-              {isDualRole && ["tenant", "landlord"].map((r) => (
-                <button
-                  key={r}
-                  type="button"
-                  onClick={() => {
-                    if (role !== r) {
-                      switchRole(r);
-                      navigate(r === "landlord" ? "/landlord" : "/dashboard");
-                    }
-                  }}
-                  className={`role-switch-btn ${role === r ? "is-active" : ""}`}
-                >
-                  {roleLabels[r]}
-                </button>
-              ))}
-              {isAdmin && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    switchRole("admin");
-                    navigate("/admin");
-                  }}
-                  className={`role-switch-btn ${role === "admin" ? "is-active" : ""}`}
-                  title="Admin"
-                >
-                  Admin
-                </button>
+          {/* ===== GUEST: just a login button ===== */}
+          {isGuest && (
+            <div className="guest-auth-actions">
+              {location.pathname !== "/register" && (
+                <Link to="/register" className="guest-register-link">Register</Link>
+              )}
+              {location.pathname !== "/login" && (
+                <Link to="/login" className="btn btn-primary guest-login-btn">Log in</Link>
               )}
             </div>
           )}
 
-          {/* Notifications */}
-          <div className="app-navbar-menu-wrapper" ref={notifRef}>
-            <button
-              type="button"
-              onClick={() => {
-                setNotifOpen((o) => !o);
-                setUserMenuOpen(false);
-              }}
-              className="icon-btn"
-              aria-label={`Notifications${unreadCount > 0 ? `, ${unreadCount} unread` : ""}`}
-            >
-              <Bell size={19} />
-              {unreadCount > 0 && <span className="notif-count">{unreadCount > 9 ? "9+" : unreadCount}</span>}
-            </button>
-
-            {notifOpen && (
-              <div className="app-dropdown notif-dropdown" role="menu">
-                <div className="app-dropdown-header">
-                  <h3>Notifications</h3>
-                  {unreadCount > 0 && (
-                    <button type="button" className="dropdown-link" onClick={markAllNotificationsRead}>
-                      <CheckCheck size={13} /> Mark all read
+          {/* ===== LOGGED IN: role switcher + bell + avatar menu ===== */}
+          {isAuthenticated && (
+            <>
+              {/* Role switcher — only for accounts that really are both.
+                  A tenant-only or landlord-only user has nothing to switch
+                  between, and offering it let anyone impersonate the other
+                  side just by clicking. */}
+              {(isDualRole || isAdmin) && (
+                <div className="role-switch">
+                  {isDualRole && ["tenant", "landlord"].map((r) => (
+                    <button
+                      key={r}
+                      type="button"
+                      onClick={() => {
+                        if (role !== r) {
+                          switchRole(r);
+                          navigate(r === "landlord" ? "/landlord" : "/dashboard");
+                        }
+                      }}
+                      className={`role-switch-btn ${role === r ? "is-active" : ""}`}
+                    >
+                      {roleLabels[r]}
+                    </button>
+                  ))}
+                  {isAdmin && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        switchRole("admin");
+                        navigate("/admin");
+                      }}
+                      className={`role-switch-btn ${role === "admin" ? "is-active" : ""}`}
+                      title="Admin"
+                    >
+                      Admin
                     </button>
                   )}
                 </div>
-                <ul className="notif-list">
-                  {notifications.length === 0 ? (
-                    <li className="notif-empty">You're all caught up.</li>
-                  ) : (
-                    notifications.slice(0, 5).map((n) => (
-                      <li key={n.id}>
+              )}
+
+              {/* Notifications */}
+              <div className="app-navbar-menu-wrapper" ref={notifRef}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setNotifOpen((o) => !o);
+                    setUserMenuOpen(false);
+                  }}
+                  className="icon-btn"
+                  aria-label={`Notifications${unreadCount > 0 ? `, ${unreadCount} unread` : ""}`}
+                >
+                  <Bell size={19} />
+                  {unreadCount > 0 && <span className="notif-count">{unreadCount > 9 ? "9+" : unreadCount}</span>}
+                </button>
+
+                {notifOpen && (
+                  <div className="app-dropdown notif-dropdown" role="menu">
+                    <div className="app-dropdown-header">
+                      <h3>Notifications</h3>
+                      {unreadCount > 0 && (
+                        <button type="button" className="dropdown-link" onClick={markAllNotificationsRead}>
+                          <CheckCheck size={13} /> Mark all read
+                        </button>
+                      )}
+                    </div>
+                    <ul className="notif-list">
+                      {notifications.length === 0 ? (
+                        <li className="notif-empty">You're all caught up.</li>
+                      ) : (
+                        notifications.slice(0, 5).map((n) => (
+                          <li key={n.id}>
+                            <button
+                              type="button"
+                              className={`notif-item ${!n.isRead ? "is-unread" : ""}`}
+                              onClick={() => {
+                                markNotificationRead(n.id);
+                                setNotifOpen(false);
+                                navigate(notificationDestination(n, role));
+                              }}
+                            >
+                              {!n.isRead && <span className="notif-dot" />}
+                              <span className="notif-item-body">
+                                <span className="notif-item-title">{n.title}</span>
+                                <span className="notif-item-message">{n.message}</span>
+                                <span className="notif-item-time">{timeAgo(n.timestamp)}</span>
+                              </span>
+                            </button>
+                          </li>
+                        ))
+                      )}
+                    </ul>
+                    {notifications.length > 0 && (
+                      <div className="app-dropdown-footer">
                         <button
                           type="button"
-                          className={`notif-item ${!n.isRead ? "is-unread" : ""}`}
+                          className="dropdown-link"
                           onClick={() => {
-                            markNotificationRead(n.id);
                             setNotifOpen(false);
-                            navigate(notificationDestination(n, role));
+                            // Tour requests are the one notification type with
+                            // a page of its own; everything else is either
+                            // handled in place or has no inbox yet. Sending
+                            // users to /inbox for all of them was simply wrong.
+                            navigate(role === "landlord" ? "/tour-requests" : "/inbox");
                           }}
                         >
-                          {!n.isRead && <span className="notif-dot" />}
-                          <span className="notif-item-body">
-                            <span className="notif-item-title">{n.title}</span>
-                            <span className="notif-item-message">{n.message}</span>
-                            <span className="notif-item-time">{timeAgo(n.timestamp)}</span>
-                          </span>
+                          {role === "landlord" ? "View tour requests →" : "Go to Inbox →"}
                         </button>
-                      </li>
-                    ))
-                  )}
-                </ul>
-                {notifications.length > 0 && (
-                  <div className="app-dropdown-footer">
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* User menu */}
+              <div className="app-navbar-menu-wrapper" ref={userMenuRef}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setUserMenuOpen((o) => !o);
+                    setNotifOpen(false);
+                  }}
+                  className="user-chip-btn"
+                  aria-label="User menu"
+                >
+                  <span className="user-chip-avatar">
+                    {currentUser?.profilePictureUrl ? (
+                      <img src={currentUser.profilePictureUrl} alt="" referrerPolicy="no-referrer" />
+                    ) : (
+                      initials
+                    )}
+                  </span>
+                  <span className="user-chip-name">{currentUser?.name?.split(" ")[0]}</span>
+                  <ChevronDown size={14} />
+                </button>
+
+                {userMenuOpen && (
+                  <div className="app-dropdown user-dropdown" role="menu">
+                    <div className="user-dropdown-header">
+                      <p className="user-dropdown-name">{currentUser?.name}</p>
+                      <p className="user-dropdown-email">{currentUser?.email}</p>
+                      <span className="badge badge-neutral">{roleLabels[role]}</span>
+                    </div>
+                    <Link to={`/users/${currentUser?.id}`} className="app-dropdown-item" onClick={() => setUserMenuOpen(false)}>
+                      <User size={15} /> View profile
+                    </Link>
+                    <Link to="/profile" className="app-dropdown-item" onClick={() => setUserMenuOpen(false)}>
+                      <Pencil size={15} /> Edit profile
+                    </Link>
+                    <Link to="/inbox" className="app-dropdown-item" onClick={() => setUserMenuOpen(false)}>
+                      <MessageSquare size={15} /> Inbox
+                    </Link>
                     <button
                       type="button"
-                      className="dropdown-link"
-                      onClick={() => {
-                        setNotifOpen(false);
-                        // Tour requests are the one notification type with
-                        // a page of its own; everything else is either
-                        // handled in place or has no inbox yet. Sending
-                        // users to /inbox for all of them was simply wrong.
-                        navigate(role === "landlord" ? "/tour-requests" : "/inbox");
-                      }}
+                      className="app-dropdown-item is-danger"
+                      onClick={handleLogout}
+                      disabled={isLoggingOut}
                     >
-                      {role === "landlord" ? "View tour requests →" : "Go to Inbox →"}
+                      <LogOut size={15} /> Log out
                     </button>
                   </div>
                 )}
               </div>
-            )}
-          </div>
-
-          {/* User menu */}
-          <div className="app-navbar-menu-wrapper" ref={userMenuRef}>
-            <button
-              type="button"
-              onClick={() => {
-                setUserMenuOpen((o) => !o);
-                setNotifOpen(false);
-              }}
-              className="user-chip-btn"
-              aria-label="User menu"
-            >
-              <span className="user-chip-avatar">
-                {currentUser?.profilePictureUrl ? (
-                  <img src={currentUser.profilePictureUrl} alt="" referrerPolicy="no-referrer" />
-                ) : (
-                  initials
-                )}
-              </span>
-              <span className="user-chip-name">{currentUser?.name?.split(" ")[0]}</span>
-              <ChevronDown size={14} />
-            </button>
-
-            {userMenuOpen && (
-              <div className="app-dropdown user-dropdown" role="menu">
-                <div className="user-dropdown-header">
-                  <p className="user-dropdown-name">{currentUser?.name}</p>
-                  <p className="user-dropdown-email">{currentUser?.email}</p>
-                  <span className="badge badge-neutral">{roleLabels[role]}</span>
-                </div>
-                <Link to={`/users/${currentUser?.id}`} className="app-dropdown-item" onClick={() => setUserMenuOpen(false)}>
-                  <User size={15} /> View profile
-                </Link>
-                <Link to="/profile" className="app-dropdown-item" onClick={() => setUserMenuOpen(false)}>
-                  <Pencil size={15} /> Edit profile
-                </Link>
-                <Link to="/inbox" className="app-dropdown-item" onClick={() => setUserMenuOpen(false)}>
-                  <MessageSquare size={15} /> Inbox
-                </Link>
-                <button
-                  type="button"
-                  className="app-dropdown-item is-danger"
-                  onClick={handleLogout}
-                  disabled={isLoggingOut}
-                >
-                  <LogOut size={15} /> Log out
-                </button>
-              </div>
-            )}
-          </div>
+            </>
+          )}
 
           {/* Mobile toggle */}
           <button
@@ -347,6 +367,12 @@ export default function AppNavbar() {
               );
             })}
           </nav>
+          {isGuest && (
+            <div className="app-mobile-guest-actions">
+              <Link to="/login" className="btn btn-primary">Log in</Link>
+              <Link to="/register" className="btn btn-ghost">Register</Link>
+            </div>
+          )}
           {(isDualRole || isAdmin) && (
             <div className="app-mobile-role-switch">
               <p className="app-mobile-role-label">Switch role</p>

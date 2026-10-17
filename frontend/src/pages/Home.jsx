@@ -25,10 +25,10 @@ export default function Home() {
   const { isLoading } = useAuth();
   const navigate = useNavigate();
 
-  function handleSearch(filters) {
+    function handleSearch(filters) {
     const params = new URLSearchParams();
     const mappings = {
-      searchText: "q",
+      searchText: "search",   // ← was "q"; now /browse?search=Gulshan
       city: "city",
       thana: "thana",
       postCode: "post_code",
@@ -40,17 +40,15 @@ export default function Home() {
 
     Object.entries(mappings).forEach(([field, parameter]) => {
       const value = filters?.[field];
-      if (typeof value === "string" ? value.trim() : value != null) {
-        const normalized = typeof value === "string" ? value.trim() : value;
-        if (normalized) params.set(parameter, normalized);
-      }
+      const normalized = typeof value === "string" ? value.trim() : value;
+      if (normalized) params.set(parameter, normalized);
     });
     if (filters?.hasBalcony && filters.hasBalcony !== "any") {
       params.set("has_balcony", filters.hasBalcony);
     }
 
     const query = params.toString();
-    navigate(query ? `/dashboard?${query}` : "/dashboard");
+    navigate(query ? `/browse?${query}` : "/browse");   // ← was /dashboard
   }
 
   // Avoid a flash of the wrong UI while we're still checking auth state.

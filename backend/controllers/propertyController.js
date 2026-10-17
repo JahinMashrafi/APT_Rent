@@ -34,14 +34,19 @@ const getProperties = async (req, res) => {
       values.push(`%${term}%`);
     };
 
-    if (q) {
-      where.push(`(
-        p.address ILIKE $${i}
-        OR COALESCE(p.details, '') ILIKE $${i}
-        OR COALESCE(p.property_type::text, '') ILIKE $${i}
-      )`);
-      values.push(`%${q}%`);
-      i += 1;
+        // Every word must appear somewhere in address / details / type
+    // (case-insensitive), so "gulshan dhaka" works too.
+    const searchTerm = (q || req.query.search || req.query.location || "").toString().trim();
+    if (searchTerm) {
+      searchTerm.split(/\s+/).forEach((word) => {
+        where.push(`(
+          p.address ILIKE $${i}
+          OR COALESCE(p.details, '') ILIKE $${i}
+          OR COALESCE(p.property_type::text, '') ILIKE $${i}
+        )`);
+        values.push(`%${word}%`);
+        i += 1;
+      });
     }
     if (city) addressSearch(city);
     if (thana) addressSearch(thana);
