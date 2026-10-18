@@ -3,7 +3,8 @@ import Modal from '../ui/Modal.jsx';
 import PhotoUploader from './PhotoUploader.jsx';
 import LocationPicker from './LocationPicker.jsx';
 import api from '../../services/api';
-import { adaptProperty } from '../../services/adapters';
+// import { adaptProperty } from '../../services/adapters';
+import { adaptProperty, LIFT_REGEX } from '../../services/adapters';
 
 /**
  * One form for both "Add New Property" and "Edit".
@@ -32,15 +33,22 @@ const EMPTY_FORM = {
   size_sqft: '',
   property_type: 'apartment',
   furnish_type: 'unfurnished',
+  has_lift: false,
 };
 
 const NUMERIC = ['latitude', 'longitude', 'rate', 'deposit', 'bedroom', 'bathroom', 'size_sqft'];
 
 // Postgres rejects '' for an integer column, and an empty <input> hands
 // us exactly that. Blank means "don't send this field", not "set to 0".
-const toPayload = (form) => {
+const buildFacilities = (existingFacilities, hasLift) => {
+  const others = (existingFacilities ?? []).filter((f) => !LIFT_REGEX.test(f));
+  return hasLift ? [...others, 'lift'] : others;
+};
+
+const toPayload = (form, existingFacilities = []) => {
   const payload = {};
   for (const [key, value] of Object.entries(form)) {
+    if (key === 'has_lift') continue; // folded into facilities below
     if (NUMERIC.includes(key)) {
       if (value === '' || value === null) continue;
       payload[key] = Number(value);
@@ -48,6 +56,7 @@ const toPayload = (form) => {
     }
     if (value !== '') payload[key] = value;
   }
+  payload.facilities = buildFacilities(existingFacilities, form.has_lift);
   return payload;
 };
 
@@ -79,6 +88,7 @@ export default function PropertyFormModal({
       size_sqft: property.size_sqft ?? '',
       property_type: property.property_type ?? 'apartment',
       furnish_type: property.furnish_type ?? 'unfurnished',
+      has_lift: Boolean(property.hasLift),
     };
   };
 
@@ -88,9 +98,9 @@ export default function PropertyFormModal({
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState('');
 
-  const handleChange = (event) => {
-    const { name, value } = event.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
+    const handleChange = (event) => {
+    const { name, value, type, checked } = event.target;
+    setForm((prev) => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
   };
 
   const uploadFiles = async (propertyId) => {
@@ -110,7 +120,7 @@ export default function PropertyFormModal({
       let saved;
 
       if (isEdit) {
-        saved = await api.properties.update(property.id, toPayload(form));
+        saved = await api.properties.update(property.id, toPayload(form, property.amenities));
 
         // Removals first: the bucket objects are keyed independently of
         // the rows, so order doesn't matter there, but doing deletions
@@ -213,6 +223,16 @@ export default function PropertyFormModal({
           </label>
         </div>
 
+        <label className="field field-checkbox" style={{ flexDirection: 'row', alignItems: 'center', gap: '10px' }}>
+          <input
+            type="checkbox"
+            name="has_lift"
+            checked={form.has_lift}
+            onChange={handleChange}
+            disabled={isSaving}
+          />
+          <span>Building has a lift / elevator</span>
+        </label>
         <PhotoUploader
           files={files}
           removedIds={removedIds}

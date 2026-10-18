@@ -103,9 +103,10 @@ export default function Contracts() {
     const values = negotiation[contract.contract_id] ?? {};
     try {
       setNegotiationError((prev) => ({ ...prev, [contract.contract_id]: "" }));
-      const updated = await api.contracts.negotiate(contract.contract_id, {
-        rate: values.rate,
-        deposit: values.deposit,
+            const updated = await api.contracts.negotiate(contract.contract_id, {
+        // Untouched inputs only display the contract's value; fall back to it.
+        rate: values.rate ?? contract.rate,
+        deposit: values.deposit ?? contract.deposit,
         message: values.message,
       });
       setContracts((prev) => prev.map((item) =>

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { MapPin, Bed, Bath, Maximize2, Building2, ShieldCheck, Check } from 'lucide-react';
+import { MapPin, Bed, Bath, Maximize2, Building2, ShieldCheck, Check, ArrowUpDown } from 'lucide-react';
 import StarRating from '../ui/StarRating.jsx';
 import '../../css/modules.css';
 import '../../css/global.css';
@@ -51,6 +51,16 @@ export default function PropertyInfo({ property }) {
           <Building2 size={20} color="var(--color-blueprint)" />
           <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.9rem', color: 'var(--color-ink)' }}>Floor {property?.floor}</div>
         </div>
+        <div
+  className="mod-card"
+  title="Lift"
+  style={{ padding: '12px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', opacity: property?.hasLift ? 1 : 0.55 }}
+>
+  <ArrowUpDown size={20} color={property?.hasLift ? 'var(--color-blueprint)' : 'var(--color-line-strong)'} />
+  <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.9rem', color: 'var(--color-ink)' }}>
+    {property?.hasLift ? 'Lift available' : 'No lift'}
+  </div>
+</div>
       </div>
 
       <div>

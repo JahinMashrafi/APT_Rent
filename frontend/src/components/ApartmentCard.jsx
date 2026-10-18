@@ -6,6 +6,7 @@ import { BedDouble, Bath, ArrowUpDown, Share2 } from "lucide-react";
 
 import formatRelativeDate from "../utils/formatRelativeDate.js";
 import { useToast } from "./ui/Toast.jsx";
+import { hasLiftIn } from "../services/adapters";
 
 // Clipboard API needs HTTPS/localhost; this fallback covers plain-http and older browsers.
 async function copyText(text) {
@@ -47,8 +48,7 @@ export default function ApartmentCard({ apartment }) {
   // adaptProperty() already computes hasLift; fall back to scanning the
   // amenities/facilities list for raw API data.
   const amenityList = apartment.amenities ?? apartment.facilities ?? [];
-  const hasLift =
-    apartment.hasLift ?? amenityList.some((f) => /lift|elevator/i.test(f));
+  const hasLift = apartment.hasLift ?? hasLiftIn(amenityList);
 
   const visiblePhotos = photos.slice(0, 3);
   const extraPhotoCount = Math.max(photos.length - 3, 0);
