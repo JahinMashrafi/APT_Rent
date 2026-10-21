@@ -1,0 +1,422 @@
+{
+  "common": {
+    "loading": "Loading…",
+    "search": "Search",
+    "clear": "Clear",
+    "cancel": "Cancel",
+    "close": "Close",
+    "dismiss": "Dismiss",
+    "yes": "Yes",
+    "no": "No",
+    "any": "Any",
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "perMonth": "{price} / month",
+    "browseListings": "Browse listings",
+    "notAvailable": "—"
+  },
+
+  "nav": {
+    "browse": "Browse",
+    "applications": "Applications",
+    "contracts": "Contracts",
+    "inbox": "Inbox",
+    "payRent": "Pay Rent",
+    "dashboard": "Dashboard",
+    "tourRequests": "Tour Requests",
+    "adminPanel": "Admin Panel",
+    "mainNavigation": "Main navigation"
+  },
+
+  "role": {
+    "tenant": "Tenant",
+    "landlord": "Landlord",
+    "admin": "Admin",
+    "switch": "Switch role"
+  },
+
+  "auth": {
+    "login": "Log in",
+    "register": "Register",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password"
+  },
+
+  "notif": {
+    "title": "Notifications",
+    "markAllRead": "Mark all read",
+    "empty": "You're all caught up.",
+    "goInbox": "Go to Inbox →",
+    "viewTours": "View tour requests →"
+  },
+
+  "time": {
+    "justNow": "just now",
+    "minutesAgo": "{count} minutes ago",
+    "minutesAgo_one": "{count} minute ago",
+    "hoursAgo": "{count} hours ago",
+    "hoursAgo_one": "{count} hour ago",
+    "daysAgo": "{count} days ago",
+    "daysAgo_one": "{count} day ago",
+    "monthsAgo": "{count} months ago",
+    "monthsAgo_one": "{count} month ago",
+    "yearsAgo": "{count} years ago",
+    "yearsAgo_one": "{count} year ago",
+    "minutesAgoShort": "{count}m ago",
+    "hoursAgoShort": "{count}h ago",
+    "daysAgoShort": "{count}d ago",
+    "monthsAgoShort": "{count}mo ago",
+    "yearsAgoShort": "{count}y ago"
+  },
+
+  "user": {
+    "menu": "User menu",
+    "viewProfile": "View profile",
+    "editProfile": "Edit profile",
+    "inbox": "Inbox",
+    "logout": "Log out"
+  },
+
+  "lang": {
+    "label": "Language",
+    "en": "English",
+    "bn": "বাংলা"
+  },
+
+  "mobile": {
+    "toggle": "Toggle mobile menu"
+  },
+
+  "footer": {
+    "brand": "APT RENT // EST. 2026"
+  },
+
+  "pwa": {
+    "newVersion": "A new version is available.",
+    "update": "Update",
+    "offline": "You're offline. Some features need a connection.",
+    "install": "Install APT Rent for quick access.",
+    "installBtn": "Install",
+    "installAria": "Install app",
+    "dismiss": "Dismiss",
+    "iosTap": "To install: tap",
+    "iosShare": "Share",
+    "iosThen": ", then",
+    "iosAdd": "Add to Home Screen"
+  },
+
+  "modal": {
+    "close": "Close modal"
+  },
+
+  "status": {
+    "active": "Active",
+    "approved": "Approved",
+    "paid": "Paid",
+    "occupied": "Occupied",
+    "verified": "Verified",
+    "pending": "Pending",
+    "due": "Due",
+    "reviewed": "Reviewed",
+    "info": "Info",
+    "rejected": "Rejected",
+    "banned": "Banned",
+    "overdue": "Overdue",
+    "vacant": "Vacant",
+    "hidden": "Hidden"
+  },
+
+  "home": {
+    "eyebrow": "Verified listings · Digital leases · Cashless rent",
+    "title": "Find Your Next Home",
+    "note": "Sign in to unlock live listings, filters, and saved searches.",
+    "explore": "Explore Available Properties"
+  },
+
+  "search": {
+    "formAria": "Search and filter apartments",
+    "placeholder": "Search by area, e.g. Gulshan, Dhanmondi...",
+    "inputAria": "Search apartments by area",
+    "clearAria": "Clear search",
+    "button": "Search",
+    "filter": "Filter",
+    "location": "Location",
+    "city": "City",
+    "thana": "Thana",
+    "postCode": "Post code",
+    "houseType": "House type",
+    "rooms": "Room(s)",
+    "bathrooms": "Bathroom(s)",
+    "balcony": "Balcony",
+    "priceRange": "Price range (BDT / month)",
+    "min": "Min",
+    "max": "Max",
+    "to": "to",
+    "clearFilters": "Clear",
+    "applyFilters": "Apply filters"
+  },
+
+  "feed": {
+    "loading": "Loading listings…",
+    "loadError": "Could not load listings.",
+    "empty": "No apartments match your search yet."
+  },
+
+  "listing": {
+    "untitled": "Untitled listing",
+    "noPhotos": "No photos yet",
+    "viewDetails": "View details for {address}",
+    "photoAlt": "{address} photo {index}",
+    "bed": "Bed",
+    "bath": "Bath",
+    "lift": "Lift",
+    "bedrooms": "Bedrooms",
+    "bathrooms": "Bathrooms",
+    "share": "Share",
+    "shareAria": "Share this listing",
+    "linkCopied": "Property link copied to clipboard!",
+    "copyFailed": "Couldn't copy the link. Please copy it from the address bar."
+  },
+
+  "pagination": {
+    "aria": "Newsfeed pagination",
+    "prev": "Prev",
+    "next": "Next"
+  },
+
+  "applications": {
+    "eyebrow": "Tenant Portal",
+    "title": "My Applications",
+    "subtitle": "Track the rental applications you've submitted to landlords.",
+    "loadError": "Could not load applications.",
+    "empty": "You haven't applied to any properties yet.",
+    "applied": "Applied {when}",
+    "today": "today"
+  },
+
+  "contracts": {
+    "eyebrow": "Lease Documents",
+    "title": "My Contracts",
+    "subtitle": "Every lease agreement you're part of — review terms, payment status, and signatures anytime.",
+    "loadError": "Could not load contracts.",
+    "empty": "No lease contracts yet.",
+    "contractNo": "Contract #{id}",
+    "txn": "Txn: {id}",
+    "noTxn": "No transaction yet",
+    "payment": "Payment: {value}",
+    "tenant": "Tenant",
+    "landlord": "Landlord",
+    "status": {
+      "draft": "Awaiting signatures",
+      "signed_by_owner": "Signed by landlord",
+      "signed_by_tenant": "Signed by tenant",
+      "fully_signed": "Fully signed",
+      "active": "Active lease"
+    },
+    "leaseAccepted": "Lease accepted",
+    "proposalSent": "Tenant proposal sent",
+    "loadingContract": "Loading contract…",
+    "loadDetailFailed": "Couldn't load the full contract. Try again in a moment.",
+    "monthlyRent": "Monthly Rent",
+    "securityDeposit": "Security Deposit",
+    "startDate": "Start Date",
+    "endDate": "End Date",
+    "bargainTitle": "Bargain lease terms",
+    "monthlyRentLabel": "Monthly rent",
+    "securityDepositLabel": "Security deposit",
+    "messageToTenant": "Optional message to the tenant",
+    "messageToLandlord": "Optional message to the landlord",
+    "sendCounter": "Send counter-offer",
+    "sendProposal": "Send bargaining proposal",
+    "proposalSentNote": "Your proposed terms were sent to the landlord.",
+    "acceptTenantProposal": "Accept tenant's proposal",
+    "acceptTerms": "Accept these lease terms",
+    "submitFailed": "Could not submit proposal.",
+    "acceptFailed": "Could not accept lease.",
+    "signTitle": "Sign final lease",
+    "signHelp": "Negotiation is accepted. Upload your signature image to complete the lease.",
+    "uploadSignature": "Upload signature",
+    "uploading": "Uploading…",
+    "signatureFailed": "Could not upload signature.",
+    "acceptedNote": "Lease accepted. Both parties can now sign.",
+    "terms": "Terms & Conditions",
+    "landlordSignature": "Landlord signature",
+    "tenantSignature": "Tenant signature",
+    "notSigned": "Not signed yet",
+    "leaseDocument": "Lease Document",
+    "pdfTitle": "Lease contract #{id}",
+    "downloadPdf": "Download PDF",
+    "pdfPending": "The lease document is still being generated — check back in a moment, or ask your landlord to re-save the contract."
+  },
+
+  "inbox": {
+    "messages": "Messages",
+    "searchPlaceholder": "Search conversations...",
+    "none": "No conversations.",
+    "noneYet": "No conversations yet.",
+    "selectPrompt": "Select a conversation to start chatting",
+    "typePlaceholder": "Type a message...",
+    "sending": "sending",
+    "read": "read",
+    "startFailed": "Could not start this conversation.",
+    "openPropertyFirst": "Open a property first to start a conversation.",
+    "sendFailed": "Message failed to send. Please try again.",
+    "back": "Back to conversations",
+    "send": "Send message"
+  },
+
+  "rent": {
+    "eyebrow": "Rent & Billing",
+    "title": "Pay Your Rent",
+    "noActive": "No active rental found",
+    "noActiveHint": "Rental details will appear here after the API responds.",
+    "due": "Due",
+    "dueBy": "Due by {date}",
+    "paidFor": "Paid for {month} — TXN #{txn}",
+    "payNow": "Pay Now",
+    "tabOnline": "Pay Online",
+    "tabCash": "Pay with Cash",
+    "selectMethod": "Select an online payment method to securely pay your rent.",
+    "card": "Credit/Debit Card",
+    "bkash": "bKash",
+    "proceed": "Proceed to Payment",
+    "modalTitle": "Pay Rent — {month}",
+    "cashScheduled": "Cash Payment Scheduled!",
+    "cashScheduledDetail": "Your pickup is scheduled for {date} during the {slot}.",
+    "addToCalendar": "Add to Calendar",
+    "cashNotice": "Cash payments must be scheduled between the 1st and 5th of each month.",
+    "selectDate": "Select a date for cash handover",
+    "timePreference": "Time preference",
+    "slot": {
+      "morning": "Morning (9AM–12PM)",
+      "afternoon": "Afternoon (12PM–5PM)",
+      "evening": "Evening (5PM–8PM)"
+    },
+    "landlordWillContact": "The landlord will contact you to confirm the pickup location.",
+    "scheduleCash": "Schedule Cash Payment",
+    "history": "Payment History",
+    "colMonth": "Month",
+    "colMethod": "Method",
+    "colAmount": "Amount",
+    "colStatus": "Status",
+    "colDatePaid": "Date Paid",
+    "colReceipt": "Receipt",
+    "downloadReceipt": "Download Receipt",
+    "paidOn": "Paid: {date}",
+    "method": {
+      "card": "Card",
+      "bkash": "bKash",
+      "cash": "Cash"
+    }
+  },
+
+  "payment": {
+    "amount": "Payment Amount",
+    "tabCard": "Card",
+    "tabBkash": "bKash",
+    "tabCash": "Cash",
+    "cardNumber": "Card Number",
+    "expiry": "Expiry (MM/YY)",
+    "expiryPlaceholder": "MM/YY",
+    "cvv": "CVV",
+    "cardholder": "Cardholder Name",
+    "cardholderPlaceholder": "John Doe",
+    "payNow": "Pay Now",
+    "bkashAccount": "bKash Account Number",
+    "sendOtp": "Send OTP",
+    "enterOtp": "Enter 6-digit OTP",
+    "verifyPay": "Verify & Pay",
+    "poweredBy": "Powered by bKash",
+    "cashInfo": "Cash payment must be arranged directly with your landlord between the 1st and 5th of each month.",
+    "confirmCash": "Confirm Cash Payment",
+    "cancel": "Cancel",
+    "errNumber": "Invalid card number",
+    "errExpiry": "Invalid expiry",
+    "errCvv": "Invalid CVV",
+    "errName": "Name is required"
+  },
+
+  "login": {
+    "welcome": "Welcome back",
+    "tagline": "Pick up right where the lease left off.",
+    "intro": "One sign-in for both sides of the rental — landlords managing units, tenants tracking rent and requests.",
+    "bullet1": "See live rent status and receipts",
+    "bullet2": "Message your landlord or tenant on record",
+    "bullet3": "File and follow up on maintenance requests",
+    "brandFoot": "APT RENT // SECURE SIGN-IN",
+    "eyebrow": "Account access",
+    "title": "Log in",
+    "subtitle": "Enter your details to access your APT Rent dashboard.",
+    "email": "Email address",
+    "emailPlaceholder": "you@example.com",
+    "password": "Password",
+    "remember": "Remember me",
+    "forgot": "Forgot password?",
+    "submit": "Log in",
+    "sessionNote": "Your secure session is saved in an HTTP-only cookie for seven days.",
+    "newHere": "New to APT Rent?",
+    "createAccount": "Create an account",
+    "genericError": "Something went wrong"
+  },
+
+  "register": {
+    "eyebrowJoin": "Join APT Rent",
+    "tagline": "One profile, verified once, used everywhere.",
+    "intro": "Whether you're listing a unit or looking for one, your details are recorded once and carried through every lease.",
+    "bullet1": "ID verification keeps both sides accountable",
+    "bullet2": "Landlords manage listings, leases, and rent in one view",
+    "bullet3": "Tenants get a documented paper trail, digitally",
+    "brandFoot": "APT RENT // NEW ACCOUNT",
+    "eyebrow": "Create your account",
+    "title": "Register",
+    "subtitle": "Tell us who you are — this becomes your verified APT Rent profile.",
+    "registerAs": "Register as",
+    "imTenant": "I'm a Tenant",
+    "imLandlord": "I'm a Landlord",
+    "fullName": "Full name",
+    "fullNamePlaceholder": "e.g. Arian Parvez Teshan",
+    "userId": "User ID",
+    "autoGenerated": "auto-generated",
+    "userIdPlaceholder": "Assigned after registration",
+    "profilePicture": "Profile picture",
+    "uploadPhoto": "Upload photo",
+    "photoHint": "JPG or PNG",
+    "nidPhoto": "NID photo",
+    "uploadNid": "Upload NID",
+    "nidHint": "Front side, clear scan",
+    "address": "Present address",
+    "addressPlaceholder": "House, road, area, city",
+    "occupation": "Occupation",
+    "selectOccupation": "Select occupation",
+    "occupations": {
+      "student": "Student",
+      "service_holder": "Service holder",
+      "businessman": "Businessman"
+    },
+    "institution": "School / College / University",
+    "institutionPlaceholder": "Institution name",
+    "studentIdCard": "Student ID card copy",
+    "uploadIdCard": "Upload ID card",
+    "idCardHint": "JPG, PNG, or PDF",
+    "phone": "Contact number",
+    "phonePlaceholder": "+880 1XXX-XXXXXX",
+    "email": "Email address",
+    "emailPlaceholder": "you@example.com",
+    "password": "Password",
+    "confirmPassword": "Confirm password",
+    "confirmAccurate": "I confirm the details above are accurate and I am submitting them for verification review.",
+    "agreePrefix": "I agree to the",
+    "terms": "Terms of Service",
+    "and": "and",
+    "privacy": "Privacy Policy",
+    "agreeSuffix": ".",
+    "submit": "Create account",
+    "submitting": "Creating account...",
+    "previewNote": "Front-end preview — no files are uploaded anywhere yet; this just demonstrates the UI.",
+    "haveAccount": "Already have an account?",
+    "errRequired": "Please fill in all required fields.",
+    "errMismatch": "Passwords do not match.",
+    "errUpload": "Account created, but document upload failed: {message}",
+    "errGeneric": "Registration failed"
+  }
+}

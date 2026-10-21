@@ -1,10 +1,11 @@
 
 
+
 import { Link } from "react-router-dom";
 
 import { BedDouble, Bath, ArrowUpDown, Share2 } from "lucide-react";
 
-import formatRelativeDate from "../utils/formatRelativeDate.js";
+import { useLanguage } from "../i18n/LanguageContext.jsx";
 import { useToast } from "./ui/Toast.jsx";
 import { hasLiftIn } from "../services/adapters";
 
@@ -18,6 +19,7 @@ async function copyText(text) {
       /* fall through to the legacy method */
     }
   }
+
   try {
     const ta = document.createElement("textarea");
     ta.value = text;
@@ -36,11 +38,18 @@ async function copyText(text) {
 
 export default function ApartmentCard({ apartment }) {
   const { showToast } = useToast();
+  const { t, pick, timeAgo, formatNumber, formatCurrency } = useLanguage();
 
   const id = apartment.id ?? apartment.property_id;
   const photos = apartment.photos ?? [];
-  const listedAt = apartment.listedAt ?? apartment.createdAt ?? apartment.created_at;
-  const address = apartment.address ?? apartment.title ?? "Untitled listing";
+  const listedAt =
+    apartment.listedAt ?? apartment.createdAt ?? apartment.created_at;
+
+  const address =
+    pick(apartment, "address") ??
+    pick(apartment, "title") ??
+    t("listing.untitled");
+
   const pricePerMonth = apartment.pricePerMonth ?? apartment.rate ?? 0;
   const bedrooms = apartment.bedrooms ?? apartment.bedroom ?? "—";
   const bathrooms = apartment.bathrooms ?? apartment.bathroom ?? "—";
@@ -63,81 +72,118 @@ export default function ApartmentCard({ apartment }) {
 
     // On phones/tablets, open the native share sheet when available.
     const isTouch = window.matchMedia?.("(pointer: coarse)").matches;
+
     if (isTouch && navigator.share) {
       try {
         await navigator.share({ title: address, url: fullUrl });
         return;
       } catch (err) {
-        if (err?.name === "AbortError") return; // user closed the sheet
-        // any other failure: fall back to copying below
+        if (err?.name === "AbortError") return;
+        // Any other failure: fall back to copying below.
       }
     }
 
     const copied = await copyText(fullUrl);
+
     showToast(
       copied
-        ? { message: "Property link copied to clipboard!", type: "success" }
-        : { message: "Couldn't copy the link. Please copy it from the address bar.", type: "error" },
+        ? { message: t("listing.linkCopied"), type: "success" }
+        : { message: t("listing.copyFailed"), type: "error" },
     );
   }
 
   return (
-  
-    <Link to={postDetailsUrl} className="apartment-card" aria-label={`View details for ${address}`}>
+    <Link
+      to={postDetailsUrl}
+      className="apartment-card"
+      aria-label={t("listing.viewDetails", { address })}
+    >
       {/* ===================== PHOTO GRID ===================== */}
       <div className="apartment-photos">
         {visiblePhotos.map((photoUrl, index) => {
           const isLastVisibleTile = index === visiblePhotos.length - 1;
-          const showOverflowBadge = isLastVisibleTile && extraPhotoCount > 0;
+          const showOverflowBadge =
+            isLastVisibleTile && extraPhotoCount > 0;
 
           return (
             <div className="apartment-photo-tile" key={photoUrl + index}>
-              <img src={photoUrl} alt={`${address} photo ${index + 1}`} />
+              <img
+                src={photoUrl}
+                alt={t("listing.photoAlt", {
+                  address,
+                  index: index + 1,
+                })}
+              />
 
-              {showOverflowBadge && <span className="apartment-photo-overflow">+{extraPhotoCount}</span>}
+              {showOverflowBadge && (
+                <span className="apartment-photo-overflow">
+                  +{formatNumber(extraPhotoCount)}
+                </span>
+              )}
             </div>
           );
         })}
+
         {visiblePhotos.length === 0 && (
           <div className="apartment-photo-tile apartment-photo-placeholder">
-            <span>No photos yet</span>
+            <span>{t("listing.noPhotos")}</span>
           </div>
         )}
       </div>
 
       <div className="apartment-card-body">
-
-        <p className="apartment-listed-date">{formatRelativeDate(listedAt)}</p>
-
+        <p className="apartment-listed-date">
+          {timeAgo(listedAt, { style: "short" })}
+        </p>
 
         <h3 className="apartment-address">{address}</h3>
 
-        <p className="apartment-price">৳{Number(pricePerMonth).toLocaleString("en-BD")} / month</p>
+        <p className="apartment-price">
+          {t("common.perMonth", {
+            price: formatCurrency(pricePerMonth),
+          })}
+        </p>
 
         {/* ===================== META ROW (bed / bath / lift) ===================== */}
         <ul className="apartment-icon-row">
-          <li title="Bedrooms">
+          <li title={t("listing.bedrooms")}>
             <BedDouble size={18} aria-hidden="true" />
-            <span className="meta-value">{bedrooms}</span>
-            <span className="meta-label">Bed</span>
+            <span className="meta-value">
+              {formatNumber(bedrooms) || bedrooms}
+            </span>
+            <span className="meta-label">{t("listing.bed")}</span>
           </li>
-          <li title="Bathrooms">
+
+          <li title={t("listing.bathrooms")}>
             <Bath size={18} aria-hidden="true" />
-            <span className="meta-value">{bathrooms}</span>
-            <span className="meta-label">Bath</span>
+            <span className="meta-value">
+              {formatNumber(bathrooms) || bathrooms}
+            </span>
+            <span className="meta-label">{t("listing.bath")}</span>
           </li>
-          <li title="Lift" className={hasLift ? "" : "is-muted"}>
+
+          <li
+            title={t("listing.lift")}
+            className={hasLift ? "" : "is-muted"}
+          >
             <ArrowUpDown size={18} aria-hidden="true" />
-            <span className="meta-value">{hasLift ? "Yes" : "No"}</span>
-            <span className="meta-label">Lift</span>
+            <span className="meta-value">
+              {hasLift ? t("common.yes") : t("common.no")}
+            </span>
+            <span className="meta-label">{t("listing.lift")}</span>
           </li>
         </ul>
 
         {/* ===================== SHARE BUTTON ===================== */}
         <div className="apartment-actions">
-          <button type="button" className="share-btn" onClick={handleShare} aria-label="Share this listing">
+          <button
+            type="button"
+            className="share-btn"
+            onClick={handleShare}
+            aria-label={t("listing.shareAria")}
+          >
             <Share2 size={16} aria-hidden="true" />
-            Share
+            {t("listing.share")}
           </button>
         </div>
       </div>

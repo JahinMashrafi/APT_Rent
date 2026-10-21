@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { X } from "lucide-react";
-
+import { useLanguage } from "../../i18n/LanguageContext.jsx";
 // =============================================================================
 // Modal.jsx — Reusable focus-trapped accessible modal
 // =============================================================================
@@ -20,6 +20,7 @@ const sizeClasses = {
 };
 
 export default function Modal({ isOpen, onClose, title, children, size = "md" }) {
+  const { t } = useLanguage(); 
   const panelRef = useRef(null);
 
   // Close on Escape key
@@ -73,7 +74,7 @@ export default function Modal({ isOpen, onClose, title, children, size = "md" })
           <button
             onClick={onClose}
             className="p-2 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
-            aria-label="Close modal"
+            aria-label={t("modal.close")}
           >
             <X size={18} />
           </button>

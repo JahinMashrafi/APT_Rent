@@ -490,3 +490,61 @@
 @media (max-width: 480px) {
   .guest-register-link { display: none; }
 }
+
+/* ==========================================================================
+   Language switcher (EN | BN) — sits in .app-navbar-actions
+   Same pill + ink/paper tokens as the role switcher.
+   ========================================================================== */
+.lang-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+  background: var(--color-paper-dim);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-pill);
+  padding: 3px;
+}
+.lang-switch-btn {
+  padding: 5px 11px;
+  border: none;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  font-family: var(--font-mono);
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  color: var(--color-blueprint);
+  cursor: pointer;
+  transition: background-color 0.15s, color 0.15s;
+}
+.lang-switch-btn:hover:not(.is-active) { color: var(--color-ink); }
+.lang-switch-btn.is-active {
+  background: var(--color-ink);
+  color: var(--color-paper);
+  box-shadow: var(--shadow-soft);
+}
+.lang-switch-btn:focus-visible {
+  outline: 2px solid var(--color-brass);
+  outline-offset: 1px;
+}
+
+/* Phones: tighten so Log in / avatar / bell / hamburger still fit */
+@media (max-width: 480px) {
+  .app-navbar-inner { padding-inline: 12px; gap: 10px; }
+  .app-navbar-actions { gap: 4px; }
+  .lang-switch { padding: 2px; }
+  .lang-switch-btn { padding: 5px 8px; font-size: 0.7rem; }
+  .guest-login-btn { padding: 0.4rem 0.8rem; min-height: 36px; font-size: 0.85rem; }
+}
+
+/* Bangla typography: Inter has no Bengali glyphs */
+html[lang="bn"] body {
+  font-family: 'Noto Sans Bengali', var(--font-body);
+}
+html[lang="bn"] .app-nav-link,
+html[lang="bn"] .notif-item-title,
+html[lang="bn"] .app-dropdown-item {
+  line-height: 1.5;
+}

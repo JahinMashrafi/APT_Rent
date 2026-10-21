@@ -1,3 +1,4 @@
+
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import SearchFilterBar from "./SearchFilterBar.jsx";
@@ -5,10 +6,11 @@ import ApartmentCard from "./ApartmentCard.jsx";
 import Pagination from "./Pagination.jsx";
 import api from "../services/api";
 import { adaptProperty } from "../services/adapters";
+import { useLanguage } from "../i18n/LanguageContext.jsx";
 
 const POSTS_PER_PAGE = 12;
 
-// filter field  ->  URL param
+// filter field -> URL param
 const URL_PARAMS = {
   searchText: "search",
   city: "city",
@@ -21,13 +23,14 @@ const URL_PARAMS = {
 };
 
 export default function NewsFeed() {
+  const { t } = useLanguage();
+
   const [searchParams, setSearchParams] = useSearchParams();
   const [apartments, setApartments] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
 
   const [totalPages, setTotalPages] = useState(1);
 
-  
 
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
@@ -35,25 +38,31 @@ export default function NewsFeed() {
   // The URL is the source of truth. Whenever it changes (typing, Home hero
   // redirect, back/forward) the filters are re-derived from it.
   const urlKey = searchParams.toString();
+
   const activeFilters = useMemo(
     () => filtersFromSearchParams(new URLSearchParams(urlKey)),
     [urlKey]
   );
 
-  // New search/filter -> back to page 1
+  // New search/filter -> back to page 1.
   useEffect(() => {
     setCurrentPage(1);
   }, [urlKey]);
 
-  // Fetch whenever page or filters change
+  // Fetch whenever page or filters change.
   useEffect(() => {
     let isCancelled = false;
 
     async function loadApartments() {
       setIsLoading(true);
       setLoadError("");
+
       try {
-        const { items, totalPages: pages } = await fetchApartments(currentPage, activeFilters);
+        const { items, totalPages: pages } = await fetchApartments(
+          currentPage,
+          activeFilters
+        );
+
         if (!isCancelled) {
           setApartments(items);
           setTotalPages(pages);
@@ -62,14 +71,17 @@ export default function NewsFeed() {
         if (!isCancelled) {
           setApartments([]);
           setTotalPages(1);
-          setLoadError(error.message || "Could not load listings.");
+          setLoadError(error.message || "__load_error__");
         }
       } finally {
-        if (!isCancelled) setIsLoading(false);
+        if (!isCancelled) {
+          setIsLoading(false);
+        }
       }
     }
 
     loadApartments();
+
     return () => {
       isCancelled = true;
     };
@@ -79,15 +91,22 @@ export default function NewsFeed() {
   const handleSearch = useCallback(
     (filters) => {
       const next = new URLSearchParams();
+
       Object.entries(URL_PARAMS).forEach(([field, param]) => {
         const value = filters?.[field];
-        const normalized = typeof value === "string" ? value.trim() : value;
-        if (normalized) next.set(param, normalized);
+        const normalized =
+          typeof value === "string" ? value.trim() : value;
+
+        if (normalized) {
+          next.set(param, normalized);
+        }
       });
+
       if (filters?.hasBalcony && filters.hasBalcony !== "any") {
         next.set("has_balcony", filters.hasBalcony);
       }
-      // replace: live typing should not fill the browser history
+
+      // Replace: live typing should not fill the browser history.
       setSearchParams(next, { replace: true });
     },
     [setSearchParams]
@@ -95,31 +114,49 @@ export default function NewsFeed() {
 
   function handleToggleWishlist(apartmentId) {
     setApartments((prev) =>
-      prev.map((apt) => (apt.id === apartmentId ? { ...apt, isWishlisted: !apt.isWishlisted } : apt))
+      prev.map((apt) =>
+        apt.id === apartmentId
+          ? { ...apt, isWishlisted: !apt.isWishlisted }
+          : apt
+      )
     );
   }
 
   return (
     <section className="newsfeed-section">
-      <SearchFilterBar onSearch={handleSearch} liveSearch initialFilters={activeFilters} />
-
+      <SearchFilterBar
+        onSearch={handleSearch}
+        liveSearch
+        initialFilters={activeFilters}
+      />
 
       {isLoading ? (
-        <p className="newsfeed-status">Loading listings…</p>
+        <p className="newsfeed-status">{t("feed.loading")}</p>
       ) : loadError ? (
-        <p className="newsfeed-status">{loadError}</p>
+        <p className="newsfeed-status">
+          {loadError === "__load_error__"
+            ? t("feed.loadError")
+            : loadError}
+        </p>
       ) : apartments.length === 0 ? (
-        <p className="newsfeed-status">No apartments match your search yet.</p>
+        <p className="newsfeed-status">{t("feed.empty")}</p>
       ) : (
         <div className="newsfeed-grid">
           {apartments.map((apartment) => (
-            <ApartmentCard key={apartment.id} apartment={apartment} onToggleWishlist={handleToggleWishlist} />
+            <ApartmentCard
+              key={apartment.id}
+              apartment={apartment}
+              onToggleWishlist={handleToggleWishlist}
+            />
           ))}
         </div>
       )}
 
-
-      <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={setCurrentPage}
+      />
     </section>
   );
 }
@@ -130,6 +167,7 @@ async function fetchApartments(page, filters) {
     limit: POSTS_PER_PAGE,
     ...toApiFilters(filters),
   });
+
   return {
     items: (data?.data ?? []).map(adaptProperty),
     totalPages: data?.meta?.total_pages ?? 1,
@@ -140,6 +178,7 @@ async function fetchApartments(page, filters) {
 function toApiFilters(filters) {
   const source = filters || {};
   const apiFilters = {};
+
   const values = {
     q: source.searchText,
     city: source.city,
@@ -152,8 +191,13 @@ function toApiFilters(filters) {
   };
 
   for (const [name, value] of Object.entries(values)) {
-    if (typeof value === "string" ? value.trim() !== "" : value != null) {
-      apiFilters[name] = typeof value === "string" ? value.trim() : value;
+    if (
+      typeof value === "string"
+        ? value.trim() !== ""
+        : value != null
+    ) {
+      apiFilters[name] =
+        typeof value === "string" ? value.trim() : value;
     }
   }
 
@@ -165,10 +209,14 @@ function toApiFilters(filters) {
 }
 
 function filtersFromSearchParams(params) {
-
+  
   return {
-    // accepts ?search=, and the older ?q= / ?location= as fallbacks
-    searchText: params.get("search") || params.get("q") || params.get("location") || "",
+    // Accepts ?search= and the older ?q= / ?location= as fallbacks.
+    searchText:
+      params.get("search") ||
+      params.get("q") ||
+      params.get("location") ||
+      "",
     city: params.get("city") || "",
     thana: params.get("thana") || "",
     postCode: params.get("post_code") || "",
