@@ -21,6 +21,7 @@ import {
 import { useApp } from "../context/AppContext.jsx";
 import { logoutUser } from "../utils/auth";
 import { useLanguage } from "../i18n/LanguageContext.jsx";
+import { localizeNotification } from "../utils/notificationText.js";
 import LanguageSwitcher from "./LanguageSwitcher.jsx";
 
 // =============================================================================
@@ -97,8 +98,9 @@ export default function AppNavbar() {
   const isAdmin = Boolean(currentUser?.isAdmin);
   const navigate = useNavigate();
   const location = useLocation();
- const { t, timeAgo } = useLanguage();
-
+  //  const { t, timeAgo } = useLanguage();
+  const i18n = useLanguage();
+  const { t, timeAgo } = i18n;
   const [mobileOpen, setMobileOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -248,32 +250,42 @@ export default function AppNavbar() {
                         </button>
                       )}
                     </div>
+
                     <ul className="notif-list">
                       {notifications.length === 0 ? (
                         <li className="notif-empty">{t("notif.empty")}</li>
                       ) : (
-                        notifications.slice(0, 5).map((n) => (
-                          <li key={n.id}>
-                            <button
-                              type="button"
-                              className={`notif-item ${!n.isRead ? "is-unread" : ""}`}
-                              onClick={() => {
-                                markNotificationRead(n.id);
-                                setNotifOpen(false);
-                                navigate(notificationDestination(n, role));
-                              }}
-                            >
-                              {!n.isRead && <span className="notif-dot" />}
-                              <span className="notif-item-body">
-                                <span className="notif-item-title">{n.title}</span>
-                                <span className="notif-item-message">{n.message}</span>
-                                <span className="notif-item-time">{timeAgo(n.timestamp, { style: "short" })}</span>
-                              </span>
-                            </button>
-                          </li>
-                        ))
+                        notifications.slice(0, 5).map((n) => {
+                          const text = localizeNotification(n, i18n);
+
+                          return (
+                            <li key={n.id}>
+                              <button
+                                type="button"
+                                className={`notif-item ${!n.isRead ? "is-unread" : ""}`}
+                                onClick={() => {
+                                  markNotificationRead(n.id);
+                                  setNotifOpen(false);
+                                  navigate(notificationDestination(n, role));
+                                }}
+                              >
+                                {!n.isRead && <span className="notif-dot" />}
+                                <span className="notif-item-body">
+                                  {/* <span className="notif-item-title">{n.title}</span> */}
+                                  {/* <span className="notif-item-message">{n.message}</span> */}
+                                   <span className="notif-item-title">{text.title}</span>
+                                   <span className="notif-item-message">{text.message}</span>
+                                  <span className="notif-item-time">
+                                    {timeAgo(n.timestamp, { style: "short" })}
+                                  </span>
+                                </span>
+                              </button>
+                            </li>
+                          );
+                        })
                       )}
                     </ul>
+
                     {notifications.length > 0 && (
                       <div className="app-dropdown-footer">
                         <button

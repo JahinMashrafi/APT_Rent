@@ -8,6 +8,7 @@ import markerIcon from 'leaflet/dist/images/marker-icon.png';
 import markerShadow from 'leaflet/dist/images/marker-shadow.png';
 import '../../css/modules.css';
 import '../../css/global.css';
+import { useLanguage } from '../../i18n/LanguageContext.jsx';
 
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -17,13 +18,14 @@ L.Icon.Default.mergeOptions({
 });
 
 export default function PropertyLocation({ lat, lng, title, address }) {
+  const { t } = useLanguage();
   const position = [lat || 23.8103, lng || 90.4125];
 
   return (
     <div style={{ marginTop: '32px' }}>
       <h2 className="section-heading" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
         <MapPin size={24} color="var(--color-ink)" />
-        Location
+        {t('propertyDetails.locationTitle')}
       </h2>
       
       <div style={{ 
