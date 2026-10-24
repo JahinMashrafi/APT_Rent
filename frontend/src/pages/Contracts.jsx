@@ -97,6 +97,19 @@ export default function Contracts() {
 
   const submitNegotiation = async (contract) => {
     const values = negotiation[contract.contract_id] ?? {};
+    const rate = values.rate ?? details[contract.contract_id]?.rate ?? contract.rate;
+    const deposit = values.deposit ?? details[contract.contract_id]?.deposit ?? contract.deposit;
+    const numericRate = Number(rate);
+    const numericDeposit = Number(deposit);
+
+    if (!Number.isFinite(numericRate) || numericRate <= 0 || !Number.isFinite(numericDeposit) || numericDeposit < 0) {
+      setNegotiationError((prev) => ({
+        ...prev,
+        [contract.contract_id]: "Enter a valid rent and non-negative deposit.",
+      }));
+      return;
+    }
+
     try {
       setNegotiationError((prev) => ({ ...prev, [contract.contract_id]: "" }));
             const updated = await api.contracts.negotiate(contract.contract_id, {

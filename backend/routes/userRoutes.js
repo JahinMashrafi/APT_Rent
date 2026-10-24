@@ -9,7 +9,6 @@ const {
   getMe,
   updateMe,
   uploadDocuments,
-  uploadAvatar,
   uploadAvatarImage,
   removeAvatar,
   getProfileDetail,
@@ -20,20 +19,8 @@ const {
 // treat "me" as an :id value and hit the wrong handler.
 router.get("/me", requireAuth, getMe);
 router.patch("/me", requireAuth, updateMe);
-router.post(
-  "/me/documents",
-  requireAuth,
-  upload.fields([
-    { name: "nid_photo", maxCount: 1 },
-    { name: "student_id_card", maxCount: 1 },
-    { name: "job_id_card", maxCount: 1 },
-    { name: "trade_license", maxCount: 1 },
-  ]),
-  uploadDocuments,
-);
-router.post("/me/avatar", requireAuth, upload.single("profile_picture"), uploadAvatar);
 router.post("/me/documents", requireAuth, uploadVerificationDocs, uploadDocuments);
-router.post("/me/avatar", requireAuth, uploadAvatar, uploadAvatarImage);
+router.post("/me/avatar", requireAuth, uploadAvatarMiddleware, uploadAvatarImage);
 router.delete("/me/avatar", requireAuth, removeAvatar);
 
 // Detailed profile page (signed-in users only).
