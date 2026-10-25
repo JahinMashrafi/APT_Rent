@@ -1,8 +1,10 @@
+
 import AppNavbar from "../components/AppNavbar.jsx";
 import PropertyMap from "../components/PropertyMap.jsx";
 import SearchFilterBar from "../components/SearchFilterBar.jsx";
 import useAuth from "../hooks/useAuth.js";
 import { useNavigate } from "react-router-dom";
+import { useLanguage } from "../i18n/LanguageContext.jsx";
 
 /**
  * ============================================================================
@@ -19,16 +21,19 @@ import { useNavigate } from "react-router-dom";
  * you can jump straight to the part you want to edit.
  * ============================================================================
  */
+
 export default function Home() {
   // isAuthenticated flips the whole page between the two experiences.
   // See src/hooks/useAuth.js — swap its internals for your real auth check.
   const { isLoading } = useAuth();
   const navigate = useNavigate();
+  const { t } = useLanguage();
 
   function handleSearch(filters) {
     const params = new URLSearchParams();
+
     const mappings = {
-      searchText: "q",
+      searchText: "search",
       city: "city",
       thana: "thana",
       postCode: "post_code",
@@ -40,17 +45,17 @@ export default function Home() {
 
     Object.entries(mappings).forEach(([field, parameter]) => {
       const value = filters?.[field];
-      if (typeof value === "string" ? value.trim() : value != null) {
-        const normalized = typeof value === "string" ? value.trim() : value;
-        if (normalized) params.set(parameter, normalized);
-      }
+      const normalized = typeof value === "string" ? value.trim() : value;
+
+      if (normalized) params.set(parameter, normalized);
     });
+
     if (filters?.hasBalcony && filters.hasBalcony !== "any") {
       params.set("has_balcony", filters.hasBalcony);
     }
 
     const query = params.toString();
-    navigate(query ? `/dashboard?${query}` : "/dashboard");
+    navigate(query ? `/browse?${query}` : "/browse");
   }
 
   // Avoid a flash of the wrong UI while we're still checking auth state.
@@ -63,7 +68,7 @@ export default function Home() {
   // ==========================================================================
 
   // ==========================================================================
-  // SECTION B — PUBLIC / LOGGED-OUT HOME (unchanged from your original code)
+  // SECTION B — PUBLIC / LOGGED-OUT HOME
   // ==========================================================================
   return (
     <div className="page-shell">
@@ -73,27 +78,35 @@ export default function Home() {
       <main>
         <section className="hero">
           <div className="hero-media" aria-hidden="true">
-            <img src="/assets/images/backgrounds/hero-background.svg" alt="" />
+            <img
+              src="/assets/images/backgrounds/hero-background.svg"
+              alt=""
+            />
             <div className="hero-overlay"></div>
           </div>
+
           <div className="container hero-inner">
             <span className="eyebrow">
-              Verified listings · Digital leases · Cashless rent
+              {t("home.eyebrow")}
             </span>
+
             <h1>
-              <em>Find Your Next Home</em>
+              <em>{t("home.title")}</em>
             </h1>
 
             <SearchFilterBar onSearch={handleSearch} />
+
             <p className="hero-note">
-              Sign in to unlock live listings, filters, and saved searches.
+              {t("home.note")}
             </p>
           </div>
         </section>
+
         <section className="max-w-7xl mx-auto px-4 py-16">
           <h2 className="text-3xl font-bold text-gray-900 mb-8">
-            Explore Available Properties
+            {t("home.explore")}
           </h2>
+
           <PropertyMap />
         </section>
       </main>
@@ -101,7 +114,7 @@ export default function Home() {
       {/* FOOTER matching index.html */}
       <footer className="site-footer">
         <div className="container">
-          <p>APT&nbsp;RENT // EST. 2026</p>
+          <p>{t("footer.brand")}</p>
         </div>
       </footer>
     </div>

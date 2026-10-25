@@ -71,6 +71,7 @@ function App() {
 
         {/* Property browsing */}
         <Route path="/listings" element={<Dashboard />} />
+        <Route path="/browse" element={<Dashboard />} />   
         <Route path="/property/:id" element={<PropertyDetails />} />
         {/* Legacy route kept for ApartmentCard links */}
         <Route path="/apartments/:id" element={<PropertyDetails />} />

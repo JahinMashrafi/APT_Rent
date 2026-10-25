@@ -1,135 +1,189 @@
-/**
- * ============================================================================
- * ApartmentCard.jsx
- * ============================================================================
- * THE SECOND BUG YOU DESCRIBED: "the full card should be a link... wherever
- * I click on the card, it will move to the next page."
- *
- * Fix: the whole <article> is now wrapped in a single <Link to={`/property/${id}`}>
- * (route confirmed from your Contracts.jsx: `to={`/property/${contract.property_id}`}`).
- * The wishlist star and share button still work normally — each one calls
- * event.preventDefault() + event.stopPropagation(), which stops the click
- * from ever reaching the surrounding <Link> and navigating away.
- *
- * FIELD NAMES: your real adapters.js wasn't included, so this reads several
- * possible field-name spellings defensively (camelCase and snake_case) so it
- * works whichever your adaptProperty() actually produces. If your adapter
- * uses different names than these fallbacks, just adjust the destructuring
- * below — everything else stays the same.
- *
- * LIFT ICON: your schema has no dedicated "has lift" column — lift/elevator
- * is one of the free-text strings in properties.facilities (same pattern
- * your own backend already uses for "balcony" in the has_balcony filter in
- * propertyController.js). So this card checks facilities for a "lift" or
- * "elevator" entry instead of a field that doesn't exist.
- * ============================================================================
- */
+
+
 
 import { Link } from "react-router-dom";
-import formatRelativeDate from "../utils/formatRelativeDate.js";
 
-export default function ApartmentCard({ apartment, onToggleWishlist }) {
+import { BedDouble, Bath, ArrowUpDown, Share2 } from "lucide-react";
+
+import { useLanguage } from "../i18n/LanguageContext.jsx";
+import { useToast } from "./ui/Toast.jsx";
+import { hasLiftIn } from "../services/adapters";
+
+// Clipboard API needs HTTPS/localhost; this fallback covers plain-http and older browsers.
+async function copyText(text) {
+  if (navigator.clipboard?.writeText) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch {
+      /* fall through to the legacy method */
+    }
+  }
+
+  try {
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    ta.setAttribute("readonly", "");
+    ta.style.position = "fixed";
+    ta.style.opacity = "0";
+    document.body.appendChild(ta);
+    ta.select();
+    const ok = document.execCommand("copy");
+    document.body.removeChild(ta);
+    return ok;
+  } catch {
+    return false;
+  }
+}
+
+export default function ApartmentCard({ apartment }) {
+  const { showToast } = useToast();
+  const { t, pick, timeAgo, formatNumber, formatCurrency } = useLanguage();
+
   const id = apartment.id ?? apartment.property_id;
   const photos = apartment.photos ?? [];
-  const listedAt = apartment.createdAt ?? apartment.created_at ?? apartment.listedAt;
-  const address = apartment.address ?? apartment.title ?? "Untitled listing";
+  const listedAt =
+    apartment.listedAt ?? apartment.createdAt ?? apartment.created_at;
+
+  const address =
+    pick(apartment, "address") ??
+    pick(apartment, "title") ??
+    t("listing.untitled");
+
   const pricePerMonth = apartment.pricePerMonth ?? apartment.rate ?? 0;
   const bedrooms = apartment.bedrooms ?? apartment.bedroom ?? "—";
   const bathrooms = apartment.bathrooms ?? apartment.bathroom ?? "—";
-  const facilities = apartment.facilities ?? [];
-  const hasLift = facilities.some((f) => /lift|elevator/i.test(f));
-  const isWishlisted = Boolean(apartment.isWishlisted);
+
+  // adaptProperty() already computes hasLift; fall back to scanning the
+  // amenities/facilities list for raw API data.
+  const amenityList = apartment.amenities ?? apartment.facilities ?? [];
+  const hasLift = apartment.hasLift ?? hasLiftIn(amenityList);
 
   const visiblePhotos = photos.slice(0, 3);
   const extraPhotoCount = Math.max(photos.length - 3, 0);
   const postDetailsUrl = `/property/${id}`;
 
-  // --- Share handler: copies the post's link to the clipboard --------------
-  function handleShare(event) {
+  async function handleShare(event) {
+    // The whole card is a <Link>; stop the click from navigating.
     event.preventDefault();
     event.stopPropagation();
-    const fullUrl = `${window.location.origin}${postDetailsUrl}`;
 
-    if (navigator.share) {
-      navigator.share({ title: address, url: fullUrl }).catch(() => {});
-    } else {
-      navigator.clipboard?.writeText(fullUrl);
-      alert("Link copied to clipboard!");
+    const fullUrl = `${window.location.origin}/property/${id}`;
+
+    // On phones/tablets, open the native share sheet when available.
+    const isTouch = window.matchMedia?.("(pointer: coarse)").matches;
+
+    if (isTouch && navigator.share) {
+      try {
+        await navigator.share({ title: address, url: fullUrl });
+        return;
+      } catch (err) {
+        if (err?.name === "AbortError") return;
+        // Any other failure: fall back to copying below.
+      }
     }
-  }
 
-  // --- Wishlist star handler -------------------------------------------------
-  function handleWishlistClick(event) {
-    event.preventDefault();
-    event.stopPropagation();
-    onToggleWishlist?.(id);
+    const copied = await copyText(fullUrl);
+
+    showToast(
+      copied
+        ? { message: t("listing.linkCopied"), type: "success" }
+        : { message: t("listing.copyFailed"), type: "error" },
+    );
   }
 
   return (
-    // ===================== WHOLE CARD IS NOW THE LINK =====================
-    // Clicking anywhere on the card (photos, address, price, icon row)
-    // navigates to /property/:id. The two buttons inside stop their click
-    // from bubbling up to this Link, so they still work on their own.
-    <Link to={postDetailsUrl} className="apartment-card" aria-label={`View details for ${address}`}>
-      {/* ===================== 1. PHOTO GRID ===================== */}
+    <Link
+      to={postDetailsUrl}
+      className="apartment-card"
+      aria-label={t("listing.viewDetails", { address })}
+    >
+      {/* ===================== PHOTO GRID ===================== */}
       <div className="apartment-photos">
         {visiblePhotos.map((photoUrl, index) => {
           const isLastVisibleTile = index === visiblePhotos.length - 1;
-          const showOverflowBadge = isLastVisibleTile && extraPhotoCount > 0;
+          const showOverflowBadge =
+            isLastVisibleTile && extraPhotoCount > 0;
 
           return (
             <div className="apartment-photo-tile" key={photoUrl + index}>
-              <img src={photoUrl} alt={`${address} photo ${index + 1}`} />
-              {/* --- "+N" overlay on the last visible tile when there are more photos --- */}
-              {showOverflowBadge && <span className="apartment-photo-overflow">+{extraPhotoCount}</span>}
+              <img
+                src={photoUrl}
+                alt={t("listing.photoAlt", {
+                  address,
+                  index: index + 1,
+                })}
+              />
+
+              {showOverflowBadge && (
+                <span className="apartment-photo-overflow">
+                  +{formatNumber(extraPhotoCount)}
+                </span>
+              )}
             </div>
           );
         })}
+
         {visiblePhotos.length === 0 && (
           <div className="apartment-photo-tile apartment-photo-placeholder">
-            <span>No photos yet</span>
+            <span>{t("listing.noPhotos")}</span>
           </div>
         )}
       </div>
 
       <div className="apartment-card-body">
-        {/* ===================== 2. LISTED DATE ===================== */}
-        <p className="apartment-listed-date">{formatRelativeDate(listedAt)}</p>
+        <p className="apartment-listed-date">
+          {timeAgo(listedAt, { style: "short" })}
+        </p>
 
-        {/* ===================== 3. ADDRESS + PRICE ===================== */}
         <h3 className="apartment-address">{address}</h3>
-        <p className="apartment-price">৳{Number(pricePerMonth).toLocaleString("en-BD")} / month</p>
 
-        {/* ===================== 4. ICON ROW (bed / bath / lift) ===================== */}
+        <p className="apartment-price">
+          {t("common.perMonth", {
+            price: formatCurrency(pricePerMonth),
+          })}
+        </p>
+
+        {/* ===================== META ROW (bed / bath / lift) ===================== */}
         <ul className="apartment-icon-row">
-          <li>
-            <img src="/assets/icons/bed.svg" alt="Bedrooms" width="16" height="16" />
-            <span>{bedrooms}</span>
+          <li title={t("listing.bedrooms")}>
+            <BedDouble size={18} aria-hidden="true" />
+            <span className="meta-value">
+              {formatNumber(bedrooms) || bedrooms}
+            </span>
+            <span className="meta-label">{t("listing.bed")}</span>
           </li>
-          <li>
-            <img src="/assets/icons/bath.svg" alt="Bathrooms" width="16" height="16" />
-            <span>{bathrooms}</span>
+
+          <li title={t("listing.bathrooms")}>
+            <Bath size={18} aria-hidden="true" />
+            <span className="meta-value">
+              {formatNumber(bathrooms) || bathrooms}
+            </span>
+            <span className="meta-label">{t("listing.bath")}</span>
           </li>
-          <li>
-            <img src="/assets/icons/lift.svg" alt="Lift" width="16" height="16" />
-            <span>{hasLift ? "Yes" : "No"}</span>
+
+          <li
+            title={t("listing.lift")}
+            className={hasLift ? "" : "is-muted"}
+          >
+            <ArrowUpDown size={18} aria-hidden="true" />
+            <span className="meta-value">
+              {hasLift ? t("common.yes") : t("common.no")}
+            </span>
+            <span className="meta-label">{t("listing.lift")}</span>
           </li>
         </ul>
 
-        {/* ===================== 5. ACTIONS (wishlist / share) ===================== */}
+        {/* ===================== SHARE BUTTON ===================== */}
         <div className="apartment-actions">
           <button
             type="button"
-            className={`icon-btn wishlist-btn ${isWishlisted ? "is-active" : ""}`}
-            onClick={handleWishlistClick}
-            aria-pressed={isWishlisted}
-            aria-label={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
+            className="share-btn"
+            onClick={handleShare}
+            aria-label={t("listing.shareAria")}
           >
-            <img src="/assets/icons/star.svg" alt="" width="18" height="18" />
-          </button>
-
-          <button type="button" className="icon-btn share-btn" onClick={handleShare} aria-label="Share this listing">
-            <img src="/assets/icons/share.svg" alt="" width="18" height="18" />
+            <Share2 size={16} aria-hidden="true" />
+            {t("listing.share")}
           </button>
         </div>
       </div>
