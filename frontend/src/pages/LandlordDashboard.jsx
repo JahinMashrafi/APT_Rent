@@ -6,6 +6,7 @@ import { TrendingUp, Users, Calendar, Edit3, Eye, EyeOff, Trash2, ChevronRight, 
 import PropertyFormModal from '../components/property/PropertyFormModal.jsx';
 import { useToast } from '../components/ui/Toast.jsx';
 import api from '../services/api';
+import { useLanguage } from '../i18n/LanguageContext.jsx';
 import { adaptProperty, adaptApplication, flattenApplication } from '../services/adapters';
 import '../css/global.css';
 import '../css/navbar.css';
@@ -15,7 +16,7 @@ import '../css/modules.css';
 // ---------------------------------------------------------------------------
 // helpers
 // ---------------------------------------------------------------------------
-const taka = (n) => `৳${Number(n ?? 0).toLocaleString('en-BD')}`;
+
 
 // Local-time YYYY-MM-DD (toISOString would shift the day for UTC+6).
 const toLocalISODate = (d) => {
@@ -34,6 +35,9 @@ const emptySlots = () => [
 export default function LandlordDashboard() {
   const navigate = useNavigate();
   const { showToast } = useToast();
+  const { t, tx, digits, formatNumber, formatCurrency, formatDate } = useLanguage();
+  // ৳35,000 in English, ৳৩৫,০০০ in Bangla
+  const taka = (n) => formatCurrency(Number(n ?? 0));
 
   const [activeTab, setActiveTab] = useState('overview');
   const [properties, setProperties] = useState([]);
@@ -70,7 +74,7 @@ export default function LandlordDashboard() {
   const [editTarget, setEditTarget] = useState(null);
   const [editPhotos, setEditPhotos] = useState([]);
 
-  const [appFilter, setAppFilter] = useState('All');
+  const [appFilter, setAppFilter] = useState('all');
 
   const loadStats = () => {
     api.landlord.stats().then(setStats).catch(() => setStats(null));
@@ -340,9 +344,9 @@ export default function LandlordDashboard() {
   // -------------------------------------------------------------------------
   // derived
   // -------------------------------------------------------------------------
-  const filteredApps = appFilter === 'All'
+  const filteredApps = appFilter === 'all'
     ? applications
-    : applications.filter((a) => (a.status || '').toLowerCase() === appFilter.toLowerCase());
+    : applications.filter((a) => (a.status || '').toLowerCase() === appFilter);
 
   const pendingApps = stats?.pending_applications ?? 0;
   const upcomingTours = stats?.upcoming_tours ?? 0;
@@ -366,8 +370,8 @@ export default function LandlordDashboard() {
       <main className="module-main-wide">
         {/* Page header */}
         <div style={{ marginBottom: '2rem' }}>
-          <span className="eyebrow">Landlord Portal</span>
-          <h1 className="module-title">Dashboard</h1>
+          <span className="eyebrow">{t('landlord.portal')}</span>
+          <h1 className="module-title">{t('landlord.title')}</h1>
         </div>
 
         {/* Tab nav */}
@@ -376,25 +380,25 @@ export default function LandlordDashboard() {
             className={`pill-tab ${activeTab === 'overview' ? 'is-active' : ''}`}
             onClick={() => setActiveTab('overview')}
           >
-            Home Overview
+            {t('landlord.tabOverview')}
           </button>
           <button
             className={`pill-tab ${activeTab === 'properties' ? 'is-active' : ''}`}
             onClick={() => setActiveTab('properties')}
           >
-            My Properties ({properties.length})
+            {t('landlord.tabProperties', { count: properties.length })}
           </button>
           <button
             className={`pill-tab ${activeTab === 'applications' ? 'is-active' : ''}`}
             onClick={() => setActiveTab('applications')}
           >
-            Applications ({applications.length})
+            {t('landlord.tabApplications', { count: applications.length })}
           </button>
           <button
             className={`pill-tab ${activeTab === 'ledger' ? 'is-active' : ''}`}
             onClick={() => { setActiveTab('ledger'); loadLedger(); }}
           >
-            Rent Ledger
+            {t('landlord.tabLedger')}
           </button>
         </div>
 
@@ -406,48 +410,48 @@ export default function LandlordDashboard() {
                 <div className="stat-card-icon" style={{ background: 'rgba(200,155,60,0.12)', color: 'var(--color-brass)' }}>
                   <TrendingUp size={24} />
                 </div>
-                <p className="stat-card-label">Monthly Revenue</p>
+                <p className="stat-card-label">{t('landlord.revenue')}</p>
                 <h3 className="stat-card-num">{stats ? taka(stats.monthly_gross_revenue) : '—'}</h3>
-                <p className="stat-card-sub">{stats ? `${taka(pendingRent)} still pending this month` : 'Loading…'}</p>
+                <p className="stat-card-sub">{stats ? t('landlord.revenuePending', { amount: taka(pendingRent) }) : t('common.loading')}</p>
               </div>
               <div className="stat-card">
                 <div className="stat-card-icon" style={{ background: 'rgba(76,122,93,0.12)', color: 'var(--color-success)' }}>
                   <DollarSign size={24} />
                 </div>
-                <p className="stat-card-label">Occupied Units</p>
-                <h3 className="stat-card-num">{stats ? `${stats.occupied_units} / ${stats.total_units}` : '—'}</h3>
-                <p className="stat-card-sub">{stats ? `${stats.occupancy_rate_pct}% occupancy rate` : 'Loading…'}</p>
+                <p className="stat-card-label">{t('landlord.occupied')}</p>
+                <h3 className="stat-card-num">{stats ? `${formatNumber(stats.occupied_units)} / ${formatNumber(stats.total_units)}` : '—'}</h3>
+                <p className="stat-card-sub">{stats ? t('landlord.occupancyRate', { rate: `${formatNumber(Number(stats.occupancy_rate_pct), { maximumFractionDigits: 1 })}%` }) : t('common.loading')}</p>
               </div>
               <div className="stat-card">
                 <div className="stat-card-icon" style={{ background: 'rgba(47,93,138,0.1)', color: 'var(--color-blueprint)' }}>
                   <Building2 size={24} />
                 </div>
-                <p className="stat-card-label">Vacant Units</p>
-                <h3 className="stat-card-num">{stats ? stats.vacant_units : '—'}</h3>
-                <p className="stat-card-sub">{stats?.vacant_units ? 'Ready for new tenants' : 'Fully occupied'}</p>
+                <p className="stat-card-label">{t('landlord.vacant')}</p>
+                <h3 className="stat-card-num">{stats ? formatNumber(stats.vacant_units) : '—'}</h3>
+                <p className="stat-card-sub">{stats?.vacant_units ? t('landlord.vacantReady') : t('landlord.fullyOccupied')}</p>
               </div>
               <div className="stat-card">
                 <div className="stat-card-icon" style={{ background: 'rgba(47,93,138,0.1)', color: 'var(--color-blueprint)' }}>
                   <Calendar size={24} />
                 </div>
-                <p className="stat-card-label">Upcoming Tours</p>
-                <h3 className="stat-card-num">{stats ? upcomingTours : '—'}</h3>
-                <p className="stat-card-sub">Pending or confirmed</p>
+                <p className="stat-card-label">{t('landlord.tours')}</p>
+                <h3 className="stat-card-num">{stats ? formatNumber(upcomingTours) : '—'}</h3>
+                <p className="stat-card-sub">{t('landlord.toursSub')}</p>
               </div>
             </div>
 
-            <h2 className="section-heading" style={{ marginTop: '2rem' }}>Action Needed</h2>
+            <h2 className="section-heading" style={{ marginTop: '2rem' }}>{t('landlord.actionNeeded')}</h2>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               {pendingApps > 0 && (
                 <div
                   className="mod-card mod-card-pad"
                   style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}
-                  onClick={() => { setAppFilter('Pending'); setActiveTab('applications'); }}
+                  onClick={() => { setAppFilter('pending'); setActiveTab('applications'); }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                     <Users size={20} color="#f59e0b" />
                     <span style={{ color: 'var(--color-ink)', fontWeight: 500 }}>
-                      {pendingApps} new tenant application{pendingApps === 1 ? '' : 's'} awaiting review
+                      {t('landlord.newApplications', { count: pendingApps })}
                     </span>
                   </div>
                   <ChevronRight size={20} color="var(--color-line-strong)" />
@@ -462,7 +466,7 @@ export default function LandlordDashboard() {
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                     <Calendar size={20} color="var(--color-blueprint)" />
                     <span style={{ color: 'var(--color-ink)', fontWeight: 500 }}>
-                      {upcomingTours} upcoming tour{upcomingTours === 1 ? '' : 's'}
+                      {t('landlord.upcomingTour', { count: upcomingTours })}
                     </span>
                   </div>
                   <ChevronRight size={20} color="var(--color-line-strong)" />
@@ -477,7 +481,7 @@ export default function LandlordDashboard() {
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                     <Wallet size={20} color="var(--color-error)" />
                     <span style={{ color: 'var(--color-ink)', fontWeight: 500 }}>
-                      {taka(pendingRent)} rent still to collect this month
+                      {t('landlord.rentToCollect', { amount: taka(pendingRent) })}
                     </span>
                   </div>
                   <ChevronRight size={20} color="var(--color-line-strong)" />
@@ -485,15 +489,15 @@ export default function LandlordDashboard() {
               )}
               {stats && pendingApps === 0 && upcomingTours === 0 && pendingRent === 0 && (
                 <div className="mod-card mod-card-pad" style={{ color: 'var(--color-charcoal)' }}>
-                  You're all caught up.
+                  {t('landlord.allCaughtUp')}
                 </div>
               )}
             </div>
 
             <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '1.5rem' }}>
-              <button className="btn btn-primary" onClick={() => setShowAddModal(true)}>+ Add Property</button>
-              <button className="btn btn-ghost" onClick={() => setActiveTab('applications')}>View Applications</button>
-              <button className="btn btn-ghost" onClick={() => navigate('/inbox')}>Go to Inbox</button>
+              <button className="btn btn-primary" onClick={() => setShowAddModal(true)}>{t('landlord.addProperty')}</button>
+              <button className="btn btn-ghost" onClick={() => setActiveTab('applications')}>{t('landlord.viewApplications')}</button>
+              <button className="btn btn-ghost" onClick={() => navigate('/inbox')}>{t('landlord.goToInbox')}</button>
             </div>
           </div>
         )}
@@ -502,8 +506,8 @@ export default function LandlordDashboard() {
         {activeTab === 'properties' && (
           <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-              <h2 className="section-heading" style={{ margin: 0 }}>My Properties ({properties.length})</h2>
-              <button className="btn btn-primary" onClick={() => setShowAddModal(true)}>+ Add New Property</button>
+              <h2 className="section-heading" style={{ margin: 0 }}>{t('landlord.tabProperties', { count: properties.length })}</h2>
+              <button className="btn btn-primary" onClick={() => setShowAddModal(true)}>{t('landlord.addNewProperty')}</button>
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.25rem' }}>
@@ -518,15 +522,15 @@ export default function LandlordDashboard() {
                     />
                     <div style={{ position: 'absolute', top: '10px', right: '10px' }}>
                       {property.status === 'occupied' ? (
-                        <span className="badge badge-success">Occupied</span>
+                        <span className="badge badge-success">{t('status.occupied')}</span>
                       ) : (
-                        <span className="badge badge-warn">Vacant</span>
+                        <span className="badge badge-warn">{t('status.vacant')}</span>
                       )}
                     </div>
                     {property.isHidden && (
                       <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.6)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#fff' }}>
                         <EyeOff size={32} style={{ marginBottom: '8px' }} />
-                        <span style={{ fontWeight: 600 }}>Hidden</span>
+                        <span style={{ fontWeight: 600 }}>{t('status.hidden')}</span>
                       </div>
                     )}
                   </div>
@@ -542,24 +546,24 @@ export default function LandlordDashboard() {
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '12px' }}>
                       <div>
                         <span style={{ fontFamily: 'var(--font-stencil)', fontSize: '1.3rem', color: 'var(--color-ink)' }}>{taka(property.pricePerMonth)}</span>
-                        <span style={{ fontSize: '0.85rem', color: 'var(--color-charcoal)' }}>/month</span>
+                        <span style={{ fontSize: '0.85rem', color: 'var(--color-charcoal)' }}>{t('landlord.perMonth')}</span>
                       </div>
-                      <span style={{ fontSize: '0.85rem', color: 'var(--color-charcoal)' }}>{property.bedrooms} Bed • {property.bathrooms} Bath</span>
+                      <span style={{ fontSize: '0.85rem', color: 'var(--color-charcoal)' }}>{t('landlord.bedBath', { beds: digits(property.bedrooms), baths: digits(property.bathrooms) })}</span>
                     </div>
 
                     <div style={{ display: 'flex', gap: '6px', paddingTop: '0.75rem', borderTop: '1px solid var(--color-line)', justifyContent: 'flex-end' }}>
-                      <button className="icon-action-btn" title="Edit" onClick={() => handleEditClick(property)}>
-                        <Edit3 size={18} /> Edit
+                      <button className="icon-action-btn" title={t('landlord.edit')} onClick={() => handleEditClick(property)}>
+                        <Edit3 size={18} /> {t('landlord.edit')}
                       </button>
                       <button
                         className="icon-action-btn"
-                        title={property.isHidden ? 'Show' : 'Hide'}
+                        title={property.isHidden ? t('landlord.show') : t('landlord.hide')}
                         onClick={() => toggleVisibility(property.id)}
                       >
-                        {property.isHidden ? <Eye size={18} /> : <EyeOff size={18} />} {property.isHidden ? 'Show' : 'Hide'}
+                        {property.isHidden ? <Eye size={18} /> : <EyeOff size={18} />} {property.isHidden ? t('landlord.show') : t('landlord.hide')}
                       </button>
-                      <button className="icon-action-btn danger" title="Delete" onClick={() => handleDeleteClick(property)}>
-                        <Trash2 size={18} /> Delete
+                      <button className="icon-action-btn danger" title={t('landlord.delete')} onClick={() => handleDeleteClick(property)}>
+                        <Trash2 size={18} /> {t('landlord.delete')}
                       </button>
                     </div>
                   </div>
@@ -567,7 +571,7 @@ export default function LandlordDashboard() {
               ))}
               {properties.length === 0 && (
                 <div className="mod-card mod-card-pad" style={{ textAlign: 'center', color: 'var(--color-charcoal)', gridColumn: '1 / -1' }}>
-                  You haven't listed any properties yet.
+                  {t('landlord.noProperties')}
                 </div>
               )}
             </div>
@@ -577,15 +581,15 @@ export default function LandlordDashboard() {
         {/* TAB: Applications */}
         {activeTab === 'applications' && (
           <div>
-            <h2 className="section-heading">Tenant Applications</h2>
+            <h2 className="section-heading">{t('landlord.applicationsTitle')}</h2>
             <div className="pill-tabs" style={{ marginBottom: '1rem' }}>
-              {['All', 'Pending', 'Reviewed', 'Approved', 'Rejected'].map(f => (
+              {['all', 'pending', 'reviewed', 'approved', 'rejected'].map(f => (
                 <button
                   key={f}
                   className={`pill-tab ${appFilter === f ? 'is-active' : ''}`}
                   onClick={() => setAppFilter(f)}
                 >
-                  {f}
+                  {f === 'all' ? t('landlord.filterAll') : tx('status', f)}
                 </button>
               ))}
             </div>
@@ -608,16 +612,16 @@ export default function LandlordDashboard() {
                   </div>
 
                   <div style={{ flex: '0 0 auto' }}>
-                    <span {...statusBadgeProps(app.status)}>{app.status || 'pending'}</span>
+                    <span {...statusBadgeProps(app.status)}>{tx('status', app.status || 'pending')}</span>
                   </div>
 
                   <div style={{ flex: '0 0 auto', fontSize: '0.85rem', color: 'var(--color-charcoal)' }}>
-                    {app.appliedAt || '—'}
+                    {app.appliedAt ? formatDate(app.appliedAt, 'medium') : '—'}
                   </div>
 
                   <div className="action-btns" style={{ flex: '0 0 auto' }}>
                     <button className="icon-action-btn" onClick={() => handleReviewProfile(app)}>
-                      <User size={18} /> Review Profile
+                      <User size={18} /> {t('landlord.reviewProfile')}
                     </button>
                     {/* Proposes 3 tour slots via POST /appointments. Tenant-
                         initiated requests are still handled on /tour-requests. */}
@@ -626,21 +630,21 @@ export default function LandlordDashboard() {
                       onClick={() => openTourModal(app)}
                       style={app.status === 'rejected' ? { opacity: 0.4, pointerEvents: 'none' } : {}}
                     >
-                      <Calendar size={18} /> Propose Tour
+                      <Calendar size={18} /> {t('landlord.proposeTour')}
                     </button>
                     <button
                       className="icon-action-btn primary"
                       onClick={() => navigate(`/lease/${app.propertyId}`)}
                       style={app.status !== 'approved' ? { opacity: 0.4, pointerEvents: 'none' } : {}}
                     >
-                      <FileText size={18} /> Offer Lease
+                      <FileText size={18} /> {t('landlord.offerLease')}
                     </button>
                   </div>
                 </div>
               ))}
               {filteredApps.length === 0 && (
                 <div className="mod-card mod-card-pad" style={{ textAlign: 'center', color: 'var(--color-charcoal)' }}>
-                  No applications found.
+                  {t('landlord.noApplications')}
                 </div>
               )}
             </div>
@@ -650,24 +654,24 @@ export default function LandlordDashboard() {
         {/* TAB: Rent Ledger — GET /landlord/rent-ledger */}
         {activeTab === 'ledger' && (
           <div>
-            <h2 className="section-heading">Rent Ledger</h2>
+            <h2 className="section-heading">{t('landlord.ledgerTitle')}</h2>
             {!ledger ? (
               <div className="mod-card mod-card-pad" style={{ textAlign: 'center', color: 'var(--color-charcoal)' }}>
-                Rent ledger unavailable right now.
+                {t('landlord.ledgerUnavailable')}
               </div>
             ) : (
               <>
                 <div className="stat-grid" style={{ marginBottom: '1.5rem' }}>
                   <div className="stat-card">
-                    <p className="stat-card-label">Receivable This Month</p>
+                    <p className="stat-card-label">{t('landlord.receivableThisMonth')}</p>
                     <h3 className="stat-card-num">{taka(ledger.summary?.total_monthly_receivable)}</h3>
                   </div>
                   <div className="stat-card">
-                    <p className="stat-card-label">Collected</p>
+                    <p className="stat-card-label">{t('landlord.collected')}</p>
                     <h3 className="stat-card-num">{taka(ledger.summary?.total_collected)}</h3>
                   </div>
                   <div className="stat-card">
-                    <p className="stat-card-label">Pending</p>
+                    <p className="stat-card-label">{t('landlord.pendingAmount')}</p>
                     <h3 className="stat-card-num">{taka(ledger.summary?.total_pending)}</h3>
                   </div>
                 </div>
@@ -685,14 +689,18 @@ export default function LandlordDashboard() {
                       </div>
                       <div style={{ fontFamily: 'var(--font-stencil)', color: 'var(--color-ink)' }}>{taka(rec.amount)}</div>
                       <div style={{ fontSize: '0.85rem', color: 'var(--color-charcoal)' }}>
-                        Due by {rec.deadline}
+                        {t('landlord.dueBy', {
+                          date: formatDate(`${String(rec.deadline).slice(0, 10)}T00:00:00`, 'medium'),
+                        })}
                       </div>
-                      <span className={`badge ${rec.status === 'paid' ? 'badge-success' : 'badge-warn'}`}>{rec.status}</span>
+                      <span className={`badge ${rec.status === 'paid' ? 'badge-success' : 'badge-warn'}`}>
+                        {tx('status', rec.status)}
+                      </span>
                     </div>
                   ))}
                   {(ledger.records ?? []).length === 0 && (
                     <div className="mod-card mod-card-pad" style={{ textAlign: 'center', color: 'var(--color-charcoal)' }}>
-                      No active contracts yet.
+                      {t('landlord.noContracts')}
                     </div>
                   )}
                 </div>

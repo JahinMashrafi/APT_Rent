@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const { requireAuth, requireAdmin } = require("../middleware/authMiddleware.js");
-const { uploadAvatar: uploadAvatarMiddleware, uploadVerificationDocs } = require("../middleware/upload.js");
+const { upload, uploadVerificationDocs } = require("../middleware/upload.js");
 const {
   getUsers,
   updateUser,

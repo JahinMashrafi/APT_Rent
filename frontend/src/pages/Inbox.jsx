@@ -10,28 +10,23 @@ import '../css/global.css';
 import '../css/navbar.css';
 import '../css/newsfeed-home.css';
 import '../css/modules.css';
+import { useLanguage } from '../i18n/LanguageContext.jsx';
 
 const POLL_INTERVAL_MS = 5000;
 
-function formatMessageTime(iso) {
-  return new Date(iso).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
-}
-function formatConvTime(iso) {
-  const d = new Date(iso), now = new Date();
-  const diff = now - d;
-  if (diff < 86400000 && d.getDate() === now.getDate()) return formatMessageTime(iso);
-  if (diff < 172800000) return 'Yesterday';
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-}
-function getDateLabel(iso) {
-  const d = new Date(iso), now = new Date();
-  const diff = now - d;
-  if (diff < 86400000 && d.getDate() === now.getDate()) return 'Today';
-  if (diff < 172800000) return 'Yesterday';
-  return d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
-}
-
 export default function Inbox() {
+  const { t, formatClock, formatDate, dayLabel, formatNumber } = useLanguage();
+
+// Localised time helpers (Bangla digits + month names when language is bn)
+const formatMessageTime = (iso) => formatClock(iso);
+const getDateLabel = (iso) => dayLabel(iso);
+const formatConvTime = (iso) => {
+  const d = new Date(iso), now = new Date();
+  const diff = now - d;
+  if (diff < 86400000 && d.getDate() === now.getDate()) return formatClock(iso);
+  if (diff < 172800000) return t('common.yesterday');
+  return formatDate(d, 'short');
+};
   const { currentUser, authReady, setMessageUnreadCount } = useApp();
   const { showToast } = useToast();
   const navigate = useNavigate();
@@ -208,19 +203,19 @@ export default function Inbox() {
         })
         .catch((error) => {
           showToast({
-            message: error.response?.data?.message || "Could not start this conversation.",
+            message: error.response?.data?.message || t('inbox.startFailed'),
             type: 'error',
           });
         });
     } else {
       showToast({
-        message: 'Open a property first to start a conversation.',
+        message: t('inbox.openPropertyFirst'),
         type: 'warning',
       });
     }
     // Drop the params so a refresh doesn't re-trigger thread creation.
     setSearchParams({}, { replace: true });
-  }, [searchParams, listReady, currentUser, conversations, openConversation, loadConversations, showToast, setSearchParams]);
+  }, [searchParams, listReady, currentUser, conversations, openConversation, loadConversations, showToast, setSearchParams, t]);
 
   // ---------------------------------------------------------------------------
   // Sending
@@ -269,7 +264,7 @@ export default function Inbox() {
           [activeConvId]: (prev[activeConvId] ?? []).filter((m) => m.id !== tempId),
         }));
         setMessageText(text); // don't lose what they typed
-        showToast({ message: 'Message failed to send. Please try again.', type: 'error' });
+        showToast({ message: t('inbox.sendFailed'), type: 'error' });
       });
   }
 
@@ -418,7 +413,7 @@ export default function Inbox() {
         {/* Left Panel */}
         <div className="inbox-contacts">
           <div style={{ padding: '16px', borderBottom: '1px solid var(--color-line)' }}>
-            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.1rem', color: 'var(--color-ink)', marginBottom: '10px' }}>Messages</h2>
+            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.1rem', color: 'var(--color-ink)', marginBottom: '10px' }}>{t('inbox.messages')}</h2>
             <div style={{ position: 'relative' }}>
               <Search size={15} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--color-blueprint)', opacity: 0.6 }} />
               <input
@@ -431,7 +426,7 @@ export default function Inbox() {
                   fontFamily: 'var(--font-body)',
                   background: 'var(--color-paper)'
                 }}
-                placeholder="Search conversations..."
+                placeholder={t('inbox.searchPlaceholder')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -440,7 +435,7 @@ export default function Inbox() {
           <div style={{ flex: 1, overflowY: 'auto' }}>
             {filteredConvs.length === 0 && (
               <p style={{ padding: '24px 16px', color: '#8a8f85', fontSize: '0.85rem', textAlign: 'center' }}>
-                {usingMock ? 'No conversations.' : 'No conversations yet.'}
+                {usingMock ? t('inbox.none') : t('inbox.noneYet')}
               </p>
             )}
             {filteredConvs.map(conv => (
@@ -466,7 +461,7 @@ export default function Inbox() {
                   </div>
                   {conv.unreadCount > 0 && (
                     <span style={{ background: 'var(--color-brass)', color: 'var(--color-ink)', borderRadius: '999px', fontSize: '0.68rem', fontWeight: 700, padding: '2px 7px', display: 'inline-block', marginTop: '4px' }}>
-                      {conv.unreadCount}
+                      {formatNumber(conv.unreadCount)}
                     </span>
                   )}
                 </div>
@@ -480,7 +475,7 @@ export default function Inbox() {
           {!activeConv ? (
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'var(--color-line-strong)' }}>
               <MessageSquare size={48} style={{ marginBottom: '16px' }} />
-              <p>Select a conversation to start chatting</p>
+              <p>{t('inbox.selectPrompt')}</p>
             </div>
           ) : (
             <>
@@ -529,7 +524,7 @@ export default function Inbox() {
                           </div>
                           <span style={{ fontSize: '0.65rem', fontFamily: 'var(--font-mono)', color: '#8a8f85', marginTop: '2px' }}>
                             {formatMessageTime(msg.timestamp)}
-                            {isSent && (msg.pending ? ' · sending' : msg.readAt ? ' · read' : '')}
+                            {isSent && (msg.pending ? ` · ${t('inbox.sending')}` : msg.readAt ? ` · ${t('inbox.read')}` : '')}
                           </span>
                         </div>
                       </div>
@@ -553,7 +548,7 @@ export default function Inbox() {
                     fontSize: '0.92rem',
                     background: 'var(--color-paper)'
                   }}
-                  placeholder="Type a message..."
+                  placeholder={t('inbox.typePlaceholder')}
                   value={messageText}
                   onChange={(e) => setMessageText(e.target.value)}
                   onKeyDown={handleKeyDown}

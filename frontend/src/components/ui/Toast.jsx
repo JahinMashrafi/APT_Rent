@@ -1,6 +1,6 @@
 import { useState, useEffect, createContext, useContext, useCallback } from "react";
 import { X, CheckCircle, AlertCircle, Info, AlertTriangle } from "lucide-react";
-
+import { useLanguage } from "../../i18n/LanguageContext.jsx";
 // =============================================================================
 // Toast.jsx — Lightweight toast/snackbar notification system
 // =============================================================================
@@ -28,6 +28,7 @@ const colors = {
 };
 
 function Toast({ id, message, type = "info", onDismiss }) {
+  const { t } = useLanguage();
   useEffect(() => {
     const timer = setTimeout(() => onDismiss(id), 4000);
     return () => clearTimeout(timer);
@@ -43,7 +44,7 @@ function Toast({ id, message, type = "info", onDismiss }) {
       <button
         onClick={() => onDismiss(id)}
         className="shrink-0 opacity-60 hover:opacity-100 transition-opacity"
-        aria-label="Dismiss"
+        aria-label={t("common.dismiss")}
       >
         <X size={15} />
       </button>

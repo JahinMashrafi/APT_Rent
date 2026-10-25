@@ -17,6 +17,7 @@
 // Mirrors the backend's 14-day window (MAX_DAYS_AHEAD in
 // appointmentController.js), so the picker can't offer a date the
 // server will reject.
+import { formatDate, localizeDigits } from "../i18n/translate.js";
 export const MAX_DAYS_AHEAD = 14;
 
 export const TIME_OPTIONS = [
@@ -25,14 +26,14 @@ export const TIME_OPTIONS = [
 ];
 
 /** "09:00" -> "9:00 AM". Tolerates the "09:00:00" Postgres returns. */
-export const formatTime = (time) => {
+export const formatTime = (time, lang = "en") => {
   if (!time) return "";
   const [rawHours, rawMinutes = "00"] = String(time).split(":");
   const hours = Number(rawHours);
   if (Number.isNaN(hours)) return String(time);
   const suffix = hours >= 12 ? "PM" : "AM";
   const displayHours = hours % 12 === 0 ? 12 : hours % 12;
-  return `${displayHours}:${rawMinutes} ${suffix}`;
+  return localizeDigits(`${displayHours}:${rawMinutes} ${suffix}`, lang);
 };
 
 /** "2026-10-05" -> a local Date, without the UTC-midnight shift. */
@@ -61,15 +62,15 @@ export const upcomingDays = (count = MAX_DAYS_AHEAD) => {
   });
 };
 
-/** "2026-10-05" -> "Monday, Oct 5" */
-export const formatDateLong = (dateString) => {
+/** "2026-10-05" -> "Monday, Oct 5" / "সোমবার ৫ অক্টো" (pass lang "bn") */
+export const formatDateLong = (dateString, lang = "en") => {
   const date = parseDateOnly(dateString);
   if (!date) return String(dateString ?? "");
-  return date.toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" });
+  return formatDate(date, lang, "weekdayLong");
 };
 
-/** "2026-10-05" -> "Mon" */
-export const shortWeekday = (dateString) => {
+/** "2026-10-05" -> "Mon" / "সোম" (pass lang "bn") */
+export const shortWeekday = (dateString, lang = "en") => {
   const date = typeof dateString === "string" ? parseDateOnly(dateString) : dateString;
-  return date ? date.toLocaleDateString("en-US", { weekday: "short" }) : "";
+  return date ? formatDate(date, lang, "weekday") : "";
 };

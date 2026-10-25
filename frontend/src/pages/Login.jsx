@@ -1,10 +1,13 @@
+
 import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import AppNavbar from "../components/AppNavbar.jsx";
 import { loginUser } from "../utils/auth";
 import { useApp } from "../context/AppContext.jsx";
+import { useLanguage } from "../i18n/LanguageContext.jsx";
 
 export default function Login() {
+  const { t } = useLanguage();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -24,7 +27,9 @@ export default function Login() {
   const from = (() => {
     const target = location.state?.from;
     if (!target) return null;
+
     const path = `${target.pathname ?? ""}${target.search ?? ""}`;
+
     // Internal paths only — guards against a crafted state pushing
     // someone off-site after they authenticate.
     return path.startsWith("/") && !path.startsWith("//") ? path : null;
@@ -42,7 +47,7 @@ export default function Login() {
       applyAuthenticatedUser(user);
       navigate(from || "/dashboard", { replace: true });
     } catch (err) {
-      setError(err.message || "Something went wrong");
+      setError(err.message || t("login.genericError"));
     }
   };
 
@@ -54,55 +59,79 @@ export default function Login() {
       <main className="auth-shell">
         <section className="auth-brand">
           <a href="/" className="brand">
-            <img src="/assets/images/logo/apt-rent-logo.png" alt="APT Rent logo" className="brand-logo" />
-            <span className="brand-name">APT<span> Rent</span></span>
+            <img
+              src="/assets/images/logo/apt-rent-logo.png"
+              alt="APT Rent logo"
+              className="brand-logo"
+            />
+            <span className="brand-name">
+              APT<span> Rent</span>
+            </span>
           </a>
 
           <div className="auth-brand-copy">
-            <span className="eyebrow">Welcome back</span>
-            <h2>Pick up right where the lease left off.</h2>
-            <p>One sign-in for both sides of the rental — landlords managing units, tenants tracking rent and requests.</p>
+            <span className="eyebrow">{t("login.welcome")}</span>
+
+            <h2>{t("login.tagline")}</h2>
+
+            <p>{t("login.intro")}</p>
+
             <ul className="auth-brand-list">
-              <li>See live rent status and receipts</li>
-              <li>Message your landlord or tenant on record</li>
-              <li>File and follow up on maintenance requests</li>
+              <li>{t("login.bullet1")}</li>
+              <li>{t("login.bullet2")}</li>
+              <li>{t("login.bullet3")}</li>
             </ul>
           </div>
 
-          <p className="auth-brand-foot">APT&nbsp;RENT // SECURE SIGN-IN</p>
+          <p className="auth-brand-foot">{t("login.brandFoot")}</p>
         </section>
 
         <section className="auth-form-panel">
           <div className="auth-card corner-marks">
             <header>
-              <span className="eyebrow">Account access</span>
-              <h1>Log in</h1>
-              <p>Enter your details to access your APT Rent dashboard.</p>
+              <span className="eyebrow">{t("login.eyebrow")}</span>
+
+              <h1>{t("login.title")}</h1>
+
+              <p>{t("login.subtitle")}</p>
             </header>
 
-            <form id="loginForm" className="form-grid" onSubmit={handleLogin} noValidate>
-
+            <form
+              id="loginForm"
+              className="form-grid"
+              onSubmit={handleLogin}
+              noValidate
+            >
               <div className="field" data-field="email">
-                <label htmlFor="loginEmail">Email address <span className="req">*</span></label>
+                <label htmlFor="loginEmail">
+                  {t("login.email")} <span className="req">*</span>
+                </label>
+
                 <div className="input-shell">
                   <img src="/assets/icons/email.svg" alt="" />
+
                   <input
                     type="email"
                     id="loginEmail"
                     name="email"
-                    placeholder="you@example.com"
+                    placeholder={t("login.emailPlaceholder")}
                     autoComplete="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                   />
                 </div>
+
                 <span className="field-error"></span>
               </div>
 
               <div className="field" data-field="password">
-                <label htmlFor="loginPassword">Password <span className="req">*</span></label>
+                <label htmlFor="loginPassword">
+                  {t("login.password")} <span className="req">*</span>
+                </label>
+
                 <div className="input-shell">
                   <img src="/assets/icons/lock.svg" alt="" />
+
                   <input
                     type={showPassword ? "text" : "password"}
                     id="loginPassword"
@@ -112,44 +141,97 @@ export default function Login() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                   />
+
                   <button
                     type="button"
                     className="toggle-visibility"
-                    aria-label={showPassword ? "Hide password" : "Show password"}
+                    aria-label={
+                      showPassword
+                        ? t("auth.hidePassword")
+                        : t("auth.showPassword")
+                    }
                     onClick={() => setShowPassword((prev) => !prev)}
                   >
                     <img
                       className="icon-show"
                       src="/assets/icons/eye.svg"
                       alt=""
-                      style={{ display: showPassword ? "none" : "block" }}
+                      style={{
+                        display: showPassword ? "none" : "block",
+                      }}
                     />
+
                     <img
                       className="icon-hide"
                       src="/assets/icons/eye-off.svg"
                       alt=""
-                      style={{ display: showPassword ? "block" : "none" }}
+                      style={{
+                        display: showPassword ? "block" : "none",
+                      }}
                     />
                   </button>
                 </div>
+
                 <span className="field-error"></span>
               </div>
 
-              <div className="field-checkbox" style={{justifyContent: 'space-between', alignItems: 'center'}}>
-                <label style={{display: 'flex', alignItems: 'center', gap: 8}}>
-                  <input type="checkbox" id="rememberMe" name="rememberMe" />
-                  Remember me
+              <div
+                className="field-checkbox"
+                style={{
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                }}
+              >
+                <label
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    id="rememberMe"
+                    name="rememberMe"
+                  />
+                  {t("login.remember")}
                 </label>
-                <a href="#" style={{fontWeight: 600, color: 'var(--color-blueprint)'}}>Forgot password?</a>
+
+                <a
+                  href="#"
+                  style={{
+                    fontWeight: 600,
+                    color: "var(--color-blueprint)",
+                  }}
+                >
+                  {t("login.forgot")}
+                </a>
               </div>
 
-              <button type="submit" className="btn btn-primary btn-block">Log in</button>
-              {error ? <p className="form-note" style={{ color: "var(--color-error)" }}>{error}</p> : null}
-              <p className="form-note">Your secure session is saved in an HTTP-only cookie for seven days.</p>
+              <button
+                type="submit"
+                className="btn btn-primary btn-block"
+              >
+                {t("login.submit")}
+              </button>
+
+              {error ? (
+                <p
+                  className="form-note"
+                  style={{ color: "var(--color-error)" }}
+                >
+                  {error}
+                </p>
+              ) : null}
+
+              <p className="form-note">
+                {t("login.sessionNote")}
+              </p>
             </form>
 
             <div className="auth-switch">
-              New to APT Rent? <a href="/register">Create an account</a>
+              {t("login.newHere")}{" "}
+              <a href="/register">{t("login.createAccount")}</a>
             </div>
           </div>
         </section>

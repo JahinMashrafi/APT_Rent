@@ -7,7 +7,7 @@
 //   size: "sm" | "md"  (default: "md")
 //   children: React.ReactNode  (overrides auto-label)
 // =============================================================================
-
+import { useLanguage } from "../../i18n/LanguageContext.jsx";
 const variantStyles = {
   active:    "bg-emerald-100 text-emerald-700",
   approved:  "bg-emerald-100 text-emerald-700",
@@ -48,8 +48,10 @@ const sizeStyles = {
 };
 
 export default function Badge({ variant = "info", size = "md", children }) {
+  const { tx } = useLanguage();
   const style = variantStyles[variant] ?? "bg-slate-100 text-slate-600";
-  const label = children ?? defaultLabels[variant] ?? variant;
+  const label = children ?? tx("status", variant, variant);
+  // const label = children ?? defaultLabels[variant] ?? variant;
 
   return (
     <span className={`inline-flex items-center font-semibold rounded-full ${style} ${sizeStyles[size]}`}>
