@@ -7,6 +7,10 @@ services:
       CORS_ORIGIN: http://localhost:8080
     ports:
       - "5000:5000"
+    # Add explicit DNS servers to bypass Docker's internal resolver block
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
 
   frontend:
     build:

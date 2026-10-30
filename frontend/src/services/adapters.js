@@ -4,7 +4,8 @@
  * Keeps every page's JSX untouched — only the data source changes once a
  * real backend exists.
  */
-
+export const LIFT_REGEX = /\b(lift|elevator)\b/i;
+export const hasLiftIn = (list = []) => list.some((f) => LIFT_REGEX.test(f));
 export function adaptProperty(p) {
   if (!p) return null;
   const owner = p.owner ?? {};
@@ -17,6 +18,7 @@ export function adaptProperty(p) {
     title: p.title ?? p.address,
     address: p.address,
     pricePerMonth: p.rate ?? p.pricePerMonth,
+    
     deposit: p.deposit ?? p.securityDeposit,
     securityDeposit: p.deposit ?? p.securityDeposit,
     bedrooms: p.bedroom ?? p.bedrooms,
@@ -24,7 +26,7 @@ export function adaptProperty(p) {
     size: p.size_sqft ?? p.size,
     floor: p.floor,
     totalFloors: p.total_floors ?? p.totalFloors,
-    hasLift: (p.facilities ?? p.amenities ?? []).some((f) => /lift/i.test(f)),
+    hasLift: hasLiftIn(p.facilities ?? p.amenities ?? []),
     isOccupied: p.availability_status === "booked",
     isHidden: Boolean(p.is_hidden),
     status: p.availability_status === "available" ? "active" : "occupied",

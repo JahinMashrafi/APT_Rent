@@ -14,8 +14,8 @@
  *    formatRelativeDate(apartment.listedAt)
  * ============================================================================
  */
-
-export default function formatRelativeDate(dateInput) {
+import { relativeTime } from "../i18n/translate.js";
+export default function formatRelativeDate(dateInput, lang = "en") {
   if (!dateInput) return "";
 
   const listedDate = new Date(dateInput);
@@ -48,5 +48,6 @@ export default function formatRelativeDate(dateInput) {
 
   // --- Years (12+ months old) ----------------------------------------------
   const diffYears = Math.floor(diffMonths / 12);
+  return relativeTime(dateInput, lang, { style: "short" });
   return `${diffYears}y ago`;
 }

@@ -17,10 +17,11 @@
 import AppNavbar from "../components/AppNavbar.jsx";
 import NewsFeed from "../components/NewsFeed.jsx";
 import useAuth from "../hooks/useAuth.js";
+import { useLanguage } from "../i18n/LanguageContext.jsx";
 
 export default function Dashboard() {
   const { isLoading } = useAuth();
-
+  const { t } = useLanguage();
   // Avoid a flash of the wrong UI while we're still checking auth state.
   if (isLoading) {
     return <div className="page-shell page-loading" aria-busy="true" />;
@@ -37,7 +38,7 @@ export default function Dashboard() {
 
       <footer className="site-footer">
         <div className="container">
-          <p>APT&nbsp;RENT // EST. 2026</p>
+          <p>{t("footer.brand")}</p>
         </div>
       </footer>
     </div>

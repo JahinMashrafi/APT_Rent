@@ -21,7 +21,9 @@
  * ============================================================================
  */
 
+import { useLanguage } from "../i18n/LanguageContext.jsx";
 export default function Pagination({ currentPage, totalPages, onPageChange }) {
+  const { t, formatNumber } = useLanguage();
   if (totalPages <= 1) return null;
 
   const isFirstPage = currentPage === 1;
@@ -45,7 +47,7 @@ export default function Pagination({ currentPage, totalPages, onPageChange }) {
   }
 
   return (
-    <nav className="pagination-bar" aria-label="Newsfeed pagination">
+    <nav className="pagination-bar" aria-label={t("pagination.aria")}>
       {/* --- Prev button: hidden on the first page --- */}
       {!isFirstPage && (
         <button
@@ -53,7 +55,7 @@ export default function Pagination({ currentPage, totalPages, onPageChange }) {
           className="pagination-btn pagination-prev"
           onClick={() => goToPage(currentPage - 1)}
         >
-          Prev
+          {t("pagination.prev")}
         </button>
       )}
 
@@ -69,7 +71,7 @@ export default function Pagination({ currentPage, totalPages, onPageChange }) {
               aria-current={page === currentPage ? "page" : undefined}
               onClick={() => goToPage(page)}
             >
-              {page}
+              {formatNumber(page)}
             </button>
           </li>
         ))}
@@ -82,7 +84,7 @@ export default function Pagination({ currentPage, totalPages, onPageChange }) {
           className="pagination-btn pagination-next"
           onClick={() => goToPage(currentPage + 1)}
         >
-          Next
+          {t("pagination.next")}
         </button>
       )}
     </nav>

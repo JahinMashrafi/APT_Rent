@@ -11,7 +11,6 @@ const { uploadToBucket } = require("../utils/storage.js");
 const negotiateContract = async (req, res) => {
   try {
     const { id } = req.params;
-    const tenantId = req.user.user_id;
     const { rate, deposit, message } = req.body || {};
     const nextRate = Number(rate);
     const nextDeposit = Number(deposit);
@@ -20,23 +19,39 @@ const negotiateContract = async (req, res) => {
       return res.status(422).json({ success: false, message: "A valid rent and non-negative deposit are required" });
     }
 
+    const contractResult = await pool.query(
+      "SELECT owner_id, tenant_id, status FROM contracts WHERE contract_id = $1",
+      [id],
+    );
+    if (contractResult.rows.length === 0) {
+      return res.status(404).json({ success: false, message: "Contract not found" });
+    }
+    const contract = contractResult.rows[0];
+    const isOwner = contract.owner_id === req.user.user_id;
+    const isTenant = contract.tenant_id === req.user.user_id;
+    if (!isOwner && !isTenant) {
+      return res.status(403).json({ success: false, message: "You are not part of this contract" });
+    }
+    if (contract.status !== "draft") {
+      return res.status(409).json({ success: false, message: "Only draft contracts can be negotiated" });
+    }
+
     const result = await pool.query(
       `UPDATE contracts
        SET rate = $1, deposit = $2, negotiation_message = $3, negotiation_status = 'proposed', updated_at = NOW()
-       WHERE contract_id = $4 AND tenant_id = $5 AND status = 'draft'
+       WHERE contract_id = $4 AND status = 'draft'
        RETURNING contract_id, rate, deposit, negotiation_message, negotiation_status, status`,
-      [nextRate, nextDeposit, message?.trim() || null, id, tenantId],
+      [nextRate, nextDeposit, message?.trim() || null, id],
     );
     if (result.rows.length === 0) {
       return res.status(404).json({ success: false, message: "Draft contract not found for this tenant" });
     }
 
-    const contract = await pool.query("SELECT owner_id FROM contracts WHERE contract_id = $1", [id]);
     await notify({
-      userId: contract.rows[0].owner_id,
+      userId: isOwner ? contract.tenant_id : contract.owner_id,
       type: "contract_negotiation",
-      title: "Tenant proposed lease terms",
-      message: message?.trim() || `Tenant proposed rent ৳${nextRate} and deposit ৳${nextDeposit}.`,
+      title: isOwner ? "Landlord counter-offered lease terms" : "Tenant proposed lease terms",
+      message: message?.trim() || `${isOwner ? "Landlord counter-offered" : "Tenant proposed"} rent ৳${nextRate} and deposit ৳${nextDeposit}.`,
       linkUrl: "/contracts",
     });
     return res.status(200).json(result.rows[0]);
@@ -49,23 +64,37 @@ const negotiateContract = async (req, res) => {
 const acceptContract = async (req, res) => {
   try {
     const { id } = req.params;
-    const tenantId = req.user.user_id;
+    const contractResult = await pool.query(
+      "SELECT owner_id, tenant_id, status, negotiation_status FROM contracts WHERE contract_id = $1",
+      [id],
+    );
+    if (contractResult.rows.length === 0) {
+      return res.status(404).json({ success: false, message: "Contract not found" });
+    }
+    const contract = contractResult.rows[0];
+    const isOwner = contract.owner_id === req.user.user_id;
+    const isTenant = contract.tenant_id === req.user.user_id;
+    if (!isOwner && !isTenant) {
+      return res.status(403).json({ success: false, message: "You are not part of this contract" });
+    }
+    if (contract.status !== "draft" || contract.negotiation_status !== "proposed") {
+      return res.status(409).json({ success: false, message: "A proposed lease must be accepted before signing" });
+    }
     const result = await pool.query(
       `UPDATE contracts
        SET negotiation_status = 'accepted', updated_at = NOW()
-       WHERE contract_id = $1 AND tenant_id = $2 AND status = 'draft'
+       WHERE contract_id = $1 AND status = 'draft' AND negotiation_status = 'proposed'
        RETURNING contract_id, rate, deposit, status, negotiation_status`,
-      [id, tenantId],
+      [id],
     );
     if (result.rows.length === 0) {
       return res.status(404).json({ success: false, message: "Draft contract not found for this tenant" });
     }
-    const owner = await pool.query("SELECT owner_id FROM contracts WHERE contract_id = $1", [id]);
     await notify({
-      userId: owner.rows[0].owner_id,
+      userId: isOwner ? contract.tenant_id : contract.owner_id,
       type: "contract_accepted",
-      title: "Lease accepted",
-      message: `The tenant accepted contract #${id}.`,
+      title: isOwner ? "Landlord accepted lease terms" : "Tenant accepted lease terms",
+      message: `${isOwner ? "The landlord" : "The tenant"} accepted contract #${id}. Both parties can now sign.`,
       linkUrl: "/contracts",
     });
     return res.status(200).json(result.rows[0]);
@@ -131,7 +160,7 @@ const createContract = async (req, res) => {
         tenantName: info.tenant_name,
         propertyAddress: info.address,
         rate,
-        depositAmount: deposit_amount ?? info.deposit,
+        depositAmount: deposit ?? info.deposit,
         startDate: start_date,
         endDate: end_date,
         contractId: contract.contract_id,
@@ -289,6 +318,9 @@ const signContract = async (req, res) => {
       return res.status(404).json({ success: false, message: "Contract not found" });
     }
     const contract = result.rows[0];
+    if (contract.status === "draft" && contract.negotiation_status !== "accepted") {
+      return res.status(409).json({ success: false, message: "Lease terms must be accepted before signing" });
+    }
 
     let role;
     if (contract.owner_id === userId) role = "owner";

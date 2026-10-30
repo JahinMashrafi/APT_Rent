@@ -24,6 +24,7 @@ import { useApp } from "../context/AppContext.jsx";
 import "../css/global.css";
 import "../css/navbar.css";
 import "../css/modules.css";
+import { useLanguage } from "../i18n/LanguageContext.jsx";
 
 const STATUS_BADGE = {
   draft: "badge-warn",
@@ -33,16 +34,11 @@ const STATUS_BADGE = {
   active: "badge-success",
 };
 
-const STATUS_LABEL = {
-  draft: "Awaiting signatures",
-  signed_by_owner: "Signed by landlord",
-  signed_by_tenant: "Signed by tenant",
-  fully_signed: "Fully signed",
-  active: "Active lease",
-};
+
 
 export default function Contracts() {
   const { currentUser } = useApp();
+  const { t, tx, lang, formatCurrency, digits } = useLanguage();
   const [contracts, setContracts] = useState([]);
   const [loadError, setLoadError] = useState("");
   const [openId, setOpenId] = useState(null);
@@ -50,6 +46,8 @@ export default function Contracts() {
   const [negotiation, setNegotiation] = useState({});
   const [negotiationError, setNegotiationError] = useState({});
   const [acceptError, setAcceptError] = useState({});
+  const [signatureBusy, setSignatureBusy] = useState({});
+  const [signatureError, setSignatureError] = useState({});
 
   useEffect(() => {
     let cancelled = false;
@@ -67,7 +65,7 @@ export default function Contracts() {
       .catch((error) => {
         if (!cancelled) {
           setContracts([]);
-          setLoadError(error.message || "Could not load contracts.");
+          setLoadError(error.message || "__default__");
         }
       });
 
@@ -93,17 +91,31 @@ export default function Contracts() {
   const counterparty = (contract) => {
     const isMine = String(contract.owner?.user_id) === String(currentUser?.id);
     return isMine
-      ? { label: "Tenant", name: contract.tenant?.name ?? "Tenant" }
-      : { label: "Landlord", name: contract.owner?.name ?? "Landlord" };
+      ? { label: t("contracts.tenant"), name: contract.tenant?.name ?? t("contracts.tenant") }
+      : { label: t("contracts.landlord"), name: contract.owner?.name ?? t("contracts.landlord") };
   };
 
   const submitNegotiation = async (contract) => {
     const values = negotiation[contract.contract_id] ?? {};
+    const rate = values.rate ?? details[contract.contract_id]?.rate ?? contract.rate;
+    const deposit = values.deposit ?? details[contract.contract_id]?.deposit ?? contract.deposit;
+    const numericRate = Number(rate);
+    const numericDeposit = Number(deposit);
+
+    if (!Number.isFinite(numericRate) || numericRate <= 0 || !Number.isFinite(numericDeposit) || numericDeposit < 0) {
+      setNegotiationError((prev) => ({
+        ...prev,
+        [contract.contract_id]: "Enter a valid rent and non-negative deposit.",
+      }));
+      return;
+    }
+
     try {
       setNegotiationError((prev) => ({ ...prev, [contract.contract_id]: "" }));
-      const updated = await api.contracts.negotiate(contract.contract_id, {
-        rate: values.rate,
-        deposit: values.deposit,
+            const updated = await api.contracts.negotiate(contract.contract_id, {
+        // Untouched inputs only display the contract's value; fall back to it.
+        rate: values.rate ?? contract.rate,
+        deposit: values.deposit ?? contract.deposit,
         message: values.message,
       });
       setContracts((prev) => prev.map((item) =>
@@ -118,7 +130,7 @@ export default function Contracts() {
     } catch (error) {
       setNegotiationError((prev) => ({
         ...prev,
-        [contract.contract_id]: error.response?.data?.message || error.message || "Could not submit proposal.",
+        [contract.contract_id]: error.response?.data?.message || error.message || t("contracts.submitFailed"),
       }));
     }
   };
@@ -139,9 +151,35 @@ export default function Contracts() {
     } catch (error) {
       setAcceptError((prev) => ({
         ...prev,
-        [contract.contract_id]: error.response?.data?.message || error.message || "Could not accept lease.",
+        [contract.contract_id]: error.response?.data?.message || error.message || t("contracts.acceptFailed"),
       }));
     }
+  };
+
+  const uploadSignature = (contract) => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "image/png,image/jpeg";
+    input.onchange = () => {
+      const file = input.files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = async () => {
+        try {
+          setSignatureBusy((prev) => ({ ...prev, [contract.contract_id]: true }));
+          setSignatureError((prev) => ({ ...prev, [contract.contract_id]: "" }));
+          const updated = await api.contracts.sign(contract.contract_id, reader.result);
+          setDetails((prev) => ({ ...prev, [contract.contract_id]: { ...prev[contract.contract_id], ...updated } }));
+          setContracts((prev) => prev.map((item) => item.contract_id === contract.contract_id ? { ...item, status: updated.status } : item));
+        } catch (error) {
+          setSignatureError((prev) => ({ ...prev, [contract.contract_id]: error.message || t("contracts.signatureFailed") }));
+        } finally {
+          setSignatureBusy((prev) => ({ ...prev, [contract.contract_id]: false }));
+        }
+      };
+      reader.readAsDataURL(file);
+    };
+    input.click();
   };
 
   return (
@@ -150,9 +188,9 @@ export default function Contracts() {
 
       <main className="module-main">
         <div style={{ marginBottom: "2rem" }}>
-          <span className="eyebrow">Lease Documents</span>
-          <h1 className="module-title">My Contracts</h1>
-          <p className="module-subtitle">Every lease agreement you're part of — review terms, payment status, and signatures anytime.</p>
+          <span className="eyebrow">{t("contracts.eyebrow")}</span>
+          <h1 className="module-title">{t("contracts.title")}</h1>
+          <p className="module-subtitle">{t("contracts.subtitle")}</p>
         </div>
 
         {loadError && (
@@ -168,16 +206,16 @@ export default function Contracts() {
               marginBottom: "1.5rem",
             }}
           >
-            {loadError}
+            {loadError === "__default__" ? t("contracts.loadError") : loadError}
           </p>
         )}
 
         {contracts.length === 0 ? (
           <div className="mod-card mod-card-pad" style={{ textAlign: "center", color: "var(--color-charcoal)" }}>
             <FileText size={28} style={{ color: "var(--color-line-strong)", margin: "0 auto 12px" }} />
-            <p>No lease contracts yet.</p>
+            <p>{t("contracts.empty")}</p>
             <Link to="/dashboard" className="btn btn-primary" style={{ marginTop: "1rem", display: "inline-flex" }}>
-              Browse listings
+              {t("common.browseListings")}
             </Link>
           </div>
         ) : (
@@ -186,6 +224,7 @@ export default function Contracts() {
               const isOpen = openId === contract.contract_id;
               const detail = details[contract.contract_id];
               const other = counterparty(contract);
+              const isOwner = String(contract.owner?.user_id) === String(currentUser?.id);
               // These two fields come straight off the list row — see
               // "transaction id / payment status yes-no" in the ask.
               const transactionId = contract.transaction_id;
@@ -206,7 +245,7 @@ export default function Contracts() {
                         {contract.property_address}
                       </Link>
                       <p style={{ fontSize: "0.82rem", color: "var(--color-blueprint)", marginTop: "2px", display: "flex", alignItems: "center", gap: "4px" }}>
-                        <Clock size={13} /> Contract #{contract.contract_id} · {other.label}: {other.name}
+                        <Clock size={13} /> {t("contracts.contractNo", { id: digits(contract.contract_id) })} · {other.label}: {other.name}
                       </p>
                     </div>
 
@@ -222,19 +261,19 @@ export default function Contracts() {
                           gap: "4px",
                         }}
                       >
-                        <Receipt size={12} /> {transactionId ? `Txn: ${transactionId}` : "No transaction yet"}
+                        <Receipt size={12} /> {transactionId ? t("contracts.txn", { id: transactionId }) : t("contracts.noTxn")}
                       </span>
                       <span className={`badge ${isPaid ? "badge-success" : "badge-warn"}`}>
-                        Payment: {isPaid ? "Yes" : "No"}
+                        {t("contracts.payment", { value: isPaid ? t("common.yes") : t("common.no") })}
                       </span>
                     </div>
 
                     <span className={`badge ${STATUS_BADGE[contract.status] ?? "badge-neutral"}`}>
                       {contract.negotiation_status === "accepted"
-                        ? "Lease accepted"
+                        ? t("contracts.leaseAccepted")
                         : contract.negotiation_status === "proposed"
-                          ? "Tenant proposal sent"
-                          : STATUS_LABEL[contract.status] ?? contract.status}
+                          ? t("contracts.proposalSent")
+                          : tx("contracts.status", contract.status)}
                     </span>
                     {isOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
                   </button>
@@ -242,19 +281,19 @@ export default function Contracts() {
                   {isOpen && (
                     <div style={{ borderTop: "1px solid var(--color-line)", marginTop: "1rem", paddingTop: "1rem" }}>
                       {detail === undefined ? (
-                        <p style={{ color: "var(--color-charcoal)", fontSize: "0.9rem" }}>Loading contract…</p>
+                        <p style={{ color: "var(--color-charcoal)", fontSize: "0.9rem" }}>{t("contracts.loadingContract")}</p>
                       ) : detail === null ? (
                         <p style={{ color: "var(--color-error)", fontSize: "0.9rem" }}>
-                          Couldn't load the full contract. Try again in a moment.
+                          {t("contracts.loadDetailFailed")}
                         </p>
                       ) : (
                         <>
                           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: "1rem", marginBottom: "1rem" }}>
                             {[
-                              { label: "Monthly Rent", value: `৳${Number(contract.rate ?? 0).toLocaleString("en-BD")}` },
-                              { label: "Security Deposit", value: `৳${Number(contract.deposit ?? 0).toLocaleString("en-BD")}` },
-                              { label: "Start Date", value: formatDateLong(contract.start_date) },
-                              { label: "End Date", value: formatDateLong(contract.end_date) },
+                              { label: t("contracts.monthlyRent"), value: formatCurrency(contract.rate ?? 0) },
+                              { label: t("contracts.securityDeposit"), value: formatCurrency(contract.deposit ?? 0) },
+                              { label: t("contracts.startDate"), value: formatDateLong(contract.start_date, lang) },
+                              { label: t("contracts.endDate"), value: formatDateLong(contract.end_date, lang) },
                             ].map((item) => (
                               <div key={item.label}>
                                 <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.72rem", color: "var(--color-blueprint)", display: "block" }}>{item.label}</span>
@@ -263,7 +302,7 @@ export default function Contracts() {
                             ))}
                           </div>
 
-                          {String(contract.tenant?.user_id) === String(currentUser?.id) && contract.status === "draft" && (
+                          {contract.status === "draft" && (!isOwner || detail.negotiation_status === "proposed") && (
                             <form
                               onSubmit={(event) => {
                                 event.preventDefault();
@@ -272,43 +311,59 @@ export default function Contracts() {
                               style={{ borderTop: "1px solid var(--color-line)", paddingTop: "1rem", marginBottom: "1rem" }}
                             >
                               <strong style={{ display: "block", marginBottom: "0.75rem", color: "var(--color-ink)" }}>
-                                Bargain lease terms
+                                {t("contracts.bargainTitle")}
                               </strong>
                               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "0.75rem" }}>
                                 <label>
-                                  <span className="eyebrow">Monthly rent</span>
+                                  <span className="eyebrow">{t("contracts.monthlyRentLabel")}</span>
                                   <input type="number" min="1" value={negotiation[contract.contract_id]?.rate ?? contract.rate ?? ""} onChange={(event) => setNegotiation((prev) => ({ ...prev, [contract.contract_id]: { ...prev[contract.contract_id], rate: event.target.value } }))} />
                                 </label>
                                 <label>
-                                  <span className="eyebrow">Security deposit</span>
+                                  <span className="eyebrow">{t("contracts.securityDepositLabel")}</span>
                                   <input type="number" min="0" value={negotiation[contract.contract_id]?.deposit ?? contract.deposit ?? ""} onChange={(event) => setNegotiation((prev) => ({ ...prev, [contract.contract_id]: { ...prev[contract.contract_id], deposit: event.target.value } }))} />
                                 </label>
                               </div>
-                              <textarea placeholder="Optional message to the landlord" value={negotiation[contract.contract_id]?.message ?? ""} onChange={(event) => setNegotiation((prev) => ({ ...prev, [contract.contract_id]: { ...prev[contract.contract_id], message: event.target.value } }))} style={{ width: "100%", marginTop: "0.75rem", minHeight: "70px" }} />
-                              <button type="submit" className="btn btn-primary" style={{ marginTop: "0.75rem" }}>Send bargaining proposal</button>
+                              <textarea placeholder={isOwner ? t("contracts.messageToTenant") : t("contracts.messageToLandlord")} value={negotiation[contract.contract_id]?.message ?? ""} onChange={(event) => setNegotiation((prev) => ({ ...prev, [contract.contract_id]: { ...prev[contract.contract_id], message: event.target.value } }))} style={{ width: "100%", marginTop: "0.75rem", minHeight: "70px" }} />
+                              <button type="submit" className="btn btn-primary" style={{ marginTop: "0.75rem" }}>{isOwner ? t("contracts.sendCounter") : t("contracts.sendProposal")}</button>
                               {negotiationError[contract.contract_id] && <p role="alert" style={{ color: "var(--color-error)", marginTop: "0.5rem" }}>{negotiationError[contract.contract_id]}</p>}
-                              {detail.negotiation_status === "proposed" && <p style={{ color: "var(--color-blueprint)", marginTop: "0.5rem" }}>Your proposed terms were sent to the landlord.</p>}
-                              {detail.negotiation_status !== "accepted" && (
+                              {detail.negotiation_status === "proposed" && <p style={{ color: "var(--color-blueprint)", marginTop: "0.5rem" }}>{t("contracts.proposalSentNote")}</p>}
+                              {detail.negotiation_status === "proposed" && (
                                 <button type="button" className="btn btn-primary" onClick={() => acceptContract(contract)} style={{ marginTop: "0.75rem" }}>
-                                  Accept these lease terms
+                                  {isOwner ? t("contracts.acceptTenantProposal") : t("contracts.acceptTerms")}
                                 </button>
                               )}
-                              {detail.negotiation_status === "accepted" && <p style={{ color: "var(--color-success)", marginTop: "0.5rem" }}>Lease accepted. The landlord has been notified.</p>}
+
                               {acceptError[contract.contract_id] && <p role="alert" style={{ color: "var(--color-error)", marginTop: "0.5rem" }}>{acceptError[contract.contract_id]}</p>}
                             </form>
                           )}
 
+                          {detail.negotiation_status === "accepted" && (
+                            <div style={{ borderTop: "1px solid var(--color-line)", paddingTop: "1rem", marginBottom: "1rem" }}>
+                              <strong style={{ display: "block", marginBottom: "0.5rem", color: "var(--color-ink)" }}>{t("contracts.signTitle")}</strong>
+                              <p style={{ color: "var(--color-charcoal)", fontSize: "0.85rem" }}>
+                                {t("contracts.signHelp")}
+                              </p>
+                              {((isOwner && !detail.owner_signature_url) || (!isOwner && !detail.tenant_signature_url)) && (
+                                <button type="button" className="btn btn-primary" disabled={signatureBusy[contract.contract_id]} onClick={() => uploadSignature(contract)}>
+                                  {signatureBusy[contract.contract_id] ? t("contracts.uploading") : t("contracts.uploadSignature")}
+                                </button>
+                              )}
+                              {signatureError[contract.contract_id] && <p role="alert" style={{ color: "var(--color-error)" }}>{signatureError[contract.contract_id]}</p>}
+                            </div>
+                          )}
+                          {detail.negotiation_status === "accepted" && <p style={{ color: "var(--color-success)", marginTop: "0.5rem" }}>{t("contracts.acceptedNote")}</p>}
+
                           {detail.terms_and_conditions && (
                             <div style={{ marginBottom: "1rem" }}>
-                              <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.72rem", color: "var(--color-blueprint)", display: "block", marginBottom: "4px" }}>Terms &amp; Conditions</span>
+                              <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.72rem", color: "var(--color-blueprint)", display: "block", marginBottom: "4px" }}>{t("contracts.terms")}</span>
                               <p style={{ color: "var(--color-charcoal)", fontSize: "0.9rem", lineHeight: 1.6, margin: 0 }}>{detail.terms_and_conditions}</p>
                             </div>
                           )}
 
                           <div style={{ display: "flex", gap: "2rem", flexWrap: "wrap", marginBottom: "1.5rem" }}>
                             {[
-                              { label: "Landlord signature", url: detail.owner_signature_url },
-                              { label: "Tenant signature", url: detail.tenant_signature_url },
+                              { label: t("contracts.landlordSignature"), url: detail.owner_signature_url },
+                              { label: t("contracts.tenantSignature"), url: detail.tenant_signature_url },
                             ].map((sig) => (
                               <div key={sig.label}>
                                 <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.72rem", color: "var(--color-blueprint)", display: "block", marginBottom: "4px" }}>{sig.label}</span>
@@ -316,7 +371,7 @@ export default function Contracts() {
                                   <img src={sig.url} alt={sig.label} style={{ maxHeight: "56px", border: "1px solid var(--color-line)", borderRadius: "var(--radius-sm)", background: "#fff" }} />
                                 ) : (
                                   <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", color: "var(--color-charcoal)", fontSize: "0.85rem" }}>
-                                    <PenLine size={13} /> Not signed yet
+                                    <PenLine size={13} /> {t("contracts.notSigned")}
                                   </span>
                                 )}
                               </div>
@@ -326,7 +381,7 @@ export default function Contracts() {
                           {/* =================== NEW: Lease Document (PDF) =================== */}
                           <div>
                             <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.72rem", color: "var(--color-blueprint)", display: "block", marginBottom: "8px" }}>
-                              Lease Document
+                              {t("contracts.leaseDocument")}
                             </span>
 
                             {detail.contract_pdf_url ? (
@@ -343,7 +398,7 @@ export default function Contracts() {
                                   {/* Browser's built-in PDF viewer renders this inline. */}
                                   <iframe
                                     src={detail.contract_pdf_url}
-                                    title={`Lease contract #${contract.contract_id}`}
+                                    title={t("contracts.pdfTitle", { id: digits(contract.contract_id) })}
                                     style={{ width: "100%", height: "100%", border: "none" }}
                                   />
                                 </div>
@@ -355,12 +410,12 @@ export default function Contracts() {
                                   className="btn btn-primary"
                                   style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}
                                 >
-                                  <Download size={16} /> Download PDF
+                                  <Download size={16} /> {t("contracts.downloadPdf")}
                                 </a>
                               </>
                             ) : (
                               <p style={{ color: "var(--color-charcoal)", fontSize: "0.85rem" }}>
-                                The lease document is still being generated — check back in a moment, or ask your landlord to re-save the contract.
+                                {t("contracts.pdfPending")}
                               </p>
                             )}
                           </div>
@@ -377,7 +432,7 @@ export default function Contracts() {
 
       <footer className="site-footer">
         <div className="container">
-          <p>APT&nbsp;RENT // EST. 2026</p>
+          <p>{t("footer.brand")}</p>
         </div>
       </footer>
     </div>
