@@ -85,18 +85,18 @@ export default function RentCollection() {
         <div className="mod-card mod-card-pad-lg" style={{ marginBottom: '2rem' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
             <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-              <div style={{ background: 'var(--color-brass)', borderRadius: '50%', padding: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-ink)' }}>
+              <div style={{ background: 'var(--color-brass)', borderRadius: '50%', padding: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-text-strong)' }}>
                 <Building2 size={24} />
               </div>
               <div>
-                <div style={{ fontWeight: 700, color: 'var(--color-ink)', fontSize: '1.1rem' }}>{property?.title || t('rent.noActive')}</div>
+                <div style={{ fontWeight: 700, color: 'var(--color-text-strong)', fontSize: '1.1rem' }}>{property?.title || t('rent.noActive')}</div>
                 <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.85rem', color: 'var(--color-blueprint)' }}>{property?.address || t('rent.noActiveHint')}</div>
               </div>
             </div>
             
             <div style={{ textAlign: 'right' }}>
-              <div style={{ color: 'var(--color-ink)', fontWeight: 600, marginBottom: '4px' }}>{billingMonth}</div>
-              <div style={{ fontFamily: 'var(--font-stencil)', fontSize: '2rem', color: 'var(--color-ink)', marginBottom: '8px' }}>
+              <div style={{ color: 'var(--color-text-strong)', fontWeight: 600, marginBottom: '4px' }}>{billingMonth}</div>
+              <div style={{ fontFamily: 'var(--font-stencil)', fontSize: '2rem', color: 'var(--color-text-strong)', marginBottom: '8px' }}>
                 {formatCurrency(45000)}
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'flex-end', marginBottom: '16px' }}>
@@ -129,12 +129,12 @@ export default function RentCollection() {
             <p style={{ color: 'var(--color-blueprint)', marginBottom: '1.5rem' }}>{t('rent.selectMethod')}</p>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
               <div className="mod-card mod-card-pad" style={{ cursor: 'pointer', border: selectedMethod === 'card' ? '2px solid var(--color-brass)' : '1px solid var(--color-line-strong)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }} onClick={() => setSelectedMethod('card')}>
-                <CreditCard size={32} color="var(--color-ink)" />
-                <span style={{ fontWeight: 600, color: 'var(--color-ink)' }}>{t('rent.card')}</span>
+                <CreditCard size={32} color="var(--color-text-strong)" />
+                <span style={{ fontWeight: 600, color: 'var(--color-text-strong)' }}>{t('rent.card')}</span>
               </div>
               <div className="mod-card mod-card-pad" style={{ cursor: 'pointer', border: selectedMethod === 'bkash' ? '2px solid var(--color-brass)' : '1px solid var(--color-line-strong)', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }} onClick={() => setSelectedMethod('bkash')}>
-                <Smartphone size={32} color="var(--color-ink)" />
-                <span style={{ fontWeight: 600, color: 'var(--color-ink)' }}>{t('rent.bkash')}</span>
+                <Smartphone size={32} color="var(--color-text-strong)" />
+                <span style={{ fontWeight: 600, color: 'var(--color-text-strong)' }}>{t('rent.bkash')}</span>
               </div>
             </div>
             <button className="btn btn-primary btn-block" disabled={!selectedMethod} onClick={() => setShowPaymentModal(true)}>{t('rent.proceed')}</button>
@@ -149,18 +149,18 @@ export default function RentCollection() {
             {cashScheduled ? (
               <div className="success-screen" style={{ textAlign: 'center', padding: '2rem 1rem' }}>
                 <CheckCircle className="success-icon" size={48} color="var(--color-success)" style={{ margin: '0 auto 1rem' }} />
-                <h3 style={{ fontSize: '1.25rem', color: 'var(--color-ink)', marginBottom: '0.5rem' }}>{t('rent.cashScheduled')}</h3>
-                <p style={{ color: 'var(--color-ink)', marginBottom: '1.5rem' }}>{t('rent.cashScheduledDetail', { date: formatDate(new Date(2026, 8, selectedCashDate), 'long'), slot: slotLabel(selectedTimeSlot) })}</p>
+                <h3 style={{ fontSize: '1.25rem', color: 'var(--color-text-strong)', marginBottom: '0.5rem' }}>{t('rent.cashScheduled')}</h3>
+                <p style={{ color: 'var(--color-text-strong)', marginBottom: '1.5rem' }}>{t('rent.cashScheduledDetail', { date: formatDate(new Date(2026, 8, selectedCashDate), 'long'), slot: slotLabel(selectedTimeSlot) })}</p>
                 <button className="btn btn-ghost" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
                   <Calendar size={18} /> {t('rent.addToCalendar')}
                 </button>
               </div>
             ) : (
               <>
-                <div style={{ background: 'rgba(200,155,60,0.1)', borderLeft: '3px solid var(--color-brass)', padding: '12px 16px', borderRadius: 'var(--radius-sm)', marginBottom: '1rem', color: 'var(--color-ink)' }}>
+                <div style={{ background: 'rgba(200,155,60,0.1)', borderLeft: '3px solid var(--color-brass)', padding: '12px 16px', borderRadius: 'var(--radius-sm)', marginBottom: '1rem', color: 'var(--color-text-strong)' }}>
                   {t('rent.cashNotice')}
                 </div>
-                <h3 style={{ fontSize: '1.1rem', color: 'var(--color-ink)', marginBottom: '1rem' }}>{t('rent.selectDate')}</h3>
+                <h3 style={{ fontSize: '1.1rem', color: 'var(--color-text-strong)', marginBottom: '1rem' }}>{t('rent.selectDate')}</h3>
                 <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginBottom: '1.5rem' }}>
                   {[1, 2, 3, 4, 5].map(day => {
                     const isDisabled = day < 5;
@@ -238,7 +238,7 @@ export default function RentCollection() {
                     <td style={{ padding: '12px 16px' }}>{showDate(item.datePaid)}</td>
                     <td style={{ padding: '12px 16px' }}>
                       {item.status === 'paid' && (
-                        <button style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-ink)' }} title={t('rent.downloadReceipt')}>
+                        <button style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-text-strong)' }} title={t('rent.downloadReceipt')}>
                           <Download size={18} />
                         </button>
                       )}
@@ -269,7 +269,7 @@ export default function RentCollection() {
                </div>
                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                  <span style={{ fontSize: '0.85rem' }}>{t('rent.paidOn', { date: showDate(item.datePaid) })}</span>
-                 {item.status === 'paid' && <Download size={18} color="var(--color-ink)" />}
+                 {item.status === 'paid' && <Download size={18} color="var(--color-text-strong)" />}
                  {item.status === 'overdue' && <AlertCircle size={18} color="var(--color-error)" />}
                </div>
              </div>

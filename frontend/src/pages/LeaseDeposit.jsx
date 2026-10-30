@@ -134,7 +134,7 @@ export default function LeaseDeposit() {
 
             {!offerSent ? (
               <div className="mod-card mod-card-pad-lg" style={{ padding: '2rem', border: '1px solid var(--color-line)', borderRadius: 'var(--radius-md)', background: 'var(--color-paper)' }}>
-                <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '1.25rem', color: 'var(--color-ink)', marginBottom: '1.5rem' }}>Lease Summary</h3>
+                <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '1.25rem', color: 'var(--color-text-strong)', marginBottom: '1.5rem' }}>Lease Summary</h3>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
                   {[
                     { label: 'Property', value: `${property?.title} - ${property?.location}` },
@@ -168,7 +168,7 @@ export default function LeaseDeposit() {
                 </div>
                 <h2 className="module-title" style={{ marginBottom: '1rem' }}>Lease Offer Sent!</h2>
                 <p style={{ color: 'var(--color-charcoal)', marginBottom: '2rem' }}>{approvedTenant?.tenantName ?? approvedTenant?.tenant?.name ?? 'The tenant'} has been notified and can now review and accept the lease.</p>
-                <Link to="/landlord" className="btn btn-ghost" style={{ padding: '0.75rem 1.5rem', background: 'transparent', color: 'var(--color-ink)', border: '1px solid var(--color-ink)', borderRadius: 'var(--radius-sm)', textDecoration: 'none', display: 'inline-block', fontWeight: 'bold' }}>
+                <Link to="/landlord" className="btn btn-ghost" style={{ padding: '0.75rem 1.5rem', background: 'transparent', color: 'var(--color-text-strong)', border: '1px solid var(--color-ink)', borderRadius: 'var(--radius-sm)', textDecoration: 'none', display: 'inline-block', fontWeight: 'bold' }}>
                   Return to Dashboard
                 </Link>
               </div>
@@ -181,7 +181,7 @@ export default function LeaseDeposit() {
 
             {existingContract && (
               <div className="mod-card mod-card-pad" style={{ marginBottom: "1.5rem", border: "1px solid var(--color-line)", background: "var(--color-paper-dim)" }}>
-                <strong style={{ color: "var(--color-ink)" }}>You have a lease offer for this property.</strong>
+                <strong style={{ color: "var(--color-text-strong)" }}>You have a lease offer for this property.</strong>
                 <p style={{ color: "var(--color-charcoal)", margin: "0.5rem 0 1rem" }}>
                   Open the contract to review the landlord&apos;s terms, bargain the rent or deposit, and accept the offer.
                 </p>
@@ -192,7 +192,7 @@ export default function LeaseDeposit() {
             {!paymentComplete ? (
               <>
                 <div className="mod-card mod-card-pad" style={{ padding: '1rem', border: '1px solid var(--color-line)', borderRadius: 'var(--radius-sm)', marginBottom: '2rem', background: 'var(--color-paper-dim)' }}>
-                  <strong style={{ display: 'block', color: 'var(--color-ink)' }}>{property?.title}</strong>
+                  <strong style={{ display: 'block', color: 'var(--color-text-strong)' }}>{property?.title}</strong>
                   <span style={{ color: 'var(--color-charcoal)', fontSize: '0.9rem' }}>{property?.location}</span>
                 </div>
 
@@ -204,7 +204,7 @@ export default function LeaseDeposit() {
                         <button 
                           className="lease-accordion-trigger" 
                           onClick={() => setExpandedClause(isExpanded ? null : item.id)}
-                          style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', background: isExpanded ? 'var(--color-paper-dim)' : 'var(--color-paper)', border: 'none', cursor: 'pointer', color: 'var(--color-ink)', fontWeight: 600, textAlign: 'left' }}
+                          style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', background: isExpanded ? 'var(--color-paper-dim)' : 'var(--color-paper)', border: 'none', cursor: 'pointer', color: 'var(--color-text-strong)', fontWeight: 600, textAlign: 'left' }}
                         >
                           {item.title}
                           {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
@@ -257,7 +257,7 @@ export default function LeaseDeposit() {
                   TXN ID: {paymentDetails?.transactionId}
                 </div>
                 <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
-                  <button className="btn btn-ghost" style={{ padding: '0.75rem 1.5rem', background: 'transparent', color: 'var(--color-ink)', border: '1px solid var(--color-ink)', borderRadius: 'var(--radius-sm)', fontWeight: 'bold', cursor: 'pointer' }}>
+                  <button className="btn btn-ghost" style={{ padding: '0.75rem 1.5rem', background: 'transparent', color: 'var(--color-text-strong)', border: '1px solid var(--color-ink)', borderRadius: 'var(--radius-sm)', fontWeight: 'bold', cursor: 'pointer' }}>
                     Download Receipt
                   </button>
                   <Link to="/inbox" className="btn btn-primary" style={{ padding: '0.75rem 1.5rem', background: 'var(--color-brass)', color: '#fff', border: 'none', borderRadius: 'var(--radius-sm)', textDecoration: 'none', fontWeight: 'bold' }}>

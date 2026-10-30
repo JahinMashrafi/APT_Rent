@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import AppNavbar from '../components/AppNavbar.jsx';
@@ -159,7 +158,7 @@ export default function TourRequests() {
                   marginBottom: '1rem',
                   fontSize: '1rem',
                   fontFamily: 'var(--font-display)',
-                  color: 'var(--color-ink)',
+                  color: 'var(--color-text-strong)',
                 }}
               >
                 <InboxIcon size={18} />{' '}
@@ -224,7 +223,7 @@ export default function TourRequests() {
                               style={{
                                 fontSize: '1.05rem',
                                 fontFamily: 'var(--font-display)',
-                                color: 'var(--color-ink)',
+                                color: 'var(--color-text-strong)',
                                 textDecoration: 'none',
                               }}
                             >
@@ -274,7 +273,7 @@ export default function TourRequests() {
                               >
                                 <strong
                                   style={{
-                                    color: 'var(--color-ink)',
+                                    color: 'var(--color-text-strong)',
                                     fontSize: '0.95rem',
                                   }}
                                 >
@@ -403,7 +402,7 @@ export default function TourRequests() {
                     marginBottom: '1rem',
                     fontSize: '1rem',
                     fontFamily: 'var(--font-display)',
-                    color: 'var(--color-ink)',
+                    color: 'var(--color-text-strong)',
                   }}
                 >
                   {t('tours.history')}
@@ -433,7 +432,7 @@ export default function TourRequests() {
                     >
                       <span
                         style={{
-                          color: 'var(--color-ink)',
+                          color: 'var(--color-text-strong)',
                           fontSize: '0.9rem',
                         }}
                       >

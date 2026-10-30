@@ -327,7 +327,7 @@ const formatConvTime = (iso) => {
            height: 44px;
            border-radius: 50%;
            background: var(--color-ink);
-           color: var(--color-paper);
+           color: var(--color-on-ink);
            display: flex;
            align-items: center;
            justify-content: center;
@@ -358,13 +358,13 @@ const formatConvTime = (iso) => {
         }
         .msg-bubble.sent {
            background: var(--color-ink);
-           color: var(--color-paper);
+           color: var(--color-on-ink);
            border-bottom-right-radius: 2px;
         }
         .msg-bubble.received {
            background: var(--color-white, #fff);
            border: 1px solid var(--color-line);
-           color: var(--color-ink);
+           color: var(--color-text-strong);
            border-bottom-left-radius: 2px;
         }
         .msg-bubble.pending {
@@ -372,7 +372,7 @@ const formatConvTime = (iso) => {
         }
         .nav-badge {
            background: var(--color-brass);
-           color: var(--color-ink);
+           color: var(--color-text-strong);
            border-radius: 999px;
            font-size: 0.62rem;
            font-weight: 700;
@@ -413,7 +413,7 @@ const formatConvTime = (iso) => {
         {/* Left Panel */}
         <div className="inbox-contacts">
           <div style={{ padding: '16px', borderBottom: '1px solid var(--color-line)' }}>
-            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.1rem', color: 'var(--color-ink)', marginBottom: '10px' }}>{t('inbox.messages')}</h2>
+            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.1rem', color: 'var(--color-text-strong)', marginBottom: '10px' }}>{t('inbox.messages')}</h2>
             <div style={{ position: 'relative' }}>
               <Search size={15} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--color-blueprint)', opacity: 0.6 }} />
               <input
@@ -434,7 +434,7 @@ const formatConvTime = (iso) => {
           </div>
           <div style={{ flex: 1, overflowY: 'auto' }}>
             {filteredConvs.length === 0 && (
-              <p style={{ padding: '24px 16px', color: '#8a8f85', fontSize: '0.85rem', textAlign: 'center' }}>
+              <p style={{ padding: '24px 16px', color: 'var(--color-subtle)', fontSize: '0.85rem', textAlign: 'center' }}>
                 {usingMock ? t('inbox.none') : t('inbox.noneYet')}
               </p>
             )}
@@ -450,17 +450,17 @@ const formatConvTime = (iso) => {
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--color-ink)' }}>{conv.participant.name}</span>
-                    <span style={{ fontSize: '0.72rem', color: '#9a9e93', fontFamily: 'var(--font-mono)' }}>{formatConvTime(conv.lastMessageTime)}</span>
+                    <span style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--color-text-strong)' }}>{conv.participant.name}</span>
+                    <span style={{ fontSize: '0.72rem', color: 'var(--color-subtle)', fontFamily: 'var(--font-mono)' }}>{formatConvTime(conv.lastMessageTime)}</span>
                   </div>
-                  <div style={{ fontSize: '0.78rem', color: '#8a8f85', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '160px' }}>
+                  <div style={{ fontSize: '0.78rem', color: 'var(--color-subtle)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '160px' }}>
                     {conv.lastMessage}
                   </div>
                   <div style={{ fontSize: '0.72rem', color: 'var(--color-blueprint)', opacity: 0.7, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {conv.propertyTitle}
                   </div>
                   {conv.unreadCount > 0 && (
-                    <span style={{ background: 'var(--color-brass)', color: 'var(--color-ink)', borderRadius: '999px', fontSize: '0.68rem', fontWeight: 700, padding: '2px 7px', display: 'inline-block', marginTop: '4px' }}>
+                    <span style={{ background: 'var(--color-brass)', color: 'var(--color-text-strong)', borderRadius: '999px', fontSize: '0.68rem', fontWeight: 700, padding: '2px 7px', display: 'inline-block', marginTop: '4px' }}>
                       {formatNumber(conv.unreadCount)}
                     </span>
                   )}
@@ -483,18 +483,18 @@ const formatConvTime = (iso) => {
               <div className="mod-card" style={{ borderRadius: 0, borderBottom: '1px solid var(--color-line)', padding: '12px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <div style={{ display: 'flex', alignItems: 'center' }}>
                   <button className="mobile-back-btn" onClick={() => setMobileView('list')}>
-                    <ArrowLeft size={20} color="var(--color-ink)" />
+                    <ArrowLeft size={20} color="var(--color-text-strong)" />
                   </button>
                   <div className="contact-avatar small" style={{ marginRight: '12px' }}>
                     {activeConv.participant.initials}
                     {activeConv.participant.isOnline && <span className="online-dot" />}
                   </div>
                   <div>
-                    <div style={{ fontWeight: 600, color: 'var(--color-ink)', fontSize: '1rem' }}>{activeConv.participant.name}</div>
+                    <div style={{ fontWeight: 600, color: 'var(--color-text-strong)', fontSize: '1rem' }}>{activeConv.participant.name}</div>
                     <div style={{ fontSize: '0.75rem', color: 'var(--color-blueprint)' }}>{activeConv.propertyTitle}</div>
                   </div>
                 </div>
-                <button style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-ink)' }}>
+                <button style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-text-strong)' }}>
                   <MoreVertical size={20} />
                 </button>
               </div>
@@ -522,7 +522,7 @@ const formatConvTime = (iso) => {
                           <div className={`msg-bubble ${isSent ? 'sent' : 'received'}${msg.pending ? ' pending' : ''}`}>
                             {msg.text}
                           </div>
-                          <span style={{ fontSize: '0.65rem', fontFamily: 'var(--font-mono)', color: '#8a8f85', marginTop: '2px' }}>
+                          <span style={{ fontSize: '0.65rem', fontFamily: 'var(--font-mono)', color: 'var(--color-subtle)', marginTop: '2px' }}>
                             {formatMessageTime(msg.timestamp)}
                             {isSent && (msg.pending ? ` · ${t('inbox.sending')}` : msg.readAt ? ` · ${t('inbox.read')}` : '')}
                           </span>
@@ -558,7 +558,7 @@ const formatConvTime = (iso) => {
                   disabled={!messageText.trim()}
                   style={{
                     background: 'var(--color-ink)',
-                    color: 'var(--color-paper)',
+                    color: 'var(--color-on-ink)',
                     width: '38px',
                     height: '38px',
                     borderRadius: '50%',

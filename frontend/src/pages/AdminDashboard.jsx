@@ -438,7 +438,7 @@ export default function AdminDashboard() {
                 fontFamily: 'var(--font-mono)',
                 fontSize: '0.75rem',
                 cursor: 'pointer',
-                color: 'var(--color-ink)',
+                color: 'var(--color-text-strong)',
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '5px',
@@ -455,7 +455,7 @@ export default function AdminDashboard() {
                 fontFamily: 'var(--font-mono)',
                 fontSize: '0.75rem',
                 cursor: 'pointer',
-                color: 'var(--color-paper)',
+                color: 'var(--color-on-ink)',
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '5px',
@@ -863,7 +863,7 @@ export default function AdminDashboard() {
                               onClick={() => handleDisputeClick(u)}
                               style={{
                                 background: 'var(--color-ink)',
-                                color: 'var(--color-paper)',
+                                color: 'var(--color-on-ink)',
                                 border: '1px solid var(--color-ink)',
                                 padding: '4px 10px',
                                 fontFamily: 'var(--font-mono)',
@@ -931,7 +931,7 @@ export default function AdminDashboard() {
                             fontFamily: 'var(--font-display)',
                             fontWeight: 700,
                             fontSize: '1.15rem',
-                            color: 'var(--color-ink)',
+                            color: 'var(--color-text-strong)',
                             marginBottom: '6px',
                           }}
                         >
@@ -1289,7 +1289,7 @@ export default function AdminDashboard() {
                           style={{
                             padding: '12px 12px 12px 0',
                             fontWeight: 600,
-                            color: 'var(--color-ink)',
+                            color: 'var(--color-text-strong)',
                           }}
                         >
                           {u.name}
@@ -1403,7 +1403,7 @@ export default function AdminDashboard() {
                                 cursor: 'pointer',
                                 fontFamily: 'var(--font-mono)',
                                 fontSize: '0.72rem',
-                                color: 'var(--color-ink)',
+                                color: 'var(--color-text-strong)',
                               }}
                             >
                               VIEW
@@ -1447,7 +1447,7 @@ export default function AdminDashboard() {
                                 onClick={() => handleDisputeClick(u)}
                                 style={{
                                   background: 'var(--color-ink)',
-                                  color: 'var(--color-paper)',
+                                  color: 'var(--color-on-ink)',
                                   border: '1px solid var(--color-ink)',
                                   padding: '4px 8px',
                                   cursor: 'pointer',
@@ -1897,7 +1897,7 @@ export default function AdminDashboard() {
               borderBottom: '1px solid var(--color-line)',
             }}
           >
-            <div style={{ fontWeight: 700, color: 'var(--color-ink)' }}>
+            <div style={{ fontWeight: 700, color: 'var(--color-text-strong)' }}>
               {rejectItem?.name}
             </div>
             <div
@@ -1989,7 +1989,7 @@ export default function AdminDashboard() {
             }}
           >
             <div>
-              <div style={{ fontWeight: 700, color: 'var(--color-ink)' }}>
+              <div style={{ fontWeight: 700, color: 'var(--color-text-strong)' }}>
                 {disputeUser.name}
               </div>
               <div
@@ -2002,7 +2002,7 @@ export default function AdminDashboard() {
                 {disputeUser.email}
               </div>
               {disputeUser.latest_dispute_reason && (
-                <div style={{ marginTop: '8px', fontSize: '0.85rem', color: 'var(--color-ink)' }}>
+                <div style={{ marginTop: '8px', fontSize: '0.85rem', color: 'var(--color-text-strong)' }}>
                   <strong>Claim:</strong> {disputeUser.latest_dispute_reason}
                   {disputeUser.latest_dispute_details && (
                     <div style={{ color: 'var(--color-charcoal)', marginTop: '2px' }}>

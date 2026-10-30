@@ -240,7 +240,7 @@ export default function Contracts() {
                       <Link
                         to={`/property/${contract.property_id}`}
                         onClick={(e) => e.stopPropagation()}
-                        style={{ fontWeight: 600, color: "var(--color-ink)", fontFamily: "var(--font-display)" }}
+                        style={{ fontWeight: 600, color: "var(--color-text-strong)", fontFamily: "var(--font-display)" }}
                       >
                         {contract.property_address}
                       </Link>
@@ -310,7 +310,7 @@ export default function Contracts() {
                               }}
                               style={{ borderTop: "1px solid var(--color-line)", paddingTop: "1rem", marginBottom: "1rem" }}
                             >
-                              <strong style={{ display: "block", marginBottom: "0.75rem", color: "var(--color-ink)" }}>
+                              <strong style={{ display: "block", marginBottom: "0.75rem", color: "var(--color-text-strong)" }}>
                                 {t("contracts.bargainTitle")}
                               </strong>
                               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "0.75rem" }}>
@@ -339,7 +339,7 @@ export default function Contracts() {
 
                           {detail.negotiation_status === "accepted" && (
                             <div style={{ borderTop: "1px solid var(--color-line)", paddingTop: "1rem", marginBottom: "1rem" }}>
-                              <strong style={{ display: "block", marginBottom: "0.5rem", color: "var(--color-ink)" }}>{t("contracts.signTitle")}</strong>
+                              <strong style={{ display: "block", marginBottom: "0.5rem", color: "var(--color-text-strong)" }}>{t("contracts.signTitle")}</strong>
                               <p style={{ color: "var(--color-charcoal)", fontSize: "0.85rem" }}>
                                 {t("contracts.signHelp")}
                               </p>

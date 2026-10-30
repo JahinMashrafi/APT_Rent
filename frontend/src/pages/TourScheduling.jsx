@@ -202,7 +202,7 @@ export default function TourScheduling() {
         </p>
 
         <div className="mod-card mod-card-pad" style={{ padding: '1rem', border: '1px solid var(--color-line)', borderRadius: 'var(--radius-sm)', margin: '1.5rem 0 2rem', background: 'var(--color-paper-dim)' }}>
-          <strong style={{ display: 'block', color: 'var(--color-ink)' }}>{property.title}</strong>
+          <strong style={{ display: 'block', color: 'var(--color-text-strong)' }}>{property.title}</strong>
           <span style={{ color: 'var(--color-charcoal)', fontSize: '0.9rem' }}>{property.address}</span>
           {openRequest && (
             <span style={{ display: 'block', marginTop: '0.5rem', color: 'var(--color-charcoal)', fontSize: '0.85rem' }}>
@@ -219,7 +219,7 @@ export default function TourScheduling() {
               style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '0.75rem', padding: '1.5rem', width: '100%', border: '1px solid var(--color-line)', borderRadius: 'var(--radius-sm)', background: 'var(--color-paper)' }}
             >
               <span style={{ fontSize: '0.75rem', fontFamily: 'var(--font-mono)', color: 'var(--color-blueprint)', textTransform: 'uppercase' }}>{formatDateLong(proposal.appointment_date)}</span>
-              <span style={{ fontSize: '2rem', fontFamily: 'var(--font-stencil)', color: 'var(--color-ink)' }}>{formatTime(proposal.appointment_time)}</span>
+              <span style={{ fontSize: '2rem', fontFamily: 'var(--font-stencil)', color: 'var(--color-text-strong)' }}>{formatTime(proposal.appointment_time)}</span>
               <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
                 <button
                   type="button"
@@ -235,7 +235,7 @@ export default function TourScheduling() {
                   className="btn btn-ghost"
                   disabled={isSubmitting}
                   onClick={() => handleReject(proposal.appointment_id)}
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.6rem 1.1rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--color-line-strong)', background: 'none', color: 'var(--color-ink)', cursor: isSubmitting ? 'not-allowed' : 'pointer' }}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: '0.6rem 1.1rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--color-line-strong)', background: 'none', color: 'var(--color-text-strong)', cursor: isSubmitting ? 'not-allowed' : 'pointer' }}
                 >
                   <XCircle size={16} /> Reject all 3
                 </button>
@@ -283,7 +283,7 @@ export default function TourScheduling() {
             className="btn btn-ghost"
             disabled={isSubmitting}
             onClick={() => handleCancelRequest(openRequest.appointment_id)}
-            style={{ padding: '0.6rem 1.1rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--color-line-strong)', background: 'none', color: 'var(--color-ink)', cursor: isSubmitting ? 'not-allowed' : 'pointer' }}
+            style={{ padding: '0.6rem 1.1rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--color-line-strong)', background: 'none', color: 'var(--color-text-strong)', cursor: isSubmitting ? 'not-allowed' : 'pointer' }}
           >
             Cancel this request
           </button>
@@ -306,12 +306,12 @@ export default function TourScheduling() {
         </p>
 
         <div className="mod-card mod-card-pad" style={{ padding: '1rem', border: '1px solid var(--color-line)', borderRadius: 'var(--radius-sm)', margin: '1.5rem 0 2rem', background: 'var(--color-paper-dim)' }}>
-          <strong style={{ display: 'block', color: 'var(--color-ink)' }}>{property.title}</strong>
+          <strong style={{ display: 'block', color: 'var(--color-text-strong)' }}>{property.title}</strong>
           <span style={{ color: 'var(--color-charcoal)', fontSize: '0.9rem' }}>{property.address}</span>
         </div>
 
         <div style={{ marginTop: '2rem' }}>
-          <label htmlFor="tour-note" style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', color: 'var(--color-ink)' }}>
+          <label htmlFor="tour-note" style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', color: 'var(--color-text-strong)' }}>
             Note for the landlord <span style={{ opacity: 0.6 }}>(optional)</span>
           </label>
           <textarea
@@ -321,7 +321,7 @@ export default function TourScheduling() {
             maxLength={500}
             onChange={(event) => setNote(event.target.value)}
             placeholder="e.g. I can come any weekday evening."
-            style={{ width: '100%', padding: '0.75rem', border: '1px solid var(--color-line)', borderRadius: 'var(--radius-sm)', background: 'var(--color-paper)', color: 'var(--color-ink)', fontFamily: 'inherit', resize: 'vertical' }}
+            style={{ width: '100%', padding: '0.75rem', border: '1px solid var(--color-line)', borderRadius: 'var(--radius-sm)', background: 'var(--color-paper)', color: 'var(--color-text-strong)', fontFamily: 'inherit', resize: 'vertical' }}
           />
         </div>
 
