@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const { requireAuth, requireAdmin } = require("../middleware/authMiddleware.js");
-const { upload, uploadVerificationDocs } = require("../middleware/upload.js");
+const { uploadVerificationDocs, uploadAvatar } = require("../middleware/upload.js");
 const {
   getUsers,
   updateUser,
@@ -20,7 +20,7 @@ const {
 router.get("/me", requireAuth, getMe);
 router.patch("/me", requireAuth, updateMe);
 router.post("/me/documents", requireAuth, uploadVerificationDocs, uploadDocuments);
-router.post("/me/avatar", requireAuth, uploadAvatarMiddleware, uploadAvatarImage);
+router.post("/me/avatar", requireAuth, uploadAvatar, uploadAvatarImage);
 router.delete("/me/avatar", requireAuth, removeAvatar);
 
 // Detailed profile page (signed-in users only).

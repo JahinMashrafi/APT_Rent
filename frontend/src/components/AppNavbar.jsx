@@ -23,7 +23,8 @@ import { logoutUser } from "../utils/auth";
 import { useLanguage } from "../i18n/LanguageContext.jsx";
 import { localizeNotification } from "../utils/notificationText.js";
 import LanguageSwitcher from "./LanguageSwitcher.jsx";
-
+import logoEnglish from "../assets/images/logo/apt-rent-logo1.png";
+import logoBangla from "../assets/images/logo/apt-rent-logo2.png";
 // =============================================================================
 // AppNavbar.jsx — Unified role-aware navigation bar
 // =============================================================================
@@ -148,7 +149,11 @@ export default function AppNavbar() {
     <header className="app-navbar">
       <div className="app-navbar-inner">
         <Link to="/" className="app-navbar-brand">
-          <img src="/assets/images/logo/apt-rent-logo.png" alt="APT Rent" className="app-navbar-logo" />
+          <img
+            src={i18n.lang === "bn" ? logoBangla : logoEnglish}
+            alt={i18n.lang === "bn" ? "আপাতে রেন্ট" : "APT Rent"}
+            className="app-navbar-logo"
+          />
         </Link>
 
         <nav className="app-nav-links" aria-label={t("nav.mainNavigation")}>
