@@ -19,6 +19,15 @@
   --color-success: #4C7A5D;
   --color-error: #B5533C;
   --color-white: #FFFFFF;
+  --color-on-ink: #F7F5EF;        /* text that sits ON an ink background (flips with theme) */
+  --color-text-strong: #1B2A41;  /* headings / emphasised text (flips in dark mode) */
+  --color-navbar-bg: #f3efe4;
+  --color-hover: rgba(27, 42, 65, 0.06);
+  --color-app-navbar-bg: #f3f1e5;   /* matches the logo artwork's own background */
+  --color-logo-plate: #f3f1e5;
+  --color-muted: #63685e;
+  --color-subtle: #8a8f85;
+  color-scheme: light;
 
   /* ---- Type tokens ---- */
   --font-display: 'Fraunces', Georgia, serif;
@@ -38,6 +47,81 @@
   /* ---- Layout ---- */
   --container-w: 1180px;
   --nav-h: 76px;
+}
+
+
+/* ---- Dark theme ----
+   Applied via <html data-theme="dark">. Surfaces and text flip; --color-ink
+   stays a deep navy because it is used as a *background* (buttons, hero, nav
+   pills). Anything that needs ink as *text* uses --color-text-strong. */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --color-ink: #22344F;
+  --color-blueprint: #7FAEDD;
+  --color-brass: #D4A946;
+  --color-brass-dark: #E2BC62;
+  --color-paper: #0E1522;
+  --color-paper-dim: #162033;
+  --color-charcoal: #E4E1D6;
+  --color-white: #1A2438;
+  --color-on-ink: #F2EFE6;
+  --color-text-strong: #F2EFE6;
+  --color-navbar-bg: #121B2B;
+  --color-hover: rgba(228, 225, 214, 0.09);
+  --color-app-navbar-bg: #121B2B;
+  --color-muted: #A5AB9F;
+  --color-subtle: #7E8578;
+  --color-line: rgba(228, 225, 214, 0.12);
+  --color-line-strong: rgba(228, 225, 214, 0.26);
+  --color-success: #6FB087;
+  --color-error: #E08066;
+  --shadow-card: 0 24px 48px -24px rgba(0, 0, 0, 0.7);
+  --shadow-soft: 0 8px 20px -12px rgba(0, 0, 0, 0.6);
+}
+/* brass buttons keep dark text in both themes (--color-ink is lighter in dark mode) */
+:root[data-theme="dark"] .btn-primary { color: #10192a; }
+:root[data-theme="dark"] .btn-dark { background: var(--color-brass); color: #10192a; }
+:root[data-theme="dark"] .btn-dark:hover { background: var(--color-brass-dark); }
+/* The logo PNG has a cream background baked in, so in dark mode it sits on a
+   cream "plate" instead of showing as a stray cream rectangle on a dark bar. */
+:root[data-theme="dark"] .app-navbar-brand,
+:root[data-theme="dark"] .navbar .brand {
+  background: var(--color-logo-plate);
+  border-radius: 10px;
+  padding: 2px 6px;
+}
+:root[data-theme="dark"] .leaflet-tile { filter: brightness(0.7) invert(1) contrast(0.9) hue-rotate(200deg) saturate(0.5) brightness(0.9); }
+:root[data-theme="dark"] .blueprint-grid { opacity: 0.9; }
+
+/* Tailwind utility classes used in a few pages */
+:root[data-theme="dark"] .bg-white { background-color: var(--color-white) !important; }
+:root[data-theme="dark"] .bg-slate-100, :root[data-theme="dark"] .bg-gray-100 { background-color: var(--color-paper-dim) !important; }
+:root[data-theme="dark"] .text-slate-900, :root[data-theme="dark"] .text-gray-900 { color: var(--color-text-strong) !important; }
+:root[data-theme="dark"] .text-slate-700, :root[data-theme="dark"] .text-slate-600, :root[data-theme="dark"] .text-slate-500,
+:root[data-theme="dark"] .text-gray-500 { color: var(--color-muted) !important; }
+:root[data-theme="dark"] .border-slate-100, :root[data-theme="dark"] .border-gray-200 { border-color: var(--color-line) !important; }
+:root[data-theme="dark"] .bg-emerald-100, :root[data-theme="dark"] .bg-emerald-50 { background-color: rgba(76,175,120,0.16) !important; }
+:root[data-theme="dark"] .bg-red-100, :root[data-theme="dark"] .bg-red-50 { background-color: rgba(224,128,102,0.16) !important; }
+:root[data-theme="dark"] .bg-blue-100, :root[data-theme="dark"] .bg-blue-50 { background-color: rgba(127,174,221,0.16) !important; }
+:root[data-theme="dark"] .bg-amber-100, :root[data-theme="dark"] .bg-amber-50 { background-color: rgba(212,169,70,0.16) !important; }
+:root[data-theme="dark"] [class*="text-emerald-"] { color: #7fd1a0 !important; }
+:root[data-theme="dark"] [class*="text-red-"] { color: #f0a08c !important; }
+:root[data-theme="dark"] [class*="text-blue-"] { color: #9cc4ee !important; }
+:root[data-theme="dark"] [class*="text-amber-"] { color: #e8c46e !important; }
+
+/* Theme toggle button */
+.theme-toggle {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 36px; height: 36px; border-radius: var(--radius-pill);
+  border: 1.5px solid var(--color-line-strong);
+  background: transparent; color: var(--color-text-strong);
+  transition: background-color .15s ease, border-color .15s ease;
+}
+.theme-toggle:hover { background: var(--color-paper-dim); border-color: var(--color-text-strong); }
+
+/* Smooth theme change (skipped for reduced-motion by the rule above) */
+html.theme-anim, html.theme-anim *, html.theme-anim *::before, html.theme-anim *::after {
+  transition: background-color .25s ease, color .25s ease, border-color .25s ease !important;
 }
 
 /* ---- Reset ---- */
@@ -75,7 +159,7 @@ body {
 
 h1, h2, h3, h4 {
   font-family: var(--font-display);
-  color: var(--color-ink);
+  color: var(--color-text-strong);
   line-height: 1.1;
   font-weight: 600;
 }
@@ -130,14 +214,14 @@ h1, h2, h3, h4 {
 
 .btn-ghost {
   background: transparent;
-  color: var(--color-ink);
+  color: var(--color-text-strong);
   border-color: var(--color-line-strong);
 }
-.btn-ghost:hover { border-color: var(--color-ink); background: rgba(27,42,65,0.05); }
+.btn-ghost:hover { border-color: var(--color-text-strong); background: var(--color-hover); }
 
 .btn-dark {
   background: var(--color-ink);
-  color: var(--color-paper);
+  color: var(--color-on-ink);
 }
 .btn-dark:hover { background: #10192a; }
 

@@ -14,7 +14,7 @@
 .auth-brand {
   position: relative;
   background: var(--color-ink);
-  color: var(--color-paper);
+  color: var(--color-on-ink);
   padding: 56px 48px;
   display: flex;
   flex-direction: column;
@@ -33,13 +33,13 @@
 }
 
 .auth-brand .brand { position: relative; }
-.auth-brand .brand-name { color: var(--color-paper); }
+.auth-brand .brand-name { color: var(--color-on-ink); }
 .auth-brand .brand-name span { color: var(--color-brass); }
 
 .auth-brand-copy { position: relative; max-width: 360px; }
 .auth-brand-copy .eyebrow { color: var(--color-brass); }
 .auth-brand-copy h2 {
-  color: var(--color-paper);
+  color: var(--color-on-ink);
   font-size: 2rem;
   margin-top: 14px;
   font-weight: 600;
@@ -110,7 +110,7 @@
 }
 .auth-card header p {
   margin-top: 8px;
-  color: #63685e;
+  color: var(--color-muted);
   font-size: 0.94rem;
 }
 
@@ -135,7 +135,7 @@
 }
 .role-tab[aria-selected="true"] {
   background: var(--color-ink);
-  color: var(--color-paper);
+  color: var(--color-on-ink);
   box-shadow: var(--shadow-soft);
 }
 
@@ -147,12 +147,12 @@
 .field label {
   font-size: 0.82rem;
   font-weight: 600;
-  color: var(--color-ink);
+  color: var(--color-text-strong);
 }
 .field label .req { color: var(--color-brass-dark); }
 .field label .hint {
   font-weight: 400;
-  color: #8a8f85;
+  color: var(--color-subtle);
   font-family: var(--font-mono);
   font-size: 0.7rem;
 }
@@ -181,7 +181,7 @@
   background: transparent;
 }
 .input-shell.disabled { background: var(--color-paper-dim); }
-.input-shell.disabled input { color: #8a8f85; }
+.input-shell.disabled input { color: var(--color-subtle); }
 
 .input-shell button.toggle-visibility {
   background: none;
@@ -216,11 +216,11 @@
 .upload-zone .upload-copy strong {
   display: block;
   font-size: 0.88rem;
-  color: var(--color-ink);
+  color: var(--color-text-strong);
 }
 .upload-zone .upload-copy span {
   font-size: 0.76rem;
-  color: #8a8f85;
+  color: var(--color-subtle);
 }
 .upload-zone .file-name {
   margin-left: auto;
@@ -250,7 +250,7 @@
   align-items: flex-start;
   gap: 10px;
   font-size: 0.85rem;
-  color: #565b52;
+  color: var(--color-muted);
 }
 .field-checkbox input {
   width: 17px; height: 17px;
@@ -282,14 +282,14 @@
   margin-top: 20px;
   text-align: center;
   font-size: 0.9rem;
-  color: #565b52;
+  color: var(--color-muted);
 }
 .auth-switch a { color: var(--color-blueprint); font-weight: 700; }
 
 .form-note {
   margin-top: 4px;
   font-size: 0.76rem;
-  color: #8a8f85;
+  color: var(--color-subtle);
 }
 
 @media (max-width: 980px) {

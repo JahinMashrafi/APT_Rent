@@ -11,7 +11,7 @@
   justify-content: center;
   padding: 64px 0;
   overflow: hidden;
-  color: var(--color-paper);
+  color: var(--color-on-ink);
 }
 
 /* ---- Background image + darkening overlay ----
@@ -42,7 +42,7 @@
 }
 
 .hero .eyebrow { color: var(--color-brass); }
-.hero h1 { color: var(--color-paper); }
+.hero h1 { color: var(--color-on-ink); }
 .hero h1 em { font-style: italic; color: var(--color-brass); }
 
 .hero .eyebrow {
@@ -103,7 +103,7 @@
 .search-tag input[type="text"] {
   flex: 1;
   min-width: 0;
-  color: var(--color-paper);
+  color: var(--color-on-ink);
   font-size: 0.98rem;
   padding: 10px 4px;
   background: transparent;
@@ -111,9 +111,10 @@
   outline: 0;
 }
 .search-tag input[type="search"]::placeholder,
-.search-tag input[type="text"]::placeholder { color: rgba(247,245,239,0.55); }
+.search-tag input[type="text"]::placeholder { color: rgba(247,245,239,0.78); }
 
 .search-tag .search-icon {
+  color: var(--color-on-ink);
   width: 34px; height: 34px;
   display: grid; place-items: center;
   background: rgba(247,245,239,0.1);
@@ -129,7 +130,7 @@
   margin-top: 16px;
   font-family: var(--font-mono);
   font-size: 0.76rem;
-  color: rgba(247, 245, 239, 0.6);
+  color: rgba(247, 245, 239, 0.9);
   letter-spacing: 0.02em;
 }
 
@@ -150,7 +151,7 @@
 .intro-stat .num {
   font-family: var(--font-stencil);
   font-size: 2.6rem;
-  color: var(--color-ink);
+  color: var(--color-text-strong);
   font-weight: 700;
   letter-spacing: 0.02em;
 }
@@ -171,3 +172,26 @@
   .search-tag button.btn-primary { width: 100%; order: 4; margin: 0 4px 4px; }
   .intro-strip .container { grid-template-columns: 1fr; gap: 10px; }
 }
+
+/* ---- Hero search: light pill ----
+   The default key-tag pill is navy, which disappears against the navy hero.
+   On the hero it is cream with dark text (same in light and dark mode, because
+   the hero artwork itself does not change with the theme). */
+.hero .newsfeed-search-bar { margin: 40px auto 0; max-width: 760px; }
+.hero .search-tag {
+  background: #F7F5EF;
+  border: 1.5px solid rgba(200, 155, 60, 0.75);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
+}
+.hero .search-tag::before { background: #1B2A41; }
+.hero .search-tag-seam { border-left-color: rgba(27, 42, 65, 0.3); }
+.hero .search-tag .search-icon { background: rgba(27, 42, 65, 0.08); color: #1B2A41; }
+.hero .search-tag input[type="search"],
+.hero .search-tag input[type="text"] { color: #1B2A41; }
+.hero .search-tag input[type="search"]::placeholder,
+.hero .search-tag input[type="text"]::placeholder { color: #5b6170; opacity: 1; }
+.hero .search-clear-btn { color: #5b6170; }
+.hero .search-clear-btn:hover { color: #8a6a1f; }
+.hero .btn-outline { background: #F7F5EF; color: #1B2A41; border-color: rgba(200, 155, 60, 0.75); }
+.hero .btn-outline:hover,
+.hero .btn-outline[aria-expanded="true"] { background: #fff; border-color: var(--color-brass); }

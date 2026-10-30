@@ -36,7 +36,7 @@
   align-items: center;
   justify-content: center;
   font-weight: 700;
-  color: var(--color-ink);
+  color: var(--color-text-strong);
 }
 
 .profile-grid {
@@ -232,7 +232,7 @@
   align-items: center;
   justify-content: center;
   font-weight: 700;
-  color: var(--color-ink);
+  color: var(--color-text-strong);
 }
 
 .pv-header-text { display: grid; gap: 6px; }
