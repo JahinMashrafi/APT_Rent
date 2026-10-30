@@ -1,4 +1,3 @@
-
 /**
  * ============================================================================
  * SearchFilterBar.jsx
@@ -17,6 +16,7 @@
  * ============================================================================
  */
 
+import { Search, SlidersHorizontal } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useLanguage } from "../i18n/LanguageContext.jsx";
 
@@ -123,12 +123,7 @@ export default function SearchFilterBar({
       {/* ===================== SEARCH INPUT (left) ===================== */}
       <div className="search-tag newsfeed-search-input">
         <span className="search-icon">
-          <img
-            src="/assets/icons/search.svg"
-            alt=""
-            width="16"
-            height="16"
-          />
+          <Search size={16} aria-hidden="true" />
         </span>
 
         <span className="search-tag-seam" aria-hidden="true"></span>
@@ -166,12 +161,7 @@ export default function SearchFilterBar({
           aria-expanded={isFilterOpen}
           onClick={() => setIsFilterOpen((prev) => !prev)}
         >
-          <img
-            src="/assets/icons/filter.svg"
-            alt=""
-            width="16"
-            height="16"
-          />
+          <SlidersHorizontal size={16} aria-hidden="true" />
           {t("search.filter")}
         </button>
 
