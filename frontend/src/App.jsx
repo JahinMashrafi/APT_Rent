@@ -20,6 +20,8 @@ import LandlordDashboard from "./pages/LandlordDashboard.jsx";
 import AdminDashboard from "./pages/AdminDashboard.jsx";
 import Applications from "./pages/Applications.jsx";
 import Contracts from "./pages/Contracts.jsx";
+import SavedListings from "./pages/SavedListings.jsx";
+import BackToTop from "./components/BackToTop.jsx";
 
 // Simple placeholder for unlisted routes
 function SimplePage({ title, text }) {
@@ -87,6 +89,7 @@ function App() {
         <Route path="/applications" element={<RequireAuth><Applications /></RequireAuth>} />
         <Route path="/contracts" element={<RequireAuth><Contracts /></RequireAuth>} />
         <Route path="/landlord" element={<RequireAuth><LandlordDashboard /></RequireAuth>} />
+        <Route path="/saved" element={<RequireAuth><SavedListings /></RequireAuth>} />
 
         {/* Admin-only */}
         <Route
@@ -100,13 +103,14 @@ function App() {
 
         {/* Legacy placeholder routes */}
         <Route path="/contact" element={<SimplePage title="Contact" text="Get in touch with us." />} />
-        <Route path="/wishlist" element={<SimplePage title="Wishlist" text="Your saved properties will appear here." />} />
+        <Route path="/wishlist" element={<Navigate to="/saved" replace />} />
         <Route path="/map-view" element={<SimplePage title="Map View" text="Map view coming soon." />} />
         <Route path="/my-apartment" element={<SimplePage title="My Current Apartment" text="Your current apartment details." />} />
 
         {/* Catch-all */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+      <BackToTop />
     </BrowserRouter>
   );
 }
