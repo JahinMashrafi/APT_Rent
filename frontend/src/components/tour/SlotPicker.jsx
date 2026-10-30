@@ -69,7 +69,7 @@ export default function SlotPicker({
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>
       <div>
-        <h3 className="section-heading" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem', fontSize: '1rem', fontFamily: 'var(--font-display)', color: 'var(--color-ink)' }}>
+        <h3 className="section-heading" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem', fontSize: '1rem', fontFamily: 'var(--font-display)', color: 'var(--color-text-strong)' }}>
           <Calendar size={18} /> Choose a Date
         </h3>
         <div className="tour-day-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '0.5rem' }}>
@@ -94,7 +94,7 @@ export default function SlotPicker({
 
         {selectedDay && (
           <div style={{ marginTop: '2rem' }}>
-            <h3 className="section-heading" style={{ marginBottom: '1rem', fontSize: '0.9rem', color: 'var(--color-ink)' }}>
+            <h3 className="section-heading" style={{ marginBottom: '1rem', fontSize: '0.9rem', color: 'var(--color-text-strong)' }}>
               Choose a Time for {formatDateLong(selectedDay)}
             </h3>
             {TIME_OPTIONS.every((time) => excluded.has(`${selectedDay}|${time}`)) ? (
@@ -128,7 +128,7 @@ export default function SlotPicker({
       </div>
 
       <div>
-        <h3 className="section-heading" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem', fontSize: '1rem', fontFamily: 'var(--font-display)', color: 'var(--color-ink)' }}>
+        <h3 className="section-heading" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem', fontSize: '1rem', fontFamily: 'var(--font-display)', color: 'var(--color-text-strong)' }}>
           <Clock size={18} /> Your Selected Slots ({selectedSlots.length}/{REQUIRED_SLOTS})
         </h3>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
@@ -139,7 +139,7 @@ export default function SlotPicker({
                 <div key={slot.key} className="mod-card mod-card-pad" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', border: '1px solid var(--color-blueprint)', borderRadius: 'var(--radius-sm)', background: 'var(--color-paper-dim)' }}>
                   <div>
                     <div style={{ fontSize: '0.8rem', fontFamily: 'var(--font-mono)', color: 'var(--color-blueprint)' }}>{formatDateLong(slot.date)}</div>
-                    <div style={{ fontSize: '1.2rem', fontFamily: 'var(--font-stencil)', color: 'var(--color-ink)' }}>{formatTime(slot.time)}</div>
+                    <div style={{ fontSize: '1.2rem', fontFamily: 'var(--font-stencil)', color: 'var(--color-text-strong)' }}>{formatTime(slot.time)}</div>
                   </div>
                   <button type="button" onClick={() => removeSlot(i)} aria-label={`Remove slot ${i + 1}`} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-error)' }}>
                     <X size={20} />

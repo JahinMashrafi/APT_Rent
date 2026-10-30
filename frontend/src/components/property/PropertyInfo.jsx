@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import {
   MapPin,
@@ -46,7 +45,7 @@ export default function PropertyInfo({ property }) {
         <h1
           style={{
             fontFamily: 'var(--font-display)',
-            color: 'var(--color-ink)',
+            color: 'var(--color-text-strong)',
             fontSize: '1.7rem',
             margin: '0 0 8px 0',
           }}
@@ -82,7 +81,7 @@ export default function PropertyInfo({ property }) {
             style={{
               fontFamily: 'var(--font-stencil)',
               fontSize: '2.4rem',
-              color: 'var(--color-ink)',
+              color: 'var(--color-text-strong)',
             }}
           >
             {formatCurrency(property?.pricePerMonth)}
@@ -130,7 +129,7 @@ export default function PropertyInfo({ property }) {
             style={{
               fontFamily: 'var(--font-mono)',
               fontSize: '0.9rem',
-              color: 'var(--color-ink)',
+              color: 'var(--color-text-strong)',
             }}
           >
             {t('propertyDetails.beds', {
@@ -154,7 +153,7 @@ export default function PropertyInfo({ property }) {
             style={{
               fontFamily: 'var(--font-mono)',
               fontSize: '0.9rem',
-              color: 'var(--color-ink)',
+              color: 'var(--color-text-strong)',
             }}
           >
             {t('propertyDetails.baths', {
@@ -178,7 +177,7 @@ export default function PropertyInfo({ property }) {
             style={{
               fontFamily: 'var(--font-mono)',
               fontSize: '0.9rem',
-              color: 'var(--color-ink)',
+              color: 'var(--color-text-strong)',
             }}
           >
             {t('propertyDetails.sqft', {
@@ -202,7 +201,7 @@ export default function PropertyInfo({ property }) {
             style={{
               fontFamily: 'var(--font-mono)',
               fontSize: '0.9rem',
-              color: 'var(--color-ink)',
+              color: 'var(--color-text-strong)',
             }}
           >
             {t('propertyDetails.floor', {
@@ -236,7 +235,7 @@ export default function PropertyInfo({ property }) {
             style={{
               fontFamily: 'var(--font-mono)',
               fontSize: '0.9rem',
-              color: 'var(--color-ink)',
+              color: 'var(--color-text-strong)',
             }}
           >
             {property?.hasLift
@@ -355,7 +354,7 @@ export default function PropertyInfo({ property }) {
                   style={{
                     fontFamily: 'var(--font-display)',
                     fontSize: '1.2rem',
-                    color: 'var(--color-ink)',
+                    color: 'var(--color-text-strong)',
                     fontWeight: 'bold',
                   }}
                 >

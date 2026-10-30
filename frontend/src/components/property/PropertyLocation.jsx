@@ -24,7 +24,7 @@ export default function PropertyLocation({ lat, lng, title, address }) {
   return (
     <div style={{ marginTop: '32px' }}>
       <h2 className="section-heading" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-        <MapPin size={24} color="var(--color-ink)" />
+        <MapPin size={24} color="var(--color-text-strong)" />
         {t('propertyDetails.locationTitle')}
       </h2>
       
@@ -44,7 +44,7 @@ export default function PropertyLocation({ lat, lng, title, address }) {
           />
           <Marker position={position}>
             <Popup>
-              <div style={{ color: 'var(--color-ink)', fontFamily: 'var(--font-body)' }}>
+              <div style={{ color: 'var(--color-text-strong)', fontFamily: 'var(--font-body)' }}>
                 <strong style={{ display: 'block', marginBottom: '4px' }}>{title}</strong>
                 <span style={{ fontSize: '0.9rem', color: 'var(--color-blueprint)' }}>{address}</span>
               </div>
