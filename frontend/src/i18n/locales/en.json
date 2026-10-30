@@ -13,9 +13,9 @@
     "yesterday": "Yesterday",
     "perMonth": "{price} / month",
     "browseListings": "Browse listings",
-    "notAvailable": "—"
+    "notAvailable": "—",
+    "backToTop": "Back to top"
   },
-
   "nav": {
     "browse": "Browse",
     "applications": "Applications",
@@ -25,23 +25,21 @@
     "dashboard": "Dashboard",
     "tourRequests": "Tour Requests",
     "adminPanel": "Admin Panel",
-    "mainNavigation": "Main navigation"
+    "mainNavigation": "Main navigation",
+    "saved": "Saved listings"
   },
-
   "role": {
     "tenant": "Tenant",
     "landlord": "Landlord",
     "admin": "Admin",
     "switch": "Switch role"
   },
-
   "auth": {
     "login": "Log in",
     "register": "Register",
     "showPassword": "Show password",
     "hidePassword": "Hide password"
   },
-
   "notif": {
     "title": "Notifications",
     "markAllRead": "Mark all read",
@@ -49,7 +47,6 @@
     "goInbox": "Go to Inbox →",
     "viewTours": "View tour requests →"
   },
-
   "time": {
     "justNow": "just now",
     "minutesAgo": "{count} minutes ago",
@@ -68,7 +65,6 @@
     "monthsAgoShort": "{count}mo ago",
     "yearsAgoShort": "{count}y ago"
   },
-
   "user": {
     "menu": "User menu",
     "viewProfile": "View profile",
@@ -76,21 +72,17 @@
     "inbox": "Inbox",
     "logout": "Log out"
   },
-
   "lang": {
     "label": "Language",
     "en": "English",
     "bn": "বাংলা"
   },
-
   "mobile": {
     "toggle": "Toggle mobile menu"
   },
-
   "footer": {
     "brand": "APT RENT // EST. 2026"
   },
-
   "pwa": {
     "newVersion": "A new version is available.",
     "update": "Update",
@@ -104,11 +96,9 @@
     "iosThen": ", then",
     "iosAdd": "Add to Home Screen"
   },
-
   "modal": {
     "close": "Close modal"
   },
-
   "status": {
     "active": "Active",
     "approved": "Approved",
@@ -125,14 +115,12 @@
     "vacant": "Vacant",
     "hidden": "Hidden"
   },
-
   "home": {
     "eyebrow": "Verified listings · Digital leases · Cashless rent",
     "title": "Find Your Next Home",
     "note": "Sign in to unlock live listings, filters, and saved searches.",
     "explore": "Explore Available Properties"
   },
-
   "search": {
     "formAria": "Search and filter apartments",
     "placeholder": "Search by area, e.g. Gulshan, Dhanmondi...",
@@ -155,13 +143,11 @@
     "clearFilters": "Clear",
     "applyFilters": "Apply filters"
   },
-
   "feed": {
     "loading": "Loading listings…",
     "loadError": "Could not load listings.",
     "empty": "No apartments match your search yet."
   },
-
   "listing": {
     "untitled": "Untitled listing",
     "noPhotos": "No photos yet",
@@ -177,13 +163,11 @@
     "linkCopied": "Property link copied to clipboard!",
     "copyFailed": "Couldn't copy the link. Please copy it from the address bar."
   },
-
   "pagination": {
     "aria": "Newsfeed pagination",
     "prev": "Prev",
     "next": "Next"
   },
-
   "applications": {
     "eyebrow": "Tenant Portal",
     "title": "My Applications",
@@ -193,7 +177,6 @@
     "applied": "Applied {when}",
     "today": "today"
   },
-
   "contracts": {
     "eyebrow": "Lease Documents",
     "title": "My Contracts",
@@ -248,7 +231,6 @@
     "downloadPdf": "Download PDF",
     "pdfPending": "The lease document is still being generated — check back in a moment, or ask your landlord to re-save the contract."
   },
-
   "inbox": {
     "messages": "Messages",
     "searchPlaceholder": "Search conversations...",
@@ -264,7 +246,6 @@
     "back": "Back to conversations",
     "send": "Send message"
   },
-
   "rent": {
     "eyebrow": "Rent & Billing",
     "title": "Pay Your Rent",
@@ -309,7 +290,6 @@
       "cash": "Cash"
     }
   },
-
   "payment": {
     "amount": "Payment Amount",
     "tabCard": "Card",
@@ -335,7 +315,6 @@
     "errCvv": "Invalid CVV",
     "errName": "Name is required"
   },
-
   "login": {
     "welcome": "Welcome back",
     "tagline": "Pick up right where the lease left off.",
@@ -358,7 +337,6 @@
     "createAccount": "Create an account",
     "genericError": "Something went wrong"
   },
-
   "register": {
     "eyebrowJoin": "Join APT Rent",
     "tagline": "One profile, verified once, used everywhere.",
@@ -419,8 +397,7 @@
     "errUpload": "Account created, but document upload failed: {message}",
     "errGeneric": "Registration failed"
   },
-
-    "addProperty": {
+  "addProperty": {
     "titleNew": "Add New Property",
     "titleEdit": "Edit Listing",
     "address": "Address",
@@ -516,70 +493,78 @@
     "hide": "Hide",
     "noProperties": "You haven't listed any properties yet.",
     "applicationsTitle": "Tenant Applications",
-  "filterAll": "All",
-  "reviewProfile": "Review Profile",
-  "proposeTour": "Propose Tour",
-  "offerLease": "Offer Lease",
-  "noApplications": "No applications found.",
-  "ledgerTitle": "Rent Ledger",
-  "ledgerUnavailable": "Rent ledger unavailable right now.",
-  "receivableThisMonth": "Receivable This Month",
-  "collected": "Collected",
-  "pendingAmount": "Pending",
-  "dueBy": "Due by {date}",
-  "noContracts": "No active contracts yet."
-},
-"propertyDetails": {
-  "backToListings": "Back to listings",
-  "loadingTitle": "Loading Property...",
-  "loadingBody": "Fetching the latest property details from the API.",
-  "unableToLoad": "Unable to Load Property",
-  "notFound": "Property Not Found",
-  "notFoundBody": "The property you're looking for doesn't exist or has been removed.",
-  "loadFailed": "Could not load this property.",
-  "perMonth": "/month",
-  "securityDeposit": "Security deposit: {amount}",
-  "requestTour": "Request a Tour",
-  "tourShort": "Tour",
-  "contactLandlord": "Contact Landlord",
-  "applyToRent": "Apply to rent",
-  "applicationSent": "Application sent",
-  "sending": "Sending…",
-  "applyFailed": "Couldn't send your application — try again in a moment.",
-  "secureVerified": "Secure & verified platform",
-  "beds": "{count} Beds",
-  "beds_one": "{count} Bed",
-  "baths": "{count} Baths",
-  "baths_one": "{count} Bath",
-  "sqft": "{count} sqft",
-  "floor": "Floor {count}",
-  "liftAvailable": "Lift available",
-  "noLift": "No lift",
-  "amenities": "Amenities",
-  "description": "Description",
-  "readMore": "[Read more]",
-  "readLess": "[Read less]",
-  "aboutLandlord": "About the Landlord",
-  "verifiedLandlord": "Verified Landlord",
-  "responseTime": "Response time: {value}",
-  "withinDay": "Within a day",
-  "memberSince": "Member since: {year}",
-  "locationTitle": "Location",
-  "whatTenantsSay": "What Tenants Say",
-  "noReviews": "No reviews yet for this property",
-  "reviewCount": "{count} reviews",
-  "reviewCount_one": "{count} review"
-},
-
-"amenity": {
-  "balcony": "Balcony", "lift": "Lift", "elevator": "Elevator",
-  "generator": "Generator", "parking": "Parking", "gas_line": "Gas line",
-  "gas": "Gas", "security_guard": "Security guard",
-  "rooftop_access": "Rooftop access", "wifi": "WiFi", "gym": "Gym",
-  "swimming_pool": "Swimming pool", "cctv": "CCTV",
-  "air_conditioning": "Air conditioning", "water_24_7": "Water 24/7",
-  "garden": "Garden"
-},
+    "filterAll": "All",
+    "reviewProfile": "Review Profile",
+    "proposeTour": "Propose Tour",
+    "offerLease": "Offer Lease",
+    "noApplications": "No applications found.",
+    "ledgerTitle": "Rent Ledger",
+    "ledgerUnavailable": "Rent ledger unavailable right now.",
+    "receivableThisMonth": "Receivable This Month",
+    "collected": "Collected",
+    "pendingAmount": "Pending",
+    "dueBy": "Due by {date}",
+    "noContracts": "No active contracts yet."
+  },
+  "propertyDetails": {
+    "backToListings": "Back to listings",
+    "loadingTitle": "Loading Property...",
+    "loadingBody": "Fetching the latest property details from the API.",
+    "unableToLoad": "Unable to Load Property",
+    "notFound": "Property Not Found",
+    "notFoundBody": "The property you're looking for doesn't exist or has been removed.",
+    "loadFailed": "Could not load this property.",
+    "perMonth": "/month",
+    "securityDeposit": "Security deposit: {amount}",
+    "requestTour": "Request a Tour",
+    "tourShort": "Tour",
+    "contactLandlord": "Contact Landlord",
+    "applyToRent": "Apply to rent",
+    "applicationSent": "Application sent",
+    "sending": "Sending…",
+    "applyFailed": "Couldn't send your application — try again in a moment.",
+    "secureVerified": "Secure & verified platform",
+    "beds": "{count} Beds",
+    "beds_one": "{count} Bed",
+    "baths": "{count} Baths",
+    "baths_one": "{count} Bath",
+    "sqft": "{count} sqft",
+    "floor": "Floor {count}",
+    "liftAvailable": "Lift available",
+    "noLift": "No lift",
+    "amenities": "Amenities",
+    "description": "Description",
+    "readMore": "[Read more]",
+    "readLess": "[Read less]",
+    "aboutLandlord": "About the Landlord",
+    "verifiedLandlord": "Verified Landlord",
+    "responseTime": "Response time: {value}",
+    "withinDay": "Within a day",
+    "memberSince": "Member since: {year}",
+    "locationTitle": "Location",
+    "whatTenantsSay": "What Tenants Say",
+    "noReviews": "No reviews yet for this property",
+    "reviewCount": "{count} reviews",
+    "reviewCount_one": "{count} review"
+  },
+  "amenity": {
+    "balcony": "Balcony",
+    "lift": "Lift",
+    "elevator": "Elevator",
+    "generator": "Generator",
+    "parking": "Parking",
+    "gas_line": "Gas line",
+    "gas": "Gas",
+    "security_guard": "Security guard",
+    "rooftop_access": "Rooftop access",
+    "wifi": "WiFi",
+    "gym": "Gym",
+    "swimming_pool": "Swimming pool",
+    "cctv": "CCTV",
+    "air_conditioning": "Air conditioning",
+    "water_24_7": "Water 24/7",
+    "garden": "Garden"
+  },
   "tours": {
     "eyebrow": "Viewing Requests",
     "title": "Tour Requests",
@@ -644,5 +629,41 @@
     "whoLandlord": "The landlord",
     "whoTenantShort": "Tenant",
     "whoLandlordShort": "Landlord"
+  },
+  "crumb": {
+    "label": "Breadcrumb",
+    "home": "Home",
+    "browse": "Browse",
+    "applications": "Applications",
+    "contracts": "Contracts",
+    "rent": "Pay rent",
+    "tourRequests": "Tour requests",
+    "landlord": "Dashboard",
+    "admin": "Admin",
+    "profile": "Profile",
+    "saved": "Saved listings",
+    "compare": "Compare",
+    "maintenance": "Maintenance",
+    "calendar": "Calendar",
+    "property": "Property #{id}",
+    "tour": "Schedule a tour",
+    "lease": "Lease & deposit"
+  },
+  "saved": {
+    "save": "Save listing",
+    "unsave": "Remove from saved",
+    "savedLabel": "Saved",
+    "added": "Saved to your list",
+    "removed": "Removed from saved listings",
+    "failed": "Couldn't update your saved listings",
+    "eyebrow": "Your shortlist",
+    "title": "Saved listings",
+    "subtitle": "Listings you've saved for later",
+    "count": "{n} saved listings",
+    "count_one": "1 saved listing",
+    "empty": "No saved listings yet",
+    "emptyBody": "Tap the heart on any listing to keep it here.",
+    "browse": "Browse listings",
+    "unavailable": "No longer available"
   }
 }
