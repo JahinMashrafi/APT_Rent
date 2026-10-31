@@ -60,7 +60,7 @@ export default function ImageSlider({ images = [], title = "Property" }) {
       <div style={{
         position: "absolute", top: "14px", right: "14px",
         background: "rgba(27,42,65,0.72)", backdropFilter: "blur(4px)",
-        color: "var(--color-paper)", borderRadius: "var(--radius-pill)",
+        color: "var(--color-on-ink)", borderRadius: "var(--radius-pill)",
         padding: "3px 10px", fontSize: "0.75rem", fontFamily: "var(--font-mono)", fontWeight: "600",
         pointerEvents: "none",
       }}>
@@ -76,7 +76,7 @@ export default function ImageSlider({ images = [], title = "Property" }) {
             position: "absolute", top: "50%", left: "14px", transform: "translateY(-50%)",
             background: "rgba(247,245,239,0.9)", border: "none", borderRadius: "50%",
             width: "36px", height: "36px", display: "flex", alignItems: "center", justifyContent: "center",
-            cursor: "pointer", boxShadow: "var(--shadow-soft)", color: "var(--color-ink)",
+            cursor: "pointer", boxShadow: "var(--shadow-soft)", color: "var(--color-text-strong)",
           }}
         >
           <ChevronLeft size={18} />
@@ -92,7 +92,7 @@ export default function ImageSlider({ images = [], title = "Property" }) {
             position: "absolute", top: "50%", right: "14px", transform: "translateY(-50%)",
             background: "rgba(247,245,239,0.9)", border: "none", borderRadius: "50%",
             width: "36px", height: "36px", display: "flex", alignItems: "center", justifyContent: "center",
-            cursor: "pointer", boxShadow: "var(--shadow-soft)", color: "var(--color-ink)",
+            cursor: "pointer", boxShadow: "var(--shadow-soft)", color: "var(--color-text-strong)",
           }}
         >
           <ChevronRight size={18} />

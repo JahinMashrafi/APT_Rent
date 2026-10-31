@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import ThemeToggle from "./ThemeToggle.jsx";
 import { fetchCurrentUser, logoutUser } from "../utils/auth";
 
 export default function Navbar() {
@@ -74,6 +75,7 @@ export default function Navbar() {
         </nav>
 
         <div className="nav-actions">
+          <ThemeToggle />
           {user?.id ? (
             <div className="user-menu-wrapper" ref={menuRef} style={{ position: "relative" }}>
               <button

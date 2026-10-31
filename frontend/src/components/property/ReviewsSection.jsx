@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import api from '../../services/api';
 import StarRating from '../ui/StarRating.jsx';
@@ -95,7 +94,7 @@ export default function ReviewsSection({ propertyId }) {
                 style={{
                   fontFamily: 'var(--font-stencil)',
                   fontSize: '2.5rem',
-                  color: 'var(--color-ink)',
+                  color: 'var(--color-text-strong)',
                   lineHeight: 1,
                 }}
               >
@@ -234,7 +233,7 @@ export default function ReviewsSection({ propertyId }) {
                     <div
                       style={{
                         fontWeight: 'bold',
-                        color: 'var(--color-ink)',
+                        color: 'var(--color-text-strong)',
                         fontFamily: 'var(--font-body)',
                       }}
                     >

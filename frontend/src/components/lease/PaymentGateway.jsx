@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { CreditCard, Smartphone, Banknote, Loader2 } from 'lucide-react';
 import '../../css/modules.css';
@@ -102,7 +101,7 @@ export default function PaymentGateway({ amount, onSuccess, onCancel }) {
           style={{
             fontFamily: 'var(--font-stencil)',
             fontSize: '2rem',
-            color: 'var(--color-ink)',
+            color: 'var(--color-text-strong)',
           }}
         >
           {formatCurrency(amount)}
@@ -216,7 +215,7 @@ export default function PaymentGateway({ amount, onSuccess, onCancel }) {
                   display: 'block',
                   fontSize: '0.85rem',
                   marginBottom: '0.25rem',
-                  color: 'var(--color-ink)',
+                  color: 'var(--color-text-strong)',
                 }}
               >
                 {t('payment.cardNumber')}
@@ -266,7 +265,7 @@ export default function PaymentGateway({ amount, onSuccess, onCancel }) {
                     display: 'block',
                     fontSize: '0.85rem',
                     marginBottom: '0.25rem',
-                    color: 'var(--color-ink)',
+                    color: 'var(--color-text-strong)',
                   }}
                 >
                   {t('payment.expiry')}
@@ -309,7 +308,7 @@ export default function PaymentGateway({ amount, onSuccess, onCancel }) {
                     display: 'block',
                     fontSize: '0.85rem',
                     marginBottom: '0.25rem',
-                    color: 'var(--color-ink)',
+                    color: 'var(--color-text-strong)',
                   }}
                 >
                   {t('payment.cvv')}
@@ -359,7 +358,7 @@ export default function PaymentGateway({ amount, onSuccess, onCancel }) {
                   display: 'block',
                   fontSize: '0.85rem',
                   marginBottom: '0.25rem',
-                  color: 'var(--color-ink)',
+                  color: 'var(--color-text-strong)',
                 }}
               >
                 {t('payment.cardholder')}
@@ -444,7 +443,7 @@ export default function PaymentGateway({ amount, onSuccess, onCancel }) {
                       display: 'block',
                       fontSize: '0.85rem',
                       marginBottom: '0.25rem',
-                      color: 'var(--color-ink)',
+                      color: 'var(--color-text-strong)',
                     }}
                   >
                     {t('payment.bkashAccount')}
@@ -495,7 +494,7 @@ export default function PaymentGateway({ amount, onSuccess, onCancel }) {
                     padding: '0.75rem',
                     marginTop: '1rem',
                     background: 'transparent',
-                    color: 'var(--color-ink)',
+                    color: 'var(--color-text-strong)',
                     border: '1px solid var(--color-ink)',
                     borderRadius: 'var(--radius-sm)',
                     fontWeight: 'bold',
@@ -515,7 +514,7 @@ export default function PaymentGateway({ amount, onSuccess, onCancel }) {
                       display: 'block',
                       fontSize: '0.85rem',
                       marginBottom: '0.25rem',
-                      color: 'var(--color-ink)',
+                      color: 'var(--color-text-strong)',
                     }}
                   >
                     {t('payment.enterOtp')}
@@ -608,7 +607,7 @@ export default function PaymentGateway({ amount, onSuccess, onCancel }) {
             >
               <Banknote
                 size={24}
-                color="var(--color-ink)"
+                color="var(--color-text-strong)"
                 style={{ flexShrink: 0 }}
               />
 

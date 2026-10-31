@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { FileText, Clock } from "lucide-react";
@@ -156,7 +155,7 @@ export default function Applications() {
                     to={`/property/${application.propertyId}`}
                     style={{
                       fontWeight: 600,
-                      color: "var(--color-ink)",
+                      color: "var(--color-text-strong)",
                       fontFamily: "var(--font-display)",
                     }}
                   >

@@ -1,6 +1,3 @@
-
-
-
 import { Link } from "react-router-dom";
 
 import { BedDouble, Bath, ArrowUpDown, Share2 } from "lucide-react";
@@ -8,6 +5,7 @@ import { BedDouble, Bath, ArrowUpDown, Share2 } from "lucide-react";
 import { useLanguage } from "../i18n/LanguageContext.jsx";
 import { useToast } from "./ui/Toast.jsx";
 import { hasLiftIn } from "../services/adapters";
+import SaveButton from "./SaveButton.jsx";
 
 // Clipboard API needs HTTPS/localhost; this fallback covers plain-http and older browsers.
 async function copyText(text) {
@@ -98,6 +96,10 @@ export default function ApartmentCard({ apartment }) {
       className="apartment-card"
       aria-label={t("listing.viewDetails", { address })}
     >
+      <div className="apartment-card-tools">
+        <SaveButton propertyId={id} />
+      </div>
+
       {/* ===================== PHOTO GRID ===================== */}
       <div className="apartment-photos">
         {visiblePhotos.map((photoUrl, index) => {

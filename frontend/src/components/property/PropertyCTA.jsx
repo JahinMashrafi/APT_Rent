@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Calendar, MessageSquare, ShieldCheck, FileText } from 'lucide-react';
@@ -93,7 +92,7 @@ export default function PropertyCTA({
             style={{
               fontFamily: 'var(--font-stencil)',
               fontSize: '1.5rem',
-              color: 'var(--color-ink)',
+              color: 'var(--color-text-strong)',
               lineHeight: 1,
             }}
           >
@@ -171,7 +170,7 @@ export default function PropertyCTA({
           style={{
             fontFamily: 'var(--font-stencil)',
             fontSize: '2rem',
-            color: 'var(--color-ink)',
+            color: 'var(--color-text-strong)',
           }}
         >
           {formatCurrency(pricePerMonth)}
@@ -228,7 +227,7 @@ export default function PropertyCTA({
               gap: '8px',
               padding: '12px',
               background: 'var(--color-brass)',
-              color: 'var(--color-ink)',
+              color: 'var(--color-text-strong)',
               border: 'none',
               borderRadius: 'var(--radius-sm)',
               cursor: applyState === 'sent' ? 'default' : 'pointer',
@@ -280,7 +279,7 @@ export default function PropertyCTA({
             gap: '8px',
             padding: '12px',
             background: 'transparent',
-            color: 'var(--color-ink)',
+            color: 'var(--color-text-strong)',
             border: '1px solid var(--color-line)',
             borderRadius: 'var(--radius-sm)',
             cursor: 'pointer',

@@ -17,12 +17,15 @@ import {
   FileSignature,
   Calendar,
   Pencil,
+  Heart,
 } from "lucide-react";
 import { useApp } from "../context/AppContext.jsx";
 import { logoutUser } from "../utils/auth";
 import { useLanguage } from "../i18n/LanguageContext.jsx";
 import { localizeNotification } from "../utils/notificationText.js";
 import LanguageSwitcher from "./LanguageSwitcher.jsx";
+import ThemeToggle from "./ThemeToggle.jsx";
+import Breadcrumbs from "./Breadcrumbs.jsx";
 
 // =============================================================================
 // AppNavbar.jsx — Unified role-aware navigation bar
@@ -145,6 +148,7 @@ export default function AppNavbar() {
       .toUpperCase() ?? "U";
 
   return (
+    <>
     <header className="app-navbar">
       <div className="app-navbar-inner">
         <Link to="/" className="app-navbar-brand">
@@ -179,6 +183,7 @@ export default function AppNavbar() {
               )}
               {/* Language switcher — right next to "Log in" */}
               <LanguageSwitcher />
+              <ThemeToggle />
             </div>
           )}
 
@@ -187,6 +192,7 @@ export default function AppNavbar() {
             <>
               {/* Language switcher — beside bell + user menu */}
               <LanguageSwitcher />
+              <ThemeToggle />
 
               {/* Role switcher — only for accounts that really are both.
                   A tenant-only or landlord-only user has nothing to switch
@@ -346,6 +352,11 @@ export default function AppNavbar() {
                     <Link to="/inbox" className="app-dropdown-item" onClick={() => setUserMenuOpen(false)}>
                       <MessageSquare size={15} /> {t("user.inbox")}
                     </Link>
+                    {role === "tenant" && (
+                      <Link to="/saved" className="app-dropdown-item" onClick={() => setUserMenuOpen(false)}>
+                        <Heart size={15} /> {t("nav.saved")}
+                      </Link>
+                    )}
                     <button
                       type="button"
                       className="app-dropdown-item is-danger"
@@ -418,5 +429,7 @@ export default function AppNavbar() {
         </div>
       )}
     </header>
+    <Breadcrumbs />
+    </>
   );
 }

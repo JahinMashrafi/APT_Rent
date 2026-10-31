@@ -221,6 +221,16 @@ export const admin = {
       .then((r) => r.data),
 };
 
+// ---------------------------------------------------------------------------
+// Saved listings
+// ---------------------------------------------------------------------------
+export const saved = {
+  list: () => apiClient.get("/saved").then((r) => r.data),
+  ids: () => apiClient.get("/saved/ids").then((r) => r.data),
+  save: (propertyId) => apiClient.post(`/saved/${propertyId}`).then((r) => r.data),
+  remove: (propertyId) => apiClient.delete(`/saved/${propertyId}`).then((r) => r.data),
+};
+
 const api = {
   auth,
   users,
@@ -234,6 +244,7 @@ const api = {
   reviews,
   landlord,
   admin,
+  saved,
 };
 
 export default api;

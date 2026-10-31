@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { ArrowLeft, Building2 } from "lucide-react";
@@ -11,6 +10,8 @@ import ReviewsSection from "../components/property/ReviewsSection.jsx";
 import api from "../services/api";
 import { adaptProperty } from "../services/adapters";
 import { useApp } from "../context/AppContext.jsx";
+import SaveButton from "../components/SaveButton.jsx";
+import { useBreadcrumbLabel } from "../hooks/useBreadcrumbLabel.js";
 import "../css/global.css";
 import "../css/navbar.css";
 import "../css/newsfeed-home.css";
@@ -50,6 +51,8 @@ export default function PropertyDetails() {
       cancelled = true;
     };
   }, [targetId]);
+
+  useBreadcrumbLabel(property?.title ?? property?.address);
 
   const handleContactLandlord = () => {
     if (property?.landlord?.id) {
@@ -148,14 +151,18 @@ export default function PropertyDetails() {
         className="module-main"
         style={{ paddingBottom: "6rem" }}
       >
-        {/* Back button */}
-        <button
-          className="back-btn"
-          onClick={() => navigate(-1)}
-        >
-          <ArrowLeft size={15} />{" "}
-          {t("propertyDetails.backToListings")}
-        </button>
+        {/* Back button + save */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 10, marginBottom: 12 }}>
+          <button
+            className="back-btn"
+            style={{ marginBottom: 0 }}
+            onClick={() => navigate(-1)}
+          >
+            <ArrowLeft size={15} />{" "}
+            {t("propertyDetails.backToListings")}
+          </button>
+          <SaveButton propertyId={property.id} variant="full" />
+        </div>
 
         {/* Two-column layout */}
         <div className="property-layout">

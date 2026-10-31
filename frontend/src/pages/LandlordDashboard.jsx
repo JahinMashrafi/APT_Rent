@@ -450,7 +450,7 @@ export default function LandlordDashboard() {
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                     <Users size={20} color="#f59e0b" />
-                    <span style={{ color: 'var(--color-ink)', fontWeight: 500 }}>
+                    <span style={{ color: 'var(--color-text-strong)', fontWeight: 500 }}>
                       {t('landlord.newApplications', { count: pendingApps })}
                     </span>
                   </div>
@@ -465,7 +465,7 @@ export default function LandlordDashboard() {
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                     <Calendar size={20} color="var(--color-blueprint)" />
-                    <span style={{ color: 'var(--color-ink)', fontWeight: 500 }}>
+                    <span style={{ color: 'var(--color-text-strong)', fontWeight: 500 }}>
                       {t('landlord.upcomingTour', { count: upcomingTours })}
                     </span>
                   </div>
@@ -480,7 +480,7 @@ export default function LandlordDashboard() {
                 >
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                     <Wallet size={20} color="var(--color-error)" />
-                    <span style={{ color: 'var(--color-ink)', fontWeight: 500 }}>
+                    <span style={{ color: 'var(--color-text-strong)', fontWeight: 500 }}>
                       {t('landlord.rentToCollect', { amount: taka(pendingRent) })}
                     </span>
                   </div>
@@ -536,7 +536,7 @@ export default function LandlordDashboard() {
                   </div>
 
                   <div className="mod-card-pad">
-                    <h3 style={{ fontFamily: 'var(--font-display)', color: 'var(--color-ink)', fontWeight: 700, margin: '0 0 4px 0', display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                    <h3 style={{ fontFamily: 'var(--font-display)', color: 'var(--color-text-strong)', fontWeight: 700, margin: '0 0 4px 0', display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                       {property.title}
                     </h3>
                     <p style={{ fontFamily: 'var(--font-mono)', color: 'var(--color-blueprint)', fontSize: '0.85rem', margin: '0 0 12px 0', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
@@ -545,7 +545,7 @@ export default function LandlordDashboard() {
 
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '12px' }}>
                       <div>
-                        <span style={{ fontFamily: 'var(--font-stencil)', fontSize: '1.3rem', color: 'var(--color-ink)' }}>{taka(property.pricePerMonth)}</span>
+                        <span style={{ fontFamily: 'var(--font-stencil)', fontSize: '1.3rem', color: 'var(--color-text-strong)' }}>{taka(property.pricePerMonth)}</span>
                         <span style={{ fontSize: '0.85rem', color: 'var(--color-charcoal)' }}>{t('landlord.perMonth')}</span>
                       </div>
                       <span style={{ fontSize: '0.85rem', color: 'var(--color-charcoal)' }}>{t('landlord.bedBath', { beds: digits(property.bedrooms), baths: digits(property.bathrooms) })}</span>
@@ -602,7 +602,7 @@ export default function LandlordDashboard() {
                       {app.tenantName?.charAt(0) || '—'}
                     </div>
                     <div>
-                      <div style={{ fontWeight: 600, color: 'var(--color-ink)' }}>{app.tenantName || '—'}</div>
+                      <div style={{ fontWeight: 600, color: 'var(--color-text-strong)' }}>{app.tenantName || '—'}</div>
                       <div style={{ fontSize: '0.85rem', color: 'var(--color-charcoal)' }}>{app.occupation || '—'}</div>
                     </div>
                   </div>
@@ -684,10 +684,10 @@ export default function LandlordDashboard() {
                       style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '1rem', justifyContent: 'space-between' }}
                     >
                       <div style={{ flex: '1 1 200px' }}>
-                        <div style={{ fontWeight: 600, color: 'var(--color-ink)' }}>{rec.tenant_name}</div>
+                        <div style={{ fontWeight: 600, color: 'var(--color-text-strong)' }}>{rec.tenant_name}</div>
                         <div style={{ fontSize: '0.85rem', color: 'var(--color-blueprint)' }}>{rec.property_address}</div>
                       </div>
-                      <div style={{ fontFamily: 'var(--font-stencil)', color: 'var(--color-ink)' }}>{taka(rec.amount)}</div>
+                      <div style={{ fontFamily: 'var(--font-stencil)', color: 'var(--color-text-strong)' }}>{taka(rec.amount)}</div>
                       <div style={{ fontSize: '0.85rem', color: 'var(--color-charcoal)' }}>
                         {t('landlord.dueBy', {
                           date: formatDate(`${String(rec.deadline).slice(0, 10)}T00:00:00`, 'medium'),
@@ -720,7 +720,7 @@ export default function LandlordDashboard() {
             <p style={{ color: 'var(--color-charcoal)', fontSize: '0.95rem', textAlign: 'center' }}>
               Are you sure you want to delete <strong>{propertyToDelete?.title}</strong>?
             </p>
-            <p style={{ color: '#8a8f85', fontSize: '0.82rem', textAlign: 'center', marginBottom: '1.5rem' }}>The listing will be archived and removed from search.</p>
+            <p style={{ color: 'var(--color-subtle)', fontSize: '0.82rem', textAlign: 'center', marginBottom: '1.5rem' }}>The listing will be archived and removed from search.</p>
             <div style={{ display: 'flex', gap: '10px', marginTop: '0.5rem' }}>
               <button className="btn btn-ghost" style={{ flex: 1 }} onClick={() => setShowDeleteModal(false)}>Cancel</button>
               <button className="btn btn-dark" style={{ flex: 1, background: 'var(--color-error)', borderColor: 'var(--color-error)' }} onClick={confirmDelete}>Delete Listing</button>
@@ -737,7 +737,7 @@ export default function LandlordDashboard() {
               {selectedApplicant.tenantName?.charAt(0) || '—'}
             </div>
             <div>
-              <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.3rem', margin: '0 0 4px 0', color: 'var(--color-ink)' }}>
+              <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.3rem', margin: '0 0 4px 0', color: 'var(--color-text-strong)' }}>
                 {selectedApplicant.tenantName || '—'}
               </h2>
               <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.85rem', color: 'var(--color-blueprint)' }}>
@@ -749,13 +749,13 @@ export default function LandlordDashboard() {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
             <div className="mod-card mod-card-pad">
               <span className="mod-label">Occupation & Income</span>
-              <div style={{ fontWeight: 500, color: 'var(--color-ink)', marginTop: '4px' }}>
+              <div style={{ fontWeight: 500, color: 'var(--color-text-strong)', marginTop: '4px' }}>
                 {selectedApplicant.occupation || '—'} • {selectedApplicant.monthlyIncome != null ? `${taka(selectedApplicant.monthlyIncome)}/mo` : '—'}
               </div>
             </div>
             <div className="mod-card mod-card-pad">
               <span className="mod-label">Family Size</span>
-              <div style={{ fontWeight: 500, color: 'var(--color-ink)', marginTop: '4px' }}>
+              <div style={{ fontWeight: 500, color: 'var(--color-text-strong)', marginTop: '4px' }}>
                 {selectedApplicant.familySize != null ? `${selectedApplicant.familySize} members` : '—'}
               </div>
             </div>

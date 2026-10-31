@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import AppNavbar from '../components/AppNavbar.jsx';
@@ -43,7 +42,7 @@ export default function TourRequests() {
 
   const confirmedByBatch = new Map(
     appointments
-      .filter((row) => row.status === 'confirmed')
+      .filter((row) => row.status === 'confirmed' && !row.is_request)
       .map((row) => [row.appointment_batch_id, row]),
   );
 
@@ -159,7 +158,7 @@ export default function TourRequests() {
                   marginBottom: '1rem',
                   fontSize: '1rem',
                   fontFamily: 'var(--font-display)',
-                  color: 'var(--color-ink)',
+                  color: 'var(--color-text-strong)',
                 }}
               >
                 <InboxIcon size={18} />{' '}
@@ -224,7 +223,7 @@ export default function TourRequests() {
                               style={{
                                 fontSize: '1.05rem',
                                 fontFamily: 'var(--font-display)',
-                                color: 'var(--color-ink)',
+                                color: 'var(--color-text-strong)',
                                 textDecoration: 'none',
                               }}
                             >
@@ -274,7 +273,7 @@ export default function TourRequests() {
                               >
                                 <strong
                                   style={{
-                                    color: 'var(--color-ink)',
+                                    color: 'var(--color-text-strong)',
                                     fontSize: '0.95rem',
                                   }}
                                 >
@@ -296,15 +295,15 @@ export default function TourRequests() {
                                   {request.is_date_less
                                     ? t('tours.noDateYet')
                                     : t('tours.askedFor', {
-                                        date: formatDateLong(
-                                          request.appointment_date,
-                                          lang,
-                                        ),
-                                        time: formatTime(
-                                          request.appointment_time,
-                                          lang,
-                                        ),
-                                      })}
+                                      date: formatDateLong(
+                                        request.appointment_date,
+                                        lang,
+                                      ),
+                                      time: formatTime(
+                                        request.appointment_time,
+                                        lang,
+                                      ),
+                                    })}
                                 </span>
                               </span>
                             </div>
@@ -378,12 +377,12 @@ export default function TourRequests() {
                                 request.is_date_less
                                   ? []
                                   : [
-                                      `${String(
-                                        request.appointment_date,
-                                      ).slice(0, 10)}|${String(
-                                        request.appointment_time,
-                                      ).slice(0, 5)}`,
-                                    ]
+                                    `${String(
+                                      request.appointment_date,
+                                    ).slice(0, 10)}|${String(
+                                      request.appointment_time,
+                                    ).slice(0, 5)}`,
+                                  ]
                               }
                             />
                           </div>
@@ -403,7 +402,7 @@ export default function TourRequests() {
                     marginBottom: '1rem',
                     fontSize: '1rem',
                     fontFamily: 'var(--font-display)',
-                    color: 'var(--color-ink)',
+                    color: 'var(--color-text-strong)',
                   }}
                 >
                   {t('tours.history')}
@@ -433,7 +432,7 @@ export default function TourRequests() {
                     >
                       <span
                         style={{
-                          color: 'var(--color-ink)',
+                          color: 'var(--color-text-strong)',
                           fontSize: '0.9rem',
                         }}
                       >
@@ -457,12 +456,15 @@ export default function TourRequests() {
                             fontSize: '0.85rem',
                           }}
                         >
-                          {request.is_date_less
-                            ? t('tours.noDate')
-                            : formatDateLong(
-                                request.appointment_date,
-                                lang,
-                              )}
+                          {(() => {
+                            const slot = confirmedByBatch.get(request.appointment_batch_id);
+                            if (slot) {
+                              return `${formatDateLong(slot.appointment_date, lang)} · ${formatTime(slot.appointment_time, lang)}`;
+                            }
+                            return request.is_date_less
+                              ? t('tours.noDate')
+                              : formatDateLong(request.appointment_date, lang);
+                          })()}
                         </span>
 
                         {renderStatus(request)}
