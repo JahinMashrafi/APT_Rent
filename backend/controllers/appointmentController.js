@@ -20,8 +20,31 @@ const MAX_DAYS_AHEAD = 14;
 const NO_DATE_REQUEST = "1970-01-01";
 const NO_TIME_REQUEST = "00:00";
 
+/** True when a row's date is the no-preference sentinel. *//** Calendar date as "YYYY-MM-DD", whether pg handed us a Date or a string.
+ *  pg builds DATE values as *local-midnight* Dates, so local getters
+ *  recover the exact stored day in any server timezone. */
+const toDateOnly = (value) => {
+  if (value instanceof Date) {
+    const y = value.getFullYear();
+    const m = String(value.getMonth() + 1).padStart(2, "0");
+    const d = String(value.getDate()).padStart(2, "0");
+    return `${y}-${m}-${d}`;
+  }
+  return String(value ?? "").slice(0, 10);
+};
+
+/** "09:00:00" -> "09:00" */
+const toTimeOnly = (value) => (value ? String(value).slice(0, 5) : null);
+
+/** Normalises a slot row so dates never travel as UTC timestamps. */
+const serializeSlot = (row) => ({
+  ...row,
+  appointment_date: toDateOnly(row.appointment_date),
+  appointment_time: toTimeOnly(row.appointment_time),
+});
+
 /** True when a row's date is the no-preference sentinel. */
-const isDateLessRequest = (date) => String(date ?? "").slice(0, 10) === NO_DATE_REQUEST;
+const isDateLessRequest = (date) => toDateOnly(date) === NO_DATE_REQUEST;
 
 /**
  * Shared by the tenant request and the landlord's 3-slot batch, so a
@@ -153,7 +176,8 @@ const requestTour = async (req, res) => {
     }).catch((err) => console.error("notify error: ", err.message));
 
     return res.status(201).json({
-      appointment: inserted.rows[0],
+      appointment: serializeSlot(inserted.rows[0]),
+      // appointment: inserted.rows[0],
       appointment_batch_id: batchId,
       property_id,
       status: "pending",
@@ -250,7 +274,8 @@ const createAppointmentBatch = async (req, res) => {
          RETURNING appointment_id, appointment_date, appointment_time`,
         [ownerId, targetTenantId, property_id, slot.appointment_date, slot.appointment_time, batchId],
       );
-      proposedSlots.push(result.rows[0]);
+      proposedSlots.push(serializeSlot(result.rows[0]));
+      // proposedSlots.push(result.rows[0]);
     }
 
     notify({
@@ -332,15 +357,15 @@ const confirmAppointment = async (req, res) => {
       userId: appointment.owner_id,
       type: "tour_confirmed",
       title: "Tour confirmed",
-      message: `Tenant confirmed a tour for ${appointment.appointment_date} at ${appointment.appointment_time}.`,
+      message: `Tenant confirmed a tour for ${toDateOnly(appointment.appointment_date)} at ${toTimeOnly(appointment.appointment_time)}.`,
       linkUrl: `/appointments/${targetId}`,
     });
 
     return res.status(200).json({
       appointment_id: appointment.appointment_id,
       property_id: appointment.property_id,
-      appointment_date: appointment.appointment_date,
-      appointment_time: appointment.appointment_time,
+      appointment_date: toDateOnly(appointment.appointment_date),
+      appointment_time: toTimeOnly(appointment.appointment_time),
       status: "confirmed",
       message: "Tour confirmed. Landlord notified.",
     });
@@ -457,8 +482,8 @@ const listAppointments = async (req, res) => {
       counterpart_id: row.counterpart_id,
       counterpart_name: row.counterpart_name,
       counterpart_phone: row.counterpart_phone,
-      appointment_date: row.appointment_date,
-      appointment_time: row.appointment_time,
+      appointment_date: toDateOnly(row.appointment_date),
+      appointment_time: toTimeOnly(row.appointment_time),
       status: row.status,
       // Lets the client group a request with its rounds of proposals
       // without a second round-trip. See migration 002.

@@ -70,7 +70,13 @@ export default function useTourNegotiation({ propertyId = null, poll = true } = 
   const requests = scoped.filter((row) => row.is_request);
   // A proposal is a landlord row that is still awaiting an answer.
   const openProposals = scoped.filter((row) => row.is_proposal && row.status === 'pending');
-  const confirmed = scoped.find((row) => row.status === 'confirmed') ?? null;
+    // Only a real slot counts. The backend relabels a cancelled request row
+  // as 'confirmed' (for the history list), and that row holds the 1970
+  // sentinel date, so it must never be used as the confirmed booking.
+  const confirmed =
+    scoped.find(
+      (row) => row.status === 'confirmed' && !row.is_request && !row.is_date_less,
+    ) ?? null;
 
   // One live negotiation per property, so each row only shows the slots
   // belonging to the request currently being negotiated.

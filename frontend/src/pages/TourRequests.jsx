@@ -42,7 +42,7 @@ export default function TourRequests() {
 
   const confirmedByBatch = new Map(
     appointments
-      .filter((row) => row.status === 'confirmed')
+      .filter((row) => row.status === 'confirmed' && !row.is_request)
       .map((row) => [row.appointment_batch_id, row]),
   );
 
@@ -295,15 +295,15 @@ export default function TourRequests() {
                                   {request.is_date_less
                                     ? t('tours.noDateYet')
                                     : t('tours.askedFor', {
-                                        date: formatDateLong(
-                                          request.appointment_date,
-                                          lang,
-                                        ),
-                                        time: formatTime(
-                                          request.appointment_time,
-                                          lang,
-                                        ),
-                                      })}
+                                      date: formatDateLong(
+                                        request.appointment_date,
+                                        lang,
+                                      ),
+                                      time: formatTime(
+                                        request.appointment_time,
+                                        lang,
+                                      ),
+                                    })}
                                 </span>
                               </span>
                             </div>
@@ -377,12 +377,12 @@ export default function TourRequests() {
                                 request.is_date_less
                                   ? []
                                   : [
-                                      `${String(
-                                        request.appointment_date,
-                                      ).slice(0, 10)}|${String(
-                                        request.appointment_time,
-                                      ).slice(0, 5)}`,
-                                    ]
+                                    `${String(
+                                      request.appointment_date,
+                                    ).slice(0, 10)}|${String(
+                                      request.appointment_time,
+                                    ).slice(0, 5)}`,
+                                  ]
                               }
                             />
                           </div>
@@ -456,12 +456,15 @@ export default function TourRequests() {
                             fontSize: '0.85rem',
                           }}
                         >
-                          {request.is_date_less
-                            ? t('tours.noDate')
-                            : formatDateLong(
-                                request.appointment_date,
-                                lang,
-                              )}
+                          {(() => {
+                            const slot = confirmedByBatch.get(request.appointment_batch_id);
+                            if (slot) {
+                              return `${formatDateLong(slot.appointment_date, lang)} · ${formatTime(slot.appointment_time, lang)}`;
+                            }
+                            return request.is_date_less
+                              ? t('tours.noDate')
+                              : formatDateLong(request.appointment_date, lang);
+                          })()}
                         </span>
 
                         {renderStatus(request)}
