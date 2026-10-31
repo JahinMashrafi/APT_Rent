@@ -198,6 +198,7 @@
     },
     "leaseAccepted": "Lease accepted",
     "proposalSent": "Tenant proposal sent",
+    "awaitingResponse": "Waiting for the other party to accept or counter.",
     "loadingContract": "Loading contract…",
     "loadDetailFailed": "Couldn't load the full contract. Try again in a moment.",
     "monthlyRent": "Monthly Rent",

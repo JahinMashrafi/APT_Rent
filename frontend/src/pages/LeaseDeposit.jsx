@@ -97,21 +97,19 @@ export default function LeaseDeposit() {
       });
   };
 
-  const handlePaymentSuccess = (details) => {
+  const handlePaymentSuccess = async (details) => {
     setShowPaymentModal(false);
-    setPaymentComplete(true);
-    setPaymentDetails(details);
-
-    if (contractId) {
-      // PATCH /contracts/:id/sign then POST /contracts/:id/deposit
-      api.contracts.sign(contractId, details?.signatureImageBase64 ?? '').catch(() => {});
-      api.contracts
-        .payDeposit(contractId, {
-          amount: property?.securityDeposit,
-          payment_method: details?.method ?? 'bkash',
-          transaction_reference: details?.reference ?? '',
-        })
-        .catch(() => {});
+    if (!contractId) return;
+    try {
+      await api.contracts.payDeposit(contractId, {
+        amount: existingContract?.deposit ?? property?.securityDeposit,
+        payment_method: details?.method ?? 'bkash',
+        transaction_reference: details?.reference ?? '',
+      });
+      setPaymentDetails(details);
+      setPaymentComplete(true);
+    } catch (error) {
+      setOfferError(error.response?.data?.message || error.message || 'Deposit payment failed.');
     }
   };
 
@@ -137,7 +135,7 @@ export default function LeaseDeposit() {
                 <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '1.25rem', color: 'var(--color-text-strong)', marginBottom: '1.5rem' }}>Lease Summary</h3>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem', marginBottom: '2rem' }}>
                   {[
-                    { label: 'Property', value: `${property?.title} - ${property?.location}` },
+                    
                     { label: 'Tenant', value: approvedTenant ? `${approvedTenant.tenantName ?? approvedTenant.tenant?.name ?? 'Unknown'} (${approvedTenant.tenantEmail ?? approvedTenant.tenant?.email ?? 'No email'})` : 'No approved tenant found' },
                     { label: 'Start Date', value: 'October 1, 2026' },
                     { label: 'Duration', value: '12 months' },
@@ -230,18 +228,31 @@ export default function LeaseDeposit() {
                   </label>
                 </div>
 
+                {existingContract?.status !== 'fully_signed' && (
+                  <p style={{ color: 'var(--color-blueprint)', marginBottom: '1rem' }}>
+                    The deposit unlocks after both parties accept the terms and sign.{' '}
+                    <Link to="/contracts">Go to Contracts</Link>
+                  </p>
+                )}
+
                 <button 
                   className="btn btn-primary btn-block" 
-                  disabled={!agreedToTerms || !agreedToDeposit}
+                  disabled={!agreedToTerms || !agreedToDeposit || existingContract?.status !== 'fully_signed'}
                   onClick={() => setShowPaymentModal(true)}
-                  style={{ width: '100%', padding: '0.75rem', background: (agreedToTerms && agreedToDeposit) ? 'var(--color-brass)' : 'var(--color-line)', color: (agreedToTerms && agreedToDeposit) ? '#fff' : 'var(--color-charcoal)', border: 'none', borderRadius: 'var(--radius-sm)', fontWeight: 'bold', cursor: (agreedToTerms && agreedToDeposit) ? 'pointer' : 'not-allowed', fontSize: '1rem' }}
+                  style={{ width: '100%', padding: '0.75rem', background: (agreedToTerms && agreedToDeposit && existingContract?.status === 'fully_signed') ? 'var(--color-brass)' : 'var(--color-line)', color: (agreedToTerms && agreedToDeposit && existingContract?.status === 'fully_signed') ? '#fff' : 'var(--color-charcoal)', border: 'none', borderRadius: 'var(--radius-sm)', fontWeight: 'bold', cursor: (agreedToTerms && agreedToDeposit && existingContract?.status === 'fully_signed') ? 'pointer' : 'not-allowed', fontSize: '1rem' }}
                 >
                   Accept Lease & Pay Security Deposit
                 </button>
                 
+                {offerError && (
+                  <p role="alert" style={{ color: 'var(--color-error)', marginTop: '1rem', fontSize: '0.9rem' }}>
+                    {offerError}
+                  </p>
+                )}
+
                 <Modal isOpen={showPaymentModal} onClose={() => setShowPaymentModal(false)} title="Pay Security Deposit" size="lg">
                   <PaymentGateway
-                    amount={property?.securityDeposit || 90000}
+                    amount={existingContract?.deposit ?? property?.securityDeposit ?? 90000}
                     onSuccess={handlePaymentSuccess}
                     onCancel={() => setShowPaymentModal(false)}
                   />

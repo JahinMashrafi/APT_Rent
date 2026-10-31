@@ -1,4 +1,5 @@
 const pool = require("../config/db.js");
+const { SIGNABLE_STATUSES, toDateOnly, contractPermissions } = require("../utils/contractState.js");
 const { saveBase64Signature } = require("../utils/signature.js");
 const { generateReceipt } = require("../utils/receipt.js");
 const { signFields, CONTRACT_SIGNED_FIELDS, PAYMENT_SIGNED_FIELDS } = require("../utils/signFields.js");
@@ -11,6 +12,7 @@ const { uploadToBucket } = require("../utils/storage.js");
 const negotiateContract = async (req, res) => {
   try {
     const { id } = req.params;
+    const userId = req.user.user_id;
     const { rate, deposit, message } = req.body || {};
     const nextRate = Number(rate);
     const nextDeposit = Number(deposit);
@@ -19,42 +21,56 @@ const negotiateContract = async (req, res) => {
       return res.status(422).json({ success: false, message: "A valid rent and non-negative deposit are required" });
     }
 
-    const contractResult = await pool.query(
-      "SELECT owner_id, tenant_id, status FROM contracts WHERE contract_id = $1",
-      [id],
-    );
-    if (contractResult.rows.length === 0) {
+    const found = await pool.query("SELECT * FROM contracts WHERE contract_id = $1", [id]);
+    if (found.rows.length === 0) {
       return res.status(404).json({ success: false, message: "Contract not found" });
     }
-    const contract = contractResult.rows[0];
-    const isOwner = contract.owner_id === req.user.user_id;
-    const isTenant = contract.tenant_id === req.user.user_id;
-    if (!isOwner && !isTenant) {
+    const c = found.rows[0];
+    const perms = contractPermissions(c, userId);
+
+    if (perms.viewer_role === "none") {
       return res.status(403).json({ success: false, message: "You are not part of this contract" });
     }
-    if (contract.status !== "draft") {
-      return res.status(409).json({ success: false, message: "Only draft contracts can be negotiated" });
+    if (perms.awaiting_other_party) {
+      return res.status(409).json({ success: false, message: "Your proposal is waiting for the other party's response." });
+    }
+    if (!perms.can_counter) {
+      return res.status(409).json({ success: false, message: "Terms are already accepted. Sign the lease instead of renegotiating." });
     }
 
+    const isOwner = perms.viewer_role === "owner";
+    const nextStatus = isOwner ? "owner_proposed" : "tenant_proposed";
+
+    // Compare-and-swap: only update if nobody changed the negotiation since we read it.
     const result = await pool.query(
       `UPDATE contracts
-       SET rate = $1, deposit = $2, negotiation_message = $3, negotiation_status = 'proposed', updated_at = NOW()
-       WHERE contract_id = $4 AND status = 'draft'
-       RETURNING contract_id, rate, deposit, negotiation_message, negotiation_status, status`,
-      [nextRate, nextDeposit, message?.trim() || null, id],
+       SET rate = $1, deposit = $2, negotiation_message = $3, negotiation_status = $4, updated_at = NOW()
+       WHERE contract_id = $5 AND status = 'draft' AND negotiation_status = $6
+       RETURNING *`,
+      [nextRate, nextDeposit, message?.trim() || null, nextStatus, id, c.negotiation_status],
     );
     if (result.rows.length === 0) {
-      return res.status(404).json({ success: false, message: "Draft contract not found for this tenant" });
+      return res.status(409).json({ success: false, message: "This lease changed while you were editing. Refresh and try again." });
     }
+    const updated = result.rows[0];
 
     await notify({
-      userId: isOwner ? contract.tenant_id : contract.owner_id,
+      userId: isOwner ? c.tenant_id : c.owner_id,
       type: "contract_negotiation",
       title: isOwner ? "Landlord counter-offered lease terms" : "Tenant proposed lease terms",
       message: message?.trim() || `${isOwner ? "Landlord counter-offered" : "Tenant proposed"} rent ৳${nextRate} and deposit ৳${nextDeposit}.`,
       linkUrl: "/contracts",
     });
-    return res.status(200).json(result.rows[0]);
+
+    return res.status(200).json({
+      contract_id: updated.contract_id,
+      rate: updated.rate,
+      deposit: updated.deposit,
+      negotiation_message: updated.negotiation_message,
+      negotiation_status: updated.negotiation_status,
+      status: updated.status,
+      ...contractPermissions(updated, userId),
+    });
   } catch (err) {
     console.error("negotiateContract error: ", err);
     return res.status(500).json({ success: false, message: "Failed to submit lease proposal" });
@@ -64,40 +80,53 @@ const negotiateContract = async (req, res) => {
 const acceptContract = async (req, res) => {
   try {
     const { id } = req.params;
-    const contractResult = await pool.query(
-      "SELECT owner_id, tenant_id, status, negotiation_status FROM contracts WHERE contract_id = $1",
-      [id],
-    );
-    if (contractResult.rows.length === 0) {
+    const userId = req.user.user_id;
+
+    const found = await pool.query("SELECT * FROM contracts WHERE contract_id = $1", [id]);
+    if (found.rows.length === 0) {
       return res.status(404).json({ success: false, message: "Contract not found" });
     }
-    const contract = contractResult.rows[0];
-    const isOwner = contract.owner_id === req.user.user_id;
-    const isTenant = contract.tenant_id === req.user.user_id;
-    if (!isOwner && !isTenant) {
+    const c = found.rows[0];
+    const perms = contractPermissions(c, userId);
+
+    if (perms.viewer_role === "none") {
       return res.status(403).json({ success: false, message: "You are not part of this contract" });
     }
-    if (contract.status !== "draft" || contract.negotiation_status !== "proposed") {
-      return res.status(409).json({ success: false, message: "A proposed lease must be accepted before signing" });
+    if (perms.awaiting_other_party) {
+      return res.status(403).json({ success: false, message: "You cannot accept your own proposal. Wait for the other party to respond." });
     }
+    if (!perms.can_accept) {
+      return res.status(409).json({ success: false, message: "There is no pending proposal to accept" });
+    }
+
     const result = await pool.query(
-      `UPDATE contracts
-       SET negotiation_status = 'accepted', updated_at = NOW()
-       WHERE contract_id = $1 AND status = 'draft' AND negotiation_status = 'proposed'
-       RETURNING contract_id, rate, deposit, status, negotiation_status`,
-      [id],
+      `UPDATE contracts SET negotiation_status = 'accepted', updated_at = NOW()
+       WHERE contract_id = $1 AND status = 'draft' AND negotiation_status = $2
+       RETURNING *`,
+      [id, c.negotiation_status],
     );
     if (result.rows.length === 0) {
-      return res.status(404).json({ success: false, message: "Draft contract not found for this tenant" });
+      return res.status(409).json({ success: false, message: "This proposal was already answered. Refresh and try again." });
     }
+    const updated = result.rows[0];
+    const isOwner = perms.viewer_role === "owner";
+
     await notify({
-      userId: isOwner ? contract.tenant_id : contract.owner_id,
+      userId: isOwner ? c.tenant_id : c.owner_id,
       type: "contract_accepted",
       title: isOwner ? "Landlord accepted lease terms" : "Tenant accepted lease terms",
       message: `${isOwner ? "The landlord" : "The tenant"} accepted contract #${id}. Both parties can now sign.`,
       linkUrl: "/contracts",
     });
-    return res.status(200).json(result.rows[0]);
+
+    return res.status(200).json({
+      contract_id: updated.contract_id,
+      rate: updated.rate,
+      deposit: updated.deposit,
+      status: updated.status,
+      negotiation_status: updated.negotiation_status,
+      ...contractPermissions(updated, userId),
+    });
   } catch (err) {
     console.error("acceptContract error: ", err);
     return res.status(500).json({ success: false, message: "Failed to accept lease" });
@@ -105,14 +134,7 @@ const acceptContract = async (req, res) => {
 };
 
 // POST /contracts  [landlord only]
-//
-// CHANGED: after inserting the contract row, this now also builds the
-// lease PDF (one shared template, filled in with this contract's
-// landlord/tenant names, address and dates) and uploads it to the
-// "contract-pdfs" bucket, saving the resulting URL on the contract row.
-// If the PDF step fails for any reason, the contract itself still gets
-// created — the PDF can be missing and regenerated later rather than the
-// whole lease creation failing over a formatting issue.
+
 const createContract = async (req, res) => {
   try {
     const ownerId = req.user.user_id;
@@ -124,8 +146,7 @@ const createContract = async (req, res) => {
         .json({ success: false, message: "property_id, tenant_id, rate, start_date, and end_date are required" });
     }
 
-    // Pull everything the PDF template needs in one query: the property's
-    // owner + address + default deposit, and both parties' display names.
+
     const infoResult = await pool.query(
       `SELECT p.owner_id, p.address, p.deposit,
               owner.name AS owner_name,
@@ -145,14 +166,16 @@ const createContract = async (req, res) => {
     }
 
     const result = await pool.query(
-      `INSERT INTO contracts (owner_id, property_id, tenant_id, rate, deposit, start_date, end_date, terms_and_conditions)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-       RETURNING contract_id, owner_id, tenant_id, property_id, rate, deposit, start_date, end_date, status, created_at`,
+      `INSERT INTO contracts (owner_id, property_id, tenant_id, rate, deposit, start_date, end_date,
+                              terms_and_conditions, negotiation_status)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'owner_proposed')
+       RETURNING contract_id, owner_id, tenant_id, property_id, rate, deposit, start_date, end_date,
+                 status, negotiation_status, created_at`,
       [ownerId, property_id, tenant_id, rate, deposit ?? 0, start_date, end_date, terms_and_conditions || null],
     );
     const contract = result.rows[0];
 
-    // --- Generate + store the lease PDF ------------------------------------
+
     let contractPdfUrl = null;
     try {
       const pdfBuffer = await buildContractPdfBuffer({
@@ -194,13 +217,7 @@ const createContract = async (req, res) => {
   }
 };
 
-// GET /contracts  [auth required] — every lease the caller is a party to.
-//
-// CHANGED: now also returns contract_pdf_url, plus the most recent
-// payment's transaction_reference and status for that contract — this is
-// what powers the "transaction id / payment status yes-no" list on the
-// Contracts page. A contract with no payment yet simply comes back with
-// transaction_id: null and payment_status: "no".
+// GET /contracts  [auth required]
 const listContracts = async (req, res) => {
   try {
     const userId = req.user.user_id;
@@ -209,7 +226,7 @@ const listContracts = async (req, res) => {
       `SELECT c.contract_id, c.property_id, p.address AS property_address,
               c.owner_id, c.tenant_id, c.rate, c.deposit, c.start_date, c.end_date,
               c.owner_signature_url, c.tenant_signature_url, c.status, c.created_at,
-              c.negotiation_status,
+              c.negotiation_status, c.contract_pdf_url,
               owner.name AS owner_name, tenant.name AS tenant_name
        FROM contracts c
        JOIN properties p ON p.property_id = c.property_id
@@ -235,8 +252,8 @@ const listContracts = async (req, res) => {
       tenant: { user_id: row.tenant_id, name: row.tenant_name },
       rate: row.rate,
       deposit: row.deposit,
-      start_date: row.start_date,
-      end_date: row.end_date,
+      start_date: toDateOnly(row.start_date),
+      end_date: toDateOnly(row.end_date),
       owner_signature_url: row.owner_signature_url,
       tenant_signature_url: row.tenant_signature_url,
       status: row.status,
@@ -245,6 +262,7 @@ const listContracts = async (req, res) => {
       contract_pdf_url: row.contract_pdf_url,
       transaction_id: row.transaction_reference || null,
       payment_status: row.payment_status === "paid" ? "yes" : "no",
+      ...contractPermissions(row, userId),
     }));
 
     return res.status(200).json({ data });
@@ -254,10 +272,7 @@ const listContracts = async (req, res) => {
   }
 };
 
-// GET /contracts/:id  [auth required — owner or tenant on the contract]
-//
-// CHANGED: includes contract_pdf_url in the response so the "View details"
-// panel can embed/link the PDF.
+// GET /contracts/:id  [auth required]
 const getContractById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -286,14 +301,15 @@ const getContractById = async (req, res) => {
       tenant_id: signed.tenant_id,
       rate: signed.rate,
       deposit: signed.deposit,
-      start_date: signed.start_date,
-      end_date: signed.end_date,
+      start_date: toDateOnly(signed.start_date),
+      end_date: toDateOnly(signed.end_date),
       terms_and_conditions: signed.terms_and_conditions,
       owner_signature_url: signed.owner_signature_url,
       tenant_signature_url: signed.tenant_signature_url,
       status: signed.status,
       negotiation_message: signed.negotiation_message,
       negotiation_status: signed.negotiation_status,
+      ...contractPermissions(contract, req.user.user_id),
     });
   } catch (err) {
     console.error("getContractById error: ", err);
@@ -301,8 +317,7 @@ const getContractById = async (req, res) => {
   }
 };
 
-// PATCH /contracts/:id/sign  [auth required — auto-detects owner vs tenant]
-// Unchanged from what you already had.
+// PATCH /contracts/:id/sign  [auth required]
 const signContract = async (req, res) => {
   try {
     const { id } = req.params;
@@ -318,14 +333,21 @@ const signContract = async (req, res) => {
       return res.status(404).json({ success: false, message: "Contract not found" });
     }
     const contract = result.rows[0];
-    if (contract.status === "draft" && contract.negotiation_status !== "accepted") {
-      return res.status(409).json({ success: false, message: "Lease terms must be accepted before signing" });
+    const perms = contractPermissions(contract, userId);
+
+    if (perms.viewer_role === "none") {
+      return res.status(403).json({ success: false, message: "You are not part of this contract" });
+    }
+    if (perms.negotiation_state !== "TERMS_ACCEPTED") {
+      return res.status(409).json({ success: false, message: "Lease terms must be accepted by the other party before signing" });
+    }
+    if (!perms.can_sign) {
+      return res.status(409).json({ success: false, message: "You have already signed, or this lease can no longer be signed" });
     }
 
-    let role;
-    if (contract.owner_id === userId) role = "owner";
-    else if (contract.tenant_id === userId) role = "tenant";
-    else return res.status(403).json({ success: false, message: "You are not part of this contract" });
+    const role = perms.viewer_role;
+    const column = role === "owner" ? "owner_signature_url" : "tenant_signature_url";
+    const otherColumn = role === "owner" ? "tenant_signature_url" : "owner_signature_url";
 
     let signaturePath;
     try {
@@ -334,19 +356,26 @@ const signContract = async (req, res) => {
       return res.status(422).json({ success: false, message: e.message });
     }
 
-    const column = role === "owner" ? "owner_signature_url" : "tenant_signature_url";
-    const otherPartyAlreadySigned =
-      role === "owner" ? Boolean(contract.tenant_signature_url) : Boolean(contract.owner_signature_url);
-    const newStatus = otherPartyAlreadySigned ? "fully_signed" : `signed_by_${role}`;
+    
 
     const updateResult = await pool.query(
-      `UPDATE contracts SET ${column} = $1, status = $2, updated_at = NOW()
-       WHERE contract_id = $3
-       RETURNING contract_id, owner_signature_url, tenant_signature_url, status`,
-      [signaturePath, newStatus, id],
+      `UPDATE contracts
+       SET ${column} = $1,
+           status = CASE WHEN ${otherColumn} IS NOT NULL
+                         THEN 'fully_signed'::contract_status_enum
+                         ELSE $2::contract_status_enum END,
+           updated_at = NOW()
+       WHERE contract_id = $3 AND negotiation_status = 'accepted'
+         AND status = ANY($4::contract_status_enum[]) AND ${column} IS NULL
+       RETURNING *`,
+      [signaturePath, `signed_by_${role}`, id, SIGNABLE_STATUSES],
     );
+    if (updateResult.rows.length === 0) {
+      return res.status(409).json({ success: false, message: "The lease changed while signing. Refresh and try again." });
+    }
 
-    const signed = await signFields(updateResult.rows[0], CONTRACT_SIGNED_FIELDS);
+    const row = updateResult.rows[0];
+    const signed = await signFields(row, CONTRACT_SIGNED_FIELDS);
 
     const otherPartyId = role === "owner" ? contract.tenant_id : contract.owner_id;
     await notify({
@@ -362,6 +391,7 @@ const signContract = async (req, res) => {
       owner_signature_url: signed.owner_signature_url,
       tenant_signature_url: signed.tenant_signature_url,
       status: signed.status,
+      ...contractPermissions(row, userId),
       message:
         signed.status === "fully_signed"
           ? "Both parties have signed. Proceed to security deposit payment."
@@ -374,8 +404,7 @@ const signContract = async (req, res) => {
 };
 
 // POST /contracts/:id/deposit  [tenant only]
-// Unchanged from what you already had — this is what sets the transaction
-// reference + payment status that listContracts now surfaces.
+
 const payDeposit = async (req, res) => {
   try {
     const { id } = req.params;
