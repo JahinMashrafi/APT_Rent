@@ -40,7 +40,12 @@ const getConversations = async (req, res) => {
               CASE WHEN c.participant_one = $1 THEN c.participant_two ELSE c.participant_one END AS other_user_id
        FROM conversations c
        LEFT JOIN properties p ON p.property_id = c.property_id
-       WHERE c.participant_one = $1 OR c.participant_two = $1
+       WHERE (c.participant_one = $1 OR c.participant_two = $1)
+         AND EXISTS (
+           SELECT 1
+           FROM messages existing_message
+           WHERE existing_message.conversation_id = c.conversation_id
+         )
        ORDER BY c.last_message_at DESC NULLS LAST`,
       [userId],
     );
@@ -101,10 +106,26 @@ const createConversation = async (req, res) => {
       return res.status(422).json({ success: false, message: "Cannot start a conversation with yourself" });
     }
 
-    const recipientCheck = await pool.query("SELECT user_id FROM users WHERE user_id = $1", [recipient_id]);
+    const [recipientCheck, propertyResult] = await Promise.all([
+      pool.query(
+        `SELECT user_id, name, profile_picture_url, is_landlord, is_tenant
+         FROM users WHERE user_id = $1`,
+        [recipient_id],
+      ),
+      pool.query(
+        "SELECT property_id, address FROM properties WHERE property_id = $1",
+        [property_id],
+      ),
+    ]);
     if (recipientCheck.rows.length === 0) {
       return res.status(404).json({ success: false, message: "Recipient not found" });
     }
+    if (propertyResult.rows.length === 0) {
+      return res.status(404).json({ success: false, message: "Property not found" });
+    }
+
+    const recipient = recipientCheck.rows[0];
+    const property = propertyResult.rows[0];
 
     const existing = await pool.query(
       `SELECT * FROM conversations
@@ -126,9 +147,27 @@ const createConversation = async (req, res) => {
       conversation = inserted.rows[0];
     }
 
+    const conversationPreview = {
+      id: conversation.conversation_id,
+      propertyId: conversation.property_id,
+      propertyTitle: property.address,
+      participant: {
+        id: recipient.user_id,
+        name: recipient.name,
+        initials: initialsOf(recipient.name),
+        role: recipient.is_landlord ? "Landlord" : recipient.is_tenant ? "Tenant" : "User",
+        profile_picture_url: recipient.profile_picture_url,
+        isOnline: isUserOnline(recipient.user_id),
+      },
+      lastMessage: "",
+      lastMessageTime: null,
+      unreadCount: 0,
+    };
+
     return res.status(existing.rows.length > 0 ? 200 : 201).json({
       conversation_id: conversation.conversation_id,
       created: existing.rows.length === 0,
+      conversation: conversationPreview,
     });
   } catch (err) {
     console.error("createConversation error: ", err);
