@@ -131,12 +131,6 @@ export const contracts = {
       .then((r) => r.data),
   payDeposit: (contractId, payload) =>
     apiClient.post(`/contracts/${contractId}/deposit`, payload).then((r) => r.data),
-
-   negotiate: (contractId, payload) =>
-    apiClient.patch(`/contracts/${contractId}/negotiate`, payload).then((r) => r.data),
-  // The other party accepts the proposed terms (unlocks signing).
-  accept: (contractId) =>
-    apiClient.patch(`/contracts/${contractId}/accept`).then((r) => r.data),
 };
 
 // ---------------------------------------------------------------------------
@@ -239,6 +233,13 @@ export const units = {
   list: () => apiClient.get("/units").then((r) => r.data),
 };
 
+// Apartment address translation
+export const addressTranslations = {
+  translate: (addresses) =>
+    apiClient
+      .post("/translate/addresses", { addresses })
+      .then((response) => response.data),
+};
 const api = {
   auth,
   users,
@@ -255,6 +256,7 @@ const api = {
   saved,
   tenant,
   units,
+  addressTranslations,
 };
 
 export default api;

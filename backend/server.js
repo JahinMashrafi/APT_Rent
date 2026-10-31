@@ -7,6 +7,7 @@ const path = require("path");
 
 const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
+const addressTranslationRoutes = require("./routes/addressTranslation");
 const propertyRoutes = require('./routes/propertyRoutes');
 const applicationRoutes = require("./routes/applicationRoutes");
 const appointmentRoutes = require("./routes/appointmentRoutes");
@@ -37,6 +38,10 @@ app.use(cors({
 }));
 app.use(express.json());
 app.use(cookieParser());
+
+// Address translation API
+app.use("/api/translate", addressTranslationRoutes);
+
 app.use(envelopeLegacyResponses);
 
 app.use("/api/auth", authRoutes);

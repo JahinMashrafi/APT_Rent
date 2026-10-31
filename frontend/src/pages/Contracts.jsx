@@ -5,7 +5,7 @@
  * ============================================================================
  */
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { FileText, ChevronDown, ChevronUp, Clock, PenLine, Download, Receipt } from "lucide-react";
 import AppNavbar from "../components/AppNavbar.jsx";
@@ -16,6 +16,7 @@ import "../css/global.css";
 import "../css/navbar.css";
 import "../css/modules.css";
 import { useLanguage } from "../i18n/LanguageContext.jsx";
+import { useAddressTranslations } from "../hooks/useAddressTranslations.js";
 
 const STATUS_BADGE = {
   draft: "badge-warn",
@@ -32,6 +33,24 @@ export default function Contracts() {
   const { currentUser } = useApp();
   const { t, tx, lang, formatCurrency, digits } = useLanguage();
   const [contracts, setContracts] = useState([]);
+  // Collect contract property addresses.
+  const addressesToTranslate = useMemo(
+    () =>
+      contracts
+        .map((contract) =>
+          typeof contract.property_address === "string"
+            ? contract.property_address.trim()
+            : ""
+        )
+        .filter(Boolean),
+    [contracts]
+  );
+
+  // Translate contract addresses in Bangla mode.
+  const addressTranslations = useAddressTranslations(
+    addressesToTranslate,
+    lang === "bn"
+  );
   const [loadError, setLoadError] = useState("");
   const [openId, setOpenId] = useState(null);
   const [details, setDetails] = useState({});
@@ -207,6 +226,15 @@ export default function Contracts() {
           <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
             {contracts.map((contract) => {
               const isOpen = openId === contract.contract_id;
+              const originalAddress =
+                typeof contract.property_address === "string"
+                  ? contract.property_address.trim()
+                  : "";
+
+              const displayAddress =
+                lang === "bn"
+                  ? addressTranslations[originalAddress] || originalAddress
+                  : originalAddress;
               const detail = details[contract.contract_id];
               const other = counterparty(contract);
               const isOwner = String(contract.owner?.user_id) === String(currentUser?.id);
@@ -226,7 +254,7 @@ export default function Contracts() {
                         onClick={(e) => e.stopPropagation()}
                         style={{ fontWeight: 600, color: "var(--color-text-strong)", fontFamily: "var(--font-display)" }}
                       >
-                        {contract.property_address}
+                        {displayAddress}
                       </Link>
                       <p style={{ fontSize: "0.82rem", color: "var(--color-blueprint)", marginTop: "2px", display: "flex", alignItems: "center", gap: "4px" }}>
                         <Clock size={13} /> {t("contracts.contractNo", { id: digits(contract.contract_id) })} · {other.label}: {other.name}

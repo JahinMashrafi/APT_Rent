@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import AppNavbar from '../components/AppNavbar.jsx';
 import SlotPicker from '../components/tour/SlotPicker.jsx';
@@ -7,6 +7,7 @@ import api from '../services/api';
 import { useToast } from '../components/ui/Toast.jsx';
 import useTourNegotiation from '../hooks/useTourNegotiation.js';
 import { useLanguage } from '../i18n/LanguageContext.jsx';
+import { useAddressTranslations } from '../hooks/useAddressTranslations.js';
 import { formatDateLong, formatTime } from '../utils/tour.js';
 import '../css/global.css';
 import '../css/navbar.css';
@@ -31,6 +32,45 @@ export default function TourRequests() {
 
   const [activeRequestId, setActiveRequestId] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  // Collect property addresses from tour requests.
+  const addressesToTranslate = useMemo(
+    () =>
+      requests
+        .map((request) =>
+          typeof request.address === "string"
+            ? request.address.trim()
+            : ""
+        )
+        .filter(Boolean),
+    [requests]
+  );
+
+  // Translate addresses when Bangla is selected.
+  const addressTranslations = useAddressTranslations(
+    addressesToTranslate,
+    lang === "bn"
+  );
+
+  // Return the correct address for each tour request.
+  const getRequestAddress = (request) => {
+    const originalAddress =
+      typeof request.address === "string"
+        ? request.address.trim()
+        : "";
+
+    const translatedAddress =
+      lang === "bn" && originalAddress
+        ? addressTranslations[originalAddress]
+        : undefined;
+
+    return (
+      translatedAddress ||
+      originalAddress ||
+      t("tours.propertyNum", {
+        id: digits(request.property_id),
+      })
+    );
+  };
 
   const openRequests = requests.filter((row) => row.status === 'pending');
   const pastRequests = requests.filter((row) => row.status !== 'pending');
@@ -227,10 +267,7 @@ export default function TourRequests() {
                                 textDecoration: 'none',
                               }}
                             >
-                              {request.address ||
-                                t('tours.propertyNum', {
-                                  id: digits(request.property_id),
-                                })}
+                             {getRequestAddress(request)}
                             </Link>
 
                             <div
@@ -436,11 +473,7 @@ export default function TourRequests() {
                           fontSize: '0.9rem',
                         }}
                       >
-                        {request.counterpart_name} —{' '}
-                        {request.address ||
-                          t('tours.propertyNum', {
-                            id: digits(request.property_id),
-                          })}
+                        {request.counterpart_name} — {getRequestAddress(request)}
                       </span>
 
                       <span

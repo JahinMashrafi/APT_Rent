@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+
+import { useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { ArrowLeft, Building2 } from "lucide-react";
 import AppNavbar from "../components/AppNavbar.jsx";
@@ -18,17 +19,62 @@ import "../css/navbar.css";
 import "../css/newsfeed-home.css";
 import "../css/modules.css";
 import { useLanguage } from "../i18n/LanguageContext.jsx";
+import { useAddressTranslations } from "../hooks/useAddressTranslations.js";
 
 export default function PropertyDetails() {
   const { id, propertyId } = useParams();
   const navigate = useNavigate();
   const { currentUser, authReady } = useApp();
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
 
   const targetId = id || propertyId;
   const [property, setProperty] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
+  // Collect the property address and title for translation.
+  const addressesToTranslate = useMemo(() => {
+    const values = [property?.address, property?.title];
+
+    return [
+      ...new Set(
+        values
+          .filter((value) => typeof value === "string")
+          .map((value) => value.trim())
+          .filter(Boolean)
+      ),
+    ];
+  }, [property?.address, property?.title]);
+
+  // Translate only when Bangla is selected.
+  const addressTranslations = useAddressTranslations(
+    addressesToTranslate,
+    lang === "bn"
+  );
+
+  // Get the translated address.
+  const displayAddress =
+    typeof property?.address === "string"
+      ? lang === "bn"
+        ? addressTranslations[property.address.trim()] || property.address
+        : property.address
+      : property?.address;
+
+  // Get the translated title.
+  const displayTitle =
+    typeof property?.title === "string"
+      ? lang === "bn"
+        ? addressTranslations[property.title.trim()] || property.title
+        : property.title
+      : property?.title;
+
+  // Create a display-only property object.
+  const displayProperty = property
+    ? {
+        ...property,
+        address: displayAddress,
+        title: displayTitle,
+      }
+    : property;
 
   useEffect(() => {
     let cancelled = false;
@@ -175,12 +221,12 @@ export default function PropertyDetails() {
               gap: "2.5rem",
             }}
           >
-            <ImageSlider
-              images={property.photos}
-              title={property.title}
-            />
+                <ImageSlider
+                  images={property.photos}
+                  title={displayTitle}
+                />
 
-            <PropertyInfo property={property} />
+            <PropertyInfo property={displayProperty} />
 
             <div
               style={{
@@ -191,8 +237,8 @@ export default function PropertyDetails() {
               <PropertyLocation
                 lat={property.lat}
                 lng={property.lng}
-                title={property.title}
-                address={property.address}
+                title={displayTitle}
+                address={displayAddress}
               />
             </div>
 

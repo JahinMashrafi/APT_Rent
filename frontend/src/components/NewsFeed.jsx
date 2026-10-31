@@ -7,10 +7,11 @@ import Pagination from "./Pagination.jsx";
 import api from "../services/api";
 import { adaptProperty } from "../services/adapters";
 import { useLanguage } from "../i18n/LanguageContext.jsx";
+import { useAddressTranslations } from "../hooks/useAddressTranslations.js";
 
 const POSTS_PER_PAGE = 12;
 
-// filter field -> URL param
+// Filter field -> URL param
 const URL_PARAMS = {
   searchText: "search",
   city: "city",
@@ -23,20 +24,44 @@ const URL_PARAMS = {
 };
 
 export default function NewsFeed() {
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
 
   const [searchParams, setSearchParams] = useSearchParams();
+
   const [apartments, setApartments] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
-
   const [totalPages, setTotalPages] = useState(1);
-
-
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
 
-  // The URL is the source of truth. Whenever it changes (typing, Home hero
-  // redirect, back/forward) the filters are re-derived from it.
+  // Collect only apartment addresses for translation.
+  // Collect apartment addresses or titles for translation.
+  const addressesToTranslate = useMemo(
+    () =>
+      apartments
+        .map((apartment) => {
+          const address =
+            typeof apartment.address === "string"
+              ? apartment.address.trim()
+              : "";
+
+          const title =
+            typeof apartment.title === "string"
+              ? apartment.title.trim()
+              : "";
+
+          return address || title;
+        })
+        .filter(Boolean),
+    [apartments]
+  );
+  // Translate only when Bangla is selected.
+  const addressTranslations = useAddressTranslations(
+    addressesToTranslate,
+    lang === "bn"
+  );
+
+  // The URL is the source of truth.
   const urlKey = searchParams.toString();
 
   const activeFilters = useMemo(
@@ -49,7 +74,7 @@ export default function NewsFeed() {
     setCurrentPage(1);
   }, [urlKey]);
 
-  // Fetch whenever page or filters change.
+  // Fetch apartments whenever page or filters change.
   useEffect(() => {
     let isCancelled = false;
 
@@ -87,7 +112,7 @@ export default function NewsFeed() {
     };
   }, [currentPage, activeFilters]);
 
-  // Search / Enter / live typing / clear all end up here -> update the URL.
+  // Search / Enter / live typing / clear all.
   const handleSearch = useCallback(
     (filters) => {
       const next = new URLSearchParams();
@@ -106,7 +131,6 @@ export default function NewsFeed() {
         next.set("has_balcony", filters.hasBalcony);
       }
 
-      // Replace: live typing should not fill the browser history.
       setSearchParams(next, { replace: true });
     },
     [setSearchParams]
@@ -142,13 +166,28 @@ export default function NewsFeed() {
         <p className="newsfeed-status">{t("feed.empty")}</p>
       ) : (
         <div className="newsfeed-grid">
-          {apartments.map((apartment) => (
-            <ApartmentCard
-              key={apartment.id}
-              apartment={apartment}
-              onToggleWishlist={handleToggleWishlist}
-            />
-          ))}
+          {apartments.map((apartment) => {
+            const originalAddress =
+              (typeof apartment.address === "string"
+                ? apartment.address.trim()
+                : "") ||
+              (typeof apartment.title === "string"
+                ? apartment.title.trim()
+                : "");
+
+            return (
+              <ApartmentCard
+                key={apartment.id}
+                apartment={apartment}
+                translatedAddress={
+                  lang === "bn"
+                    ? addressTranslations[originalAddress]
+                    : undefined
+                }
+                onToggleWishlist={handleToggleWishlist}
+              />
+            );
+          })}
         </div>
       )}
 
@@ -173,7 +212,6 @@ async function fetchApartments(page, filters) {
     totalPages: data?.meta?.total_pages ?? 1,
   };
 }
-
 
 function toApiFilters(filters) {
   const source = filters || {};
@@ -209,9 +247,8 @@ function toApiFilters(filters) {
 }
 
 function filtersFromSearchParams(params) {
-  
   return {
-    // Accepts ?search= and the older ?q= / ?location= as fallbacks.
+    // Accepts ?search= and older ?q= / ?location= fallbacks.
     searchText:
       params.get("search") ||
       params.get("q") ||
