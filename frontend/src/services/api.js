@@ -220,7 +220,13 @@ export const admin = {
       .patch(`/admin/disputes/${disputeId}/resolve`, { resolution_notes: resolutionNotes })
       .then((r) => r.data),
 };
-
+// Apartment address translation
+export const addressTranslations = {
+  translate: (addresses) =>
+    apiClient
+      .post("/translate/addresses", { addresses })
+      .then((response) => response.data),
+};
 const api = {
   auth,
   users,
@@ -234,6 +240,7 @@ const api = {
   reviews,
   landlord,
   admin,
+  addressTranslations,
 };
 
 export default api;

@@ -36,7 +36,7 @@ async function copyText(text) {
   }
 }
 
-export default function ApartmentCard({ apartment }) {
+export default function ApartmentCard({ apartment, translatedAddress }) {
   const { showToast } = useToast();
   const { t, pick, timeAgo, formatNumber, formatCurrency } = useLanguage();
 
@@ -45,10 +45,12 @@ export default function ApartmentCard({ apartment }) {
   const listedAt =
     apartment.listedAt ?? apartment.createdAt ?? apartment.created_at;
 
-  const address =
-    pick(apartment, "address") ??
-    pick(apartment, "title") ??
-    t("listing.untitled");
+  const originalAddress =
+  pick(apartment, "address") ??
+  pick(apartment, "title") ??
+  t("listing.untitled");
+
+const address = translatedAddress || originalAddress;
 
   const pricePerMonth = apartment.pricePerMonth ?? apartment.rate ?? 0;
   const bedrooms = apartment.bedrooms ?? apartment.bedroom ?? "—";
