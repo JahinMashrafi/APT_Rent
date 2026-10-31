@@ -13,8 +13,7 @@
     "yesterday": "Yesterday",
     "perMonth": "{price} / month",
     "browseListings": "Browse listings",
-    "notAvailable": "—",
-    "backToTop": "Back to top"
+    "notAvailable": "—"
   },
   "nav": {
     "browse": "Browse",
@@ -25,8 +24,7 @@
     "dashboard": "Dashboard",
     "tourRequests": "Tour Requests",
     "adminPanel": "Admin Panel",
-    "mainNavigation": "Main navigation",
-    "saved": "Saved listings"
+    "mainNavigation": "Main navigation"
   },
   "role": {
     "tenant": "Tenant",
@@ -44,10 +42,10 @@
     "title": "Notifications",
     "markAllRead": "Mark all read",
     "empty": "You're all caught up.",
-    "goInbox": "Go to Inbox →",
+   "goInbox": "Go to Inbox →",
     "viewTours": "View tour requests →",
     "viewAll": "View all notifications",
-    "pageTitle": "All notifications",
+    "pageTitle": "Notifications",
     "filter": {
       "all": "All",
       "unread": "Unread"
@@ -181,7 +179,8 @@
     "loadError": "Could not load applications.",
     "empty": "You haven't applied to any properties yet.",
     "applied": "Applied {when}",
-    "today": "today"
+    "today": "today",
+    "untitledProperty": "Property address unavailable"
   },
   "contracts": {
     "eyebrow": "Lease Documents",
@@ -204,7 +203,6 @@
     },
     "leaseAccepted": "Lease accepted",
     "proposalSent": "Tenant proposal sent",
-    "awaitingResponse": "Waiting for the other party to accept or counter.",
     "loadingContract": "Loading contract…",
     "loadDetailFailed": "Couldn't load the full contract. Try again in a moment.",
     "monthlyRent": "Monthly Rent",
@@ -635,95 +633,16 @@
     "whoTenant": "The tenant",
     "whoLandlord": "The landlord",
     "whoTenantShort": "Tenant",
-    "whoLandlordShort": "Landlord"
-  },
-    "crumb": {
-    "label": "Breadcrumb",
-    "home": "Home",
-    "browse": "Browse",
-    "applications": "Applications",
-    "contracts": "Contracts",
-    "rent": "Pay rent",
-    "tourRequests": "Tour requests",
-    "landlord": "Dashboard",
-    "admin": "Admin",
-    "profile": "Profile",
-    "saved": "Saved listings",
-    "compare": "Compare",
-    "maintenance": "Maintenance",
-    "calendar": "Calendar",
-    "property": "Property #{id}",
-    "tour": "Schedule a tour",
-    "lease": "Lease & deposit"
-  },
-  "saved": {
-    "save": "Save listing",
-    "unsave": "Remove from saved",
-    "savedLabel": "Saved",
-    "added": "Saved to your list",
-    "removed": "Removed from saved listings",
-    "failed": "Couldn't update your saved listings",
-    "eyebrow": "Your wishlist",
-    "title": "Saved listings",
-    "subtitle": "Listings you've saved for later",
-    "count": "{n} saved listings",
-    "count_one": "1 saved listing",
-    "empty": "No saved listings yet",
-    "emptyBody": "Tap the heart on any listing to keep it here.",
-    "browse": "Browse listings",
-    "unavailable": "No longer available"
-  },
-  "dash": {
-    "eyebrow": "Tenant dashboard",
-    "welcome": "Welcome, {name}",
-    "noProperty": "No rented property yet",
-    "noPropertyBody": "Once a lease is active, your property and rent status appear here.",
-    "myProperty": "My property",
-    "landlord": "Landlord",
-    "leaseTerm": "Lease: {from} – {to}",
-    "viewLease": "View lease",
-    "thisMonth": "This month",
-    "status": {
-      "paid": "Paid",
-      "due": "Due",
-      "overdue": "Overdue",
-      "pending": "Lease starts when it becomes active"
-    },
-    "rentDue": "Rent due",
-    "allPaid": "All rent is paid up",
-    "monthsDue": "{n} months unpaid",
-    "monthsDue_one": "1 month unpaid",
-    "perMonth": "/ month",
-    "dueBy": "Due by {date}"
-  },
-  "availability": {
-    "available": "Available",
-    "rented": "Rented",
-    "unavailable": "Unavailable",
-    "archived": "Archived"
-  },
-  "units": {
-    "tab": "Units",
-    "occupied": "Occupied units",
-    "vacant": "Vacant units",
-    "noneOccupied": "No occupied units yet.",
-    "noneVacant": "No vacant units.",
-    "property": "Property",
-    "tenant": "Current tenant",
-    "rent": "Rent",
-    "leaseEnd": "Lease ends",
-    "rentStatus": "This month's rent",
-    "listingStatus": "Listing status",
-    "loadError": "Couldn't load units.",
-    "floor": "Floor {floor} of {total}",
-    "listing": {
-      "listed": "Listed — available",
-      "hidden": "Hidden",
-      "unavailable": "Unavailable",
-      "rented": "Rented"
-    },
-    "noTenant": "No tenant on record",
-    "leaseNotActive": "Lease not active"
+    "whoLandlordShort": "Landlord",
+    "applicationReceivedTitle": "New rental application",
+    "applicationReceivedBody": "A tenant applied for your property (application #{id}).",
+    "applicationUpdateTitle": "Application update",
+    "applicationUpdateBody": "Your application for {address} was marked “{status}”.",
+    "disputeFiledTitle": "New dispute filed",
+    "disputeFiledBody": "Dispute #{id}: {reason}",
+    "tourRescheduledTitle": "Tour rescheduled",
+    "tourRescheduledBody": "A tour for property #{id} was moved to {date} at {time}. Please confirm the new time.",
+    "tourRescheduledReasonBody": "A tour for property #{id} was moved to {date} at {time}. Please confirm the new time. Reason: {reason}"
   },
   "profileView": {
     "loading": "Loading profile…",

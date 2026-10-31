@@ -13,8 +13,7 @@
     "yesterday": "গতকাল",
     "perMonth": "{price} / মাস",
     "browseListings": "বিজ্ঞাপন ব্রাউজ করুন",
-    "notAvailable": "—",
-    "backToTop": "উপরে ফিরে যান"
+    "notAvailable": "—"
   },
   "nav": {
     "browse": "ব্রাউজ",
@@ -25,8 +24,7 @@
     "dashboard": "ড্যাশবোর্ড",
     "tourRequests": "ভিজিটের অনুরোধ",
     "adminPanel": "অ্যাডমিন প্যানেল",
-    "mainNavigation": "প্রধান নেভিগেশন",
-    "saved": "সংরক্ষিত বিজ্ঞাপন"
+    "mainNavigation": "প্রধান নেভিগেশন"
   },
   "role": {
     "tenant": "ভাড়াটিয়া",
@@ -46,8 +44,8 @@
     "empty": "আপনি সব দেখে ফেলেছেন।",
     "goInbox": "ইনবক্সে যান →",
     "viewTours": "ভিজিটের অনুরোধ দেখুন →",
-    "viewAll": "সব নোটিফিকেশন দেখুন",
-    "pageTitle": "সব নোটিফিকেশন",
+    "viewAll": "সব বিস্তারিত দেখুন",
+    "pageTitle": "বিজ্ঞপ্তি",
     "filter": {
       "all": "সব",
       "unread": "অপঠিত"
@@ -181,7 +179,8 @@
     "loadError": "আবেদনসমূহ লোড করা যায়নি।",
     "empty": "আপনি এখনো কোনো সম্পত্তিতে আবেদন করেননি।",
     "applied": "আবেদন করা হয়েছে {when}",
-    "today": "আজ"
+    "today": "আজ",
+    "untitledProperty": "সম্পত্তির ঠিকানা পাওয়া যায়নি"
   },
   "contracts": {
     "eyebrow": "ভাড়া চুক্তির নথি",
@@ -204,7 +203,6 @@
     },
     "leaseAccepted": "চুক্তি গৃহীত",
     "proposalSent": "ভাড়াটিয়ার প্রস্তাব পাঠানো হয়েছে",
-    "awaitingResponse": "অপর পক্ষের সম্মতি বা পাল্টা প্রস্তাবের অপেক্ষায়।",
     "loadingContract": "চুক্তি লোড হচ্ছে…",
     "loadDetailFailed": "সম্পূর্ণ চুক্তি লোড করা যায়নি। একটু পরে আবার চেষ্টা করুন।",
     "monthlyRent": "মাসিক ভাড়া",
@@ -635,95 +633,16 @@
     "whoTenant": "ভাড়াটিয়া",
     "whoLandlord": "বাড়িওয়ালা",
     "whoTenantShort": "ভাড়াটিয়া",
-    "whoLandlordShort": "বাড়িওয়ালা"
-  },
-    "crumb": {
-    "label": "ব্রেডক্রাম্ব",
-    "home": "হোম",
-    "browse": "ব্রাউজ",
-    "applications": "আবেদনসমূহ",
-    "contracts": "চুক্তি",
-    "rent": "ভাড়া পরিশোধ",
-    "tourRequests": "ট্যুর অনুরোধ",
-    "landlord": "ড্যাশবোর্ড",
-    "admin": "অ্যাডমিন",
-    "profile": "প্রোফাইল",
-    "saved": "সংরক্ষিত বিজ্ঞাপন",
-    "compare": "তুলনা",
-    "maintenance": "রক্ষণাবেক্ষণ",
-    "calendar": "ক্যালেন্ডার",
-    "property": "প্রপার্টি #{id}",
-    "tour": "ট্যুর নির্ধারণ",
-    "lease": "চুক্তি ও জামানত"
-  },
-  "saved": {
-    "save": "সংরক্ষণ করুন",
-    "unsave": "সংরক্ষণ থেকে সরান",
-    "savedLabel": "সংরক্ষিত",
-    "added": "আপনার তালিকায় সংরক্ষিত হয়েছে",
-    "removed": "সংরক্ষিত তালিকা থেকে সরানো হয়েছে",
-    "failed": "সংরক্ষিত তালিকা হালনাগাদ করা যায়নি",
-    "eyebrow": "আপনার উইশলিস্ট",
-    "title": "সংরক্ষিত বিজ্ঞাপন",
-    "subtitle": "পরে দেখার জন্য সংরক্ষিত বিজ্ঞাপন",
-    "count": "{n}টি সংরক্ষিত বিজ্ঞাপন",
-    "count_one": "১টি সংরক্ষিত বিজ্ঞাপন",
-    "empty": "এখনো কিছু সংরক্ষণ করা হয়নি",
-    "emptyBody": "যেকোনো বিজ্ঞাপনের হার্টে ট্যাপ করলে সেটি এখানে জমা থাকবে।",
-    "browse": "বিজ্ঞাপন দেখুন",
-    "unavailable": "আর পাওয়া যাচ্ছে না"
-  },
-  "dash": {
-    "eyebrow": "ভাড়াটিয়া ড্যাশবোর্ড",
-    "welcome": "স্বাগতম, {name}",
-    "noProperty": "এখনো কোনো ভাড়া নেওয়া প্রপার্টি নেই",
-    "noPropertyBody": "চুক্তি সক্রিয় হলে আপনার প্রপার্টি ও ভাড়ার অবস্থা এখানে দেখাবে।",
-    "myProperty": "আমার প্রপার্টি",
-    "landlord": "বাড়িওয়ালা",
-    "leaseTerm": "চুক্তি: {from} – {to}",
-    "viewLease": "চুক্তি দেখুন",
-    "thisMonth": "এই মাস",
-    "status": {
-      "paid": "পরিশোধিত",
-      "due": "বাকি",
-      "overdue": "মেয়াদোত্তীর্ণ",
-      "pending": "চুক্তি সক্রিয় হলে শুরু হবে"
-    },
-    "rentDue": "বকেয়া ভাড়া",
-    "allPaid": "সব ভাড়া পরিশোধিত",
-    "monthsDue": "{n} মাসের ভাড়া বাকি",
-    "monthsDue_one": "১ মাসের ভাড়া বাকি",
-    "perMonth": "/ মাস",
-    "dueBy": "{date}-এর মধ্যে দিতে হবে"
-  },
-  "availability": {
-    "available": "খালি আছে",
-    "rented": "ভাড়া হয়েছে",
-    "unavailable": "অনুপলব্ধ",
-    "archived": "আর্কাইভড"
-  },
-  "units": {
-    "tab": "ইউনিট",
-    "occupied": "ভাড়া দেওয়া ইউনিট",
-    "vacant": "খালি ইউনিট",
-    "noneOccupied": "এখনো কোনো ভাড়া দেওয়া ইউনিট নেই।",
-    "noneVacant": "কোনো খালি ইউনিট নেই।",
-    "property": "প্রপার্টি",
-    "tenant": "বর্তমান ভাড়াটিয়া",
-    "rent": "ভাড়া",
-    "leaseEnd": "চুক্তি শেষ",
-    "rentStatus": "এই মাসের ভাড়া",
-    "listingStatus": "বিজ্ঞাপনের অবস্থা",
-    "loadError": "ইউনিট লোড করা যায়নি।",
-    "floor": "{total} তলার মধ্যে {floor} তলা",
-    "listing": {
-      "listed": "তালিকাভুক্ত — খালি",
-      "hidden": "লুকানো",
-      "unavailable": "অনুপলব্ধ",
-      "rented": "ভাড়া হয়েছে"
-    },
-    "noTenant": "ভাড়াটিয়ার তথ্য নেই",
-    "leaseNotActive": "চুক্তি সক্রিয় নয়"
+    "whoLandlordShort": "বাড়িওয়ালা",
+    "applicationReceivedTitle": "নতুন ভাড়ার আবেদন",
+    "applicationReceivedBody": "একজন ভাড়াটিয়া আপনার প্রপার্টির জন্য আবেদন করেছেন (আবেদন নম্বর #{id})।",
+    "applicationUpdateTitle": "আবেদনের হালনাগাদ",
+    "applicationUpdateBody": "{address}-এর জন্য আপনার আবেদনটি “{status}” হিসেবে চিহ্নিত করা হয়েছে।",
+    "disputeFiledTitle": "নতুন বিরোধের অভিযোগ",
+    "disputeFiledBody": "বিরোধ #{id}: {reason}",
+    "tourRescheduledTitle": "ভিজিট পুনর্নির্ধারণ",
+    "tourRescheduledBody": "প্রপার্টি #{id}-এর ভিজিট {date}, {time}-এ পুনর্নির্ধারণ করা হয়েছে। অনুগ্রহ করে নতুন সময়টি নিশ্চিত করুন।",
+    "tourRescheduledReasonBody": "প্রপার্টি #{id}-এর ভিজিট {date}, {time}-এ পুনর্নির্ধারণ করা হয়েছে। অনুগ্রহ করে নতুন সময়টি নিশ্চিত করুন। কারণ: {reason}"
   },
   "profileView": {
     "loading": "প্রোফাইল লোড হচ্ছে…",
