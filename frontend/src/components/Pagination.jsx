@@ -107,7 +107,7 @@ export default function Pagination({ currentPage, totalPages, onPageChange }) {
       </div>
 
       <p className="pagination-status" aria-live="polite">
-        {t("pagination.pageStatus", {
+        {t("", {
           current: formatNumber(safeCurrentPage),
           total: formatNumber(safeTotalPages),
         })}
