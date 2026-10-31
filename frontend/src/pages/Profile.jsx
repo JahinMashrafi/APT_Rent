@@ -3,9 +3,10 @@ import { Link, useNavigate } from "react-router-dom";
 import AppNavbar from "../components/AppNavbar.jsx";
 import VerificationCard from "../components/profile/VerificationCard.jsx";
 import { logoutUser, normalizeUserPayload } from "../utils/auth";
-import { OCCUPATIONS, takesInstitution, takesWorkplace, workplaceLabel } from "../utils/occupations";
+import { OCCUPATIONS, takesInstitution, takesWorkplace } from "../utils/occupations";
 import { useApp } from "../context/AppContext.jsx";
 import api from "../services/api";
+import { useLanguage } from "../i18n/LanguageContext.jsx";
 
 const AVATAR_TYPES = ["image/jpeg", "image/png", "image/webp"];
 const AVATAR_MAX_BYTES = 2 * 1024 * 1024;
@@ -24,6 +25,9 @@ const errorMessage = (err, fallback) => err?.details?.[0]?.issue || err?.message
 
 export default function Profile() {
   const { role, clearSession, applyAuthenticatedUser, switchRole } = useApp();
+  const { t } = useLanguage();
+  const tRef = useRef(t);
+  tRef.current = t;
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
 
@@ -60,7 +64,7 @@ export default function Profile() {
         if (!alive) return;
         const status = err?.status ?? err?.response?.status;
         if (status === 401 || status === 403) navigate("/login");
-        else setError(errorMessage(err, "Failed to load profile."));
+        else setError(errorMessage(err, tRef.current("profileEdit.loadError")));
       })
       .finally(() => alive && setLoading(false));
     return () => {
@@ -92,9 +96,9 @@ export default function Profile() {
       setMe(updated);
       setForm(toFormState(updated));
       syncContext(updated);
-      setSuccess("Profile updated successfully.");
+      setSuccess(t("profileEdit.updateSuccess"));
     } catch (err) {
-      setError(errorMessage(err, "Failed to update profile."));
+      setError(errorMessage(err, t("profileEdit.updateError")));
     } finally {
       setSaving(false);
     }
@@ -112,11 +116,11 @@ export default function Profile() {
     if (!file) return;
     setAvatarError("");
     if (!AVATAR_TYPES.includes(file.type)) {
-      setAvatarError("Please choose a JPG, PNG or WebP image.");
+      setAvatarError(t("profileEdit.avatarTypeError"));
       return;
     }
     if (file.size > AVATAR_MAX_BYTES) {
-      setAvatarError("The image must be 2 MB or smaller.");
+      setAvatarError(t("profileEdit.avatarSizeError"));
       return;
     }
     try {
@@ -126,21 +130,21 @@ export default function Profile() {
       const result = await api.users.uploadAvatar(body);
       applyAvatar(result.profile_picture_url);
     } catch (err) {
-      setAvatarError(errorMessage(err, "Could not upload the picture."));
+      setAvatarError(errorMessage(err, t("profileEdit.avatarUploadError")));
     } finally {
       setAvatarBusy(false);
     }
   };
 
   const handleAvatarRemove = async () => {
-    if (!window.confirm("Remove your profile picture?")) return;
+    if (!window.confirm(t("profileEdit.removePhotoConfirm"))) return;
     try {
       setAvatarBusy(true);
       setAvatarError("");
       await api.users.removeAvatar();
       applyAvatar(null);
     } catch (err) {
-      setAvatarError(errorMessage(err, "Could not remove the picture."));
+      setAvatarError(errorMessage(err, t("profileEdit.avatarRemoveError")));
     } finally {
       setAvatarBusy(false);
     }
@@ -166,13 +170,13 @@ export default function Profile() {
           <div className="profile-card">
             <div className="profile-header">
               {pictureUrl ? (
-                <img src={pictureUrl} alt="Profile" className="profile-avatar profile-avatar-lg" referrerPolicy="no-referrer" />
+                <img src={pictureUrl} alt={t("profileEdit.profilePhotoAlt")} className="profile-avatar profile-avatar-lg" referrerPolicy="no-referrer" />
               ) : (
                 <span className="profile-avatar profile-avatar-lg">{avatarInitial}</span>
               )}
               <div className="profile-header-text">
-                <h1>My Profile</h1>
-                <p>View and manage your account information.</p>
+                <h1>{t("profileEdit.title")}</h1>
+                <p>{t("profileEdit.subtitle")}</p>
                 <div className="avatar-actions">
                   <input
                     ref={fileInputRef}
@@ -187,11 +191,11 @@ export default function Profile() {
                     onClick={() => fileInputRef.current?.click()}
                     disabled={avatarBusy || loading}
                   >
-                    {avatarBusy ? "Working..." : pictureUrl ? "Change photo" : "Upload photo"}
+                    {avatarBusy ? t("profileEdit.working") : pictureUrl ? t("profileEdit.changePhoto") : t("profileEdit.uploadPhoto")}
                   </button>
                   {pictureUrl ? (
                     <button type="button" className="btn btn-ghost btn-sm" onClick={handleAvatarRemove} disabled={avatarBusy}>
-                      Remove
+                      {t("profileEdit.remove")}
                     </button>
                   ) : null}
                 </div>
@@ -199,31 +203,31 @@ export default function Profile() {
               </div>
             </div>
 
-            {loading ? <p>Loading profile...</p> : null}
+            {loading ? <p>{t("profileEdit.loading")}</p> : null}
             {error ? <p className="profile-error">{error}</p> : null}
             {success ? <p className="profile-success">{success}</p> : null}
 
             <form className="profile-grid" onSubmit={handleUpdateProfile}>
               <label className="field">
-                <span>Name</span>
+                <span>{t("profileEdit.name")}</span>
                 <input type="text" name="name" value={form.name} onChange={handleInputChange} required />
               </label>
               <label className="field">
-                <span>Email</span>
+                <span>{t("profileEdit.email")}</span>
                 <input type="email" name="email" value={form.email} readOnly disabled />
-                <small className="field-hint">Email can't be changed here.</small>
+                <small className="field-hint">{t("profileEdit.emailCannotChange")}</small>
               </label>
               <label className="field">
-                <span>Contact Number</span>
+                <span>{t("profileEdit.contactNumber")}</span>
                 <input type="text" name="contact_number" value={form.contact_number} onChange={handleInputChange} required />
               </label>
               <label className="field">
-                <span>Occupation</span>
+                <span>{t("profileEdit.occupation")}</span>
                 <select name="occupation" value={form.occupation} onChange={handleInputChange}>
-                  <option value="">Select occupation</option>
+                  <option value="">{t("profileEdit.selectOccupation")}</option>
                   {OCCUPATIONS.map((o) => (
                     <option key={o.value} value={o.value}>
-                      {o.label}
+                      {t(`profileEdit.occupations.${o.value}`)}
                     </option>
                   ))}
                 </select>
@@ -231,45 +235,45 @@ export default function Profile() {
 
               {takesInstitution(form.occupation) ? (
                 <label className="field">
-                  <span>Institution name</span>
+                  <span>{t("profileEdit.institutionName")}</span>
                   <input
                     type="text"
                     name="institution_name"
                     value={form.institution_name}
                     onChange={handleInputChange}
-                    placeholder="e.g. University of Dhaka"
+                    placeholder={t("profileEdit.institutionPlaceholder")}
                   />
                 </label>
               ) : null}
               {takesWorkplace(form.occupation) ? (
                 <label className="field">
-                  <span>{workplaceLabel(form.occupation)}</span>
+                  <span>{form.occupation === "businessman" ? t("profileEdit.businessName") : t("profileEdit.workplace")}</span>
                   <input
                     type="text"
                     name="workplace_name"
                     value={form.workplace_name}
                     onChange={handleInputChange}
-                    placeholder={form.occupation === "businessman" ? "Your business name" : "Where you work"}
+                    placeholder={form.occupation === "businessman" ? t("profileEdit.businessPlaceholder") : t("profileEdit.workplacePlaceholder")}
                   />
                 </label>
               ) : null}
 
               <label className="field field-wide">
-                <span>Address</span>
+                <span>{t("profileEdit.address")}</span>
                 <input type="text" name="address" value={form.address} onChange={handleInputChange} />
               </label>
 
               <div className="profile-actions">
                 <button type="submit" className="btn btn-primary" disabled={saving || loading}>
-                  {saving ? "Saving..." : "Save changes"}
+                  {saving ? t("profileEdit.saving") : t("profileEdit.saveChanges")}
                 </button>
                 {me ? (
                   <Link className="btn btn-ghost" to={`/users/${me.user_id}`}>
-                    View public profile
+                    {t("profileEdit.viewPublicProfile")}
                   </Link>
                 ) : null}
                 <button type="button" className="btn btn-ghost" onClick={handleLogout}>
-                  Logout
+                  {t("user.logout")}
                 </button>
               </div>
             </form>
