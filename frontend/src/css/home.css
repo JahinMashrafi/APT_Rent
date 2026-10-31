@@ -10,7 +10,10 @@
   align-items: center;   /* vertically centers everything below, incl. the search bar */
   justify-content: center;
   padding: 64px 0;
-  overflow: hidden;
+  /* Keep the hero backdrop behind its content without clipping the filter
+     popover that extends below the search bar. */
+  overflow: visible;
+  isolation: isolate;
   color: var(--color-paper);
 }
 
@@ -36,6 +39,8 @@
 }
 
 .hero-inner {
+  position: relative;
+  z-index: 2;
   max-width: 760px;
   margin-inline: auto;
   text-align: center;

@@ -15,7 +15,6 @@
     "browseListings": "বিজ্ঞাপন ব্রাউজ করুন",
     "notAvailable": "—"
   },
-
   "nav": {
     "browse": "ব্রাউজ",
     "applications": "আবেদনসমূহ",
@@ -27,21 +26,18 @@
     "adminPanel": "অ্যাডমিন প্যানেল",
     "mainNavigation": "প্রধান নেভিগেশন"
   },
-
   "role": {
     "tenant": "ভাড়াটিয়া",
     "landlord": "বাড়িওয়ালা",
     "admin": "অ্যাডমিন",
     "switch": "ভূমিকা পরিবর্তন"
   },
-
   "auth": {
     "login": "লগ ইন",
     "register": "নিবন্ধন",
     "showPassword": "পাসওয়ার্ড দেখান",
     "hidePassword": "পাসওয়ার্ড লুকান"
   },
-
   "notif": {
     "title": "বিজ্ঞপ্তি",
     "markAllRead": "সব পঠিত করুন",
@@ -49,7 +45,6 @@
     "goInbox": "ইনবক্সে যান →",
     "viewTours": "ভিজিটের অনুরোধ দেখুন →"
   },
-
   "time": {
     "justNow": "এইমাত্র",
     "minutesAgo": "{count} মিনিট আগে",
@@ -68,7 +63,6 @@
     "monthsAgoShort": "{count} মাস আগে",
     "yearsAgoShort": "{count} বছর আগে"
   },
-
   "user": {
     "menu": "ব্যবহারকারী মেনু",
     "viewProfile": "প্রোফাইল দেখুন",
@@ -76,21 +70,17 @@
     "inbox": "ইনবক্স",
     "logout": "লগ আউট"
   },
-
   "lang": {
     "label": "ভাষা",
     "en": "English",
     "bn": "বাংলা"
   },
-
   "mobile": {
     "toggle": "মোবাইল মেনু"
   },
-
   "footer": {
-  "brand": "আপাতে রেন্ট // প্রতিষ্ঠিত ২০২৬"
+    "brand": "আপাতে রেন্ট // প্রতিষ্ঠিত ২০২৬"
   },
-
   "pwa": {
     "newVersion": "অ্যাপের একটি নতুন সংস্করণ পাওয়া যাচ্ছে।",
     "update": "আপডেট",
@@ -104,11 +94,9 @@
     "iosThen": ", তারপর",
     "iosAdd": "হোম স্ক্রিনে যোগ করুন"
   },
-
   "modal": {
     "close": "মডাল বন্ধ করুন"
   },
-
   "status": {
     "active": "সক্রিয়",
     "approved": "অনুমোদিত",
@@ -125,14 +113,12 @@
     "vacant": "খালি",
     "hidden": "লুকানো"
   },
-
   "home": {
     "eyebrow": "যাচাইকৃত বিজ্ঞাপন · ডিজিটাল চুক্তি · নগদবিহীন ভাড়া",
     "title": "আপনার পরবর্তী বাসা খুঁজুন",
     "note": "সরাসরি বিজ্ঞাপন, ফিল্টার ও সংরক্ষিত অনুসন্ধান পেতে সাইন ইন করুন।",
     "explore": "উপলব্ধ বাসাগুলো দেখুন"
   },
-
   "search": {
     "formAria": "অ্যাপার্টমেন্ট অনুসন্ধান ও ফিল্টার",
     "placeholder": "এলাকা দিয়ে খুঁজুন, যেমন গুলশান, ধানমন্ডি...",
@@ -155,13 +141,11 @@
     "clearFilters": "মুছুন",
     "applyFilters": "ফিল্টার প্রয়োগ করুন"
   },
-
   "feed": {
     "loading": "বিজ্ঞাপন লোড হচ্ছে…",
     "loadError": "বিজ্ঞাপন লোড করা যায়নি।",
     "empty": "আপনার অনুসন্ধানের সাথে মিলে এমন কোনো অ্যাপার্টমেন্ট এখনো নেই।"
   },
-
   "listing": {
     "untitled": "শিরোনামহীন বিজ্ঞাপন",
     "noPhotos": "এখনো কোনো ছবি নেই",
@@ -177,13 +161,13 @@
     "linkCopied": "সম্পত্তির লিংক কপি হয়েছে!",
     "copyFailed": "লিংক কপি করা যায়নি। অনুগ্রহ করে ঠিকানা বার থেকে কপি করুন।"
   },
-
   "pagination": {
     "aria": "নিউজফিড পৃষ্ঠা নম্বর",
     "prev": "আগের",
-    "next": "পরের"
+    "next": "পরের",
+    "goToPage": "{page} নম্বর পৃষ্ঠায় যান",
+    "pageStatus": "পৃষ্ঠা {current} / {total}"
   },
-
   "applications": {
     "eyebrow": "ভাড়াটিয়া পোর্টাল",
     "title": "আমার আবেদনসমূহ",
@@ -193,7 +177,6 @@
     "applied": "আবেদন করা হয়েছে {when}",
     "today": "আজ"
   },
-
   "contracts": {
     "eyebrow": "ভাড়া চুক্তির নথি",
     "title": "আমার চুক্তিসমূহ",
@@ -248,7 +231,6 @@
     "downloadPdf": "পিডিএফ ডাউনলোড",
     "pdfPending": "চুক্তিপত্র এখনো তৈরি হচ্ছে — একটু পরে আবার দেখুন, অথবা বাড়িওয়ালাকে চুক্তিটি আবার সংরক্ষণ করতে বলুন।"
   },
-
   "inbox": {
     "messages": "বার্তাসমূহ",
     "searchPlaceholder": "কথোপকথন খুঁজুন...",
@@ -264,7 +246,6 @@
     "back": "কথোপকথনে ফিরে যান",
     "send": "বার্তা পাঠান"
   },
-
   "rent": {
     "eyebrow": "ভাড়া ও বিল",
     "title": "আপনার ভাড়া পরিশোধ করুন",
@@ -309,7 +290,6 @@
       "cash": "নগদ"
     }
   },
-
   "payment": {
     "amount": "পরিশোধের পরিমাণ",
     "tabCard": "কার্ড",
@@ -335,7 +315,6 @@
     "errCvv": "সিভিভি সঠিক নয়",
     "errName": "নাম আবশ্যক"
   },
-
   "login": {
     "welcome": "আবার স্বাগতম",
     "tagline": "যেখানে চুক্তি থেমেছিল, সেখান থেকেই শুরু করুন।",
@@ -358,7 +337,6 @@
     "createAccount": "অ্যাকাউন্ট খুলুন",
     "genericError": "কিছু একটা ভুল হয়েছে"
   },
-
   "register": {
     "eyebrowJoin": "APT Rent-এ যোগ দিন",
     "tagline": "একটি প্রোফাইল, একবার যাচাই, সবখানে ব্যবহার।",
@@ -419,8 +397,7 @@
     "errUpload": "অ্যাকাউন্ট তৈরি হয়েছে, কিন্তু নথি আপলোড ব্যর্থ হয়েছে: {message}",
     "errGeneric": "নিবন্ধন ব্যর্থ হয়েছে"
   },
-
-    "addProperty": {
+  "addProperty": {
     "titleNew": "নতুন প্রপার্টি যোগ করুন",
     "titleEdit": "লিস্টিং সম্পাদনা করুন",
     "address": "ঠিকানা",
@@ -515,71 +492,79 @@
     "show": "দেখান",
     "hide": "লুকান",
     "noProperties": "আপনি এখনও কোনো প্রপার্টি তালিকাভুক্ত করেননি।",
-     "applicationsTitle": "ভাড়াটিয়ার আবেদন",
-  "filterAll": "সব",
-  "reviewProfile": "প্রোফাইল দেখুন",
-  "proposeTour": "ভিজিটের প্রস্তাব দিন",
-  "offerLease": "লিজ প্রস্তাব করুন",
-  "noApplications": "কোনো আবেদন পাওয়া যায়নি।",
-  "ledgerTitle": "ভাড়ার খতিয়ান",
-  "ledgerUnavailable": "ভাড়ার খতিয়ান এখন পাওয়া যাচ্ছে না।",
-  "receivableThisMonth": "এই মাসে প্রাপ্য",
-  "collected": "আদায় হয়েছে",
-  "pendingAmount": "অপেক্ষমাণ",
-  "dueBy": "{date} এর মধ্যে পরিশোধ্য",
-  "noContracts": "এখনও কোনো সক্রিয় চুক্তি নেই।"
-},
-"propertyDetails": {
-  "backToListings": "তালিকায় ফিরে যান",
-  "loadingTitle": "প্রপার্টি লোড হচ্ছে...",
-  "loadingBody": "সর্বশেষ প্রপার্টির তথ্য আনা হচ্ছে।",
-  "unableToLoad": "প্রপার্টি লোড করা যায়নি",
-  "notFound": "প্রপার্টি পাওয়া যায়নি",
-  "notFoundBody": "আপনি যে প্রপার্টিটি খুঁজছেন সেটি নেই অথবা সরিয়ে ফেলা হয়েছে।",
-  "loadFailed": "এই প্রপার্টিটি লোড করা যায়নি।",
-  "perMonth": "/মাস",
-  "securityDeposit": "জামানত: {amount}",
-  "requestTour": "ভিজিটের অনুরোধ করুন",
-  "tourShort": "ভিজিট",
-  "contactLandlord": "বাড়িওয়ালার সাথে যোগাযোগ",
-  "applyToRent": "ভাড়ার জন্য আবেদন করুন",
-  "applicationSent": "আবেদন পাঠানো হয়েছে",
-  "sending": "পাঠানো হচ্ছে…",
-  "applyFailed": "আপনার আবেদন পাঠানো যায়নি — একটু পরে আবার চেষ্টা করুন।",
-  "secureVerified": "নিরাপদ ও যাচাইকৃত প্ল্যাটফর্ম",
-  "beds": "{count}টি বেডরুম",
-  "beds_one": "{count}টি বেডরুম",
-  "baths": "{count}টি বাথরুম",
-  "baths_one": "{count}টি বাথরুম",
-  "sqft": "{count} বর্গফুট",
-  "floor": "{count} তলা",
-  "liftAvailable": "লিফট আছে",
-  "noLift": "লিফট নেই",
-  "amenities": "সুযোগ-সুবিধা",
-  "description": "বিবরণ",
-  "readMore": "[আরও পড়ুন]",
-  "readLess": "[কম দেখুন]",
-  "aboutLandlord": "বাড়িওয়ালা সম্পর্কে",
-  "verifiedLandlord": "যাচাইকৃত বাড়িওয়ালা",
-  "responseTime": "উত্তরের সময়: {value}",
-  "withinDay": "এক দিনের মধ্যে",
-  "memberSince": "সদস্য হয়েছেন: {year}",
-  "locationTitle": "অবস্থান",
-  "whatTenantsSay": "ভাড়াটিয়ারা কী বলছেন",
-  "noReviews": "এই প্রপার্টির জন্য এখনও কোনো রিভিউ নেই",
-  "reviewCount": "{count}টি রিভিউ",
-  "reviewCount_one": "{count}টি রিভিউ"
-},
-
-"amenity": {
-  "balcony": "বারান্দা", "lift": "লিফট", "elevator": "লিফট",
-  "generator": "জেনারেটর", "parking": "পার্কিং", "gas_line": "গ্যাস লাইন",
-  "gas": "গ্যাস", "security_guard": "নিরাপত্তা প্রহরী",
-  "rooftop_access": "ছাদে প্রবেশাধিকার", "wifi": "ওয়াইফাই", "gym": "জিম",
-  "swimming_pool": "সুইমিং পুল", "cctv": "সিসিটিভি",
-  "air_conditioning": "এয়ার কন্ডিশনিং", "water_24_7": "২৪/৭ পানি",
-  "garden": "বাগান"
-},
+    "applicationsTitle": "ভাড়াটিয়ার আবেদন",
+    "filterAll": "সব",
+    "reviewProfile": "প্রোফাইল দেখুন",
+    "proposeTour": "ভিজিটের প্রস্তাব দিন",
+    "offerLease": "লিজ প্রস্তাব করুন",
+    "noApplications": "কোনো আবেদন পাওয়া যায়নি।",
+    "ledgerTitle": "ভাড়ার খতিয়ান",
+    "ledgerUnavailable": "ভাড়ার খতিয়ান এখন পাওয়া যাচ্ছে না।",
+    "receivableThisMonth": "এই মাসে প্রাপ্য",
+    "collected": "আদায় হয়েছে",
+    "pendingAmount": "অপেক্ষমাণ",
+    "dueBy": "{date} এর মধ্যে পরিশোধ্য",
+    "noContracts": "এখনও কোনো সক্রিয় চুক্তি নেই।"
+  },
+  "propertyDetails": {
+    "backToListings": "তালিকায় ফিরে যান",
+    "loadingTitle": "প্রপার্টি লোড হচ্ছে...",
+    "loadingBody": "সর্বশেষ প্রপার্টির তথ্য আনা হচ্ছে।",
+    "unableToLoad": "প্রপার্টি লোড করা যায়নি",
+    "notFound": "প্রপার্টি পাওয়া যায়নি",
+    "notFoundBody": "আপনি যে প্রপার্টিটি খুঁজছেন সেটি নেই অথবা সরিয়ে ফেলা হয়েছে।",
+    "loadFailed": "এই প্রপার্টিটি লোড করা যায়নি।",
+    "perMonth": "/মাস",
+    "securityDeposit": "জামানত: {amount}",
+    "requestTour": "ভিজিটের অনুরোধ করুন",
+    "tourShort": "ভিজিট",
+    "contactLandlord": "বাড়িওয়ালার সাথে যোগাযোগ",
+    "applyToRent": "ভাড়ার জন্য আবেদন করুন",
+    "applicationSent": "আবেদন পাঠানো হয়েছে",
+    "sending": "পাঠানো হচ্ছে…",
+    "applyFailed": "আপনার আবেদন পাঠানো যায়নি — একটু পরে আবার চেষ্টা করুন।",
+    "secureVerified": "নিরাপদ ও যাচাইকৃত প্ল্যাটফর্ম",
+    "beds": "{count}টি বেডরুম",
+    "beds_one": "{count}টি বেডরুম",
+    "baths": "{count}টি বাথরুম",
+    "baths_one": "{count}টি বাথরুম",
+    "sqft": "{count} বর্গফুট",
+    "floor": "{count} তলা",
+    "liftAvailable": "লিফট আছে",
+    "noLift": "লিফট নেই",
+    "amenities": "সুযোগ-সুবিধা",
+    "description": "বিবরণ",
+    "readMore": "[আরও পড়ুন]",
+    "readLess": "[কম দেখুন]",
+    "aboutLandlord": "বাড়িওয়ালা সম্পর্কে",
+    "verifiedLandlord": "যাচাইকৃত বাড়িওয়ালা",
+    "responseTime": "উত্তরের সময়: {value}",
+    "withinDay": "এক দিনের মধ্যে",
+    "memberSince": "সদস্য হয়েছেন: {year}",
+    "locationTitle": "অবস্থান",
+    "whatTenantsSay": "ভাড়াটিয়ারা কী বলছেন",
+    "noReviews": "এই প্রপার্টির জন্য এখনও কোনো রিভিউ নেই",
+    "reviewCount": "{count}টি রিভিউ",
+    "reviewCount_one": "{count}টি রিভিউ"
+  },
+  "amenity": {
+    "balcony": "বারান্দা",
+    "lift": "লিফট",
+    "elevator": "লিফট",
+    "generator": "জেনারেটর",
+    "parking": "পার্কিং",
+    "gas_line": "গ্যাস লাইন",
+    "gas": "গ্যাস",
+    "security_guard": "নিরাপত্তা প্রহরী",
+    "rooftop_access": "ছাদে প্রবেশাধিকার",
+    "wifi": "ওয়াইফাই",
+    "gym": "জিম",
+    "swimming_pool": "সুইমিং পুল",
+    "cctv": "সিসিটিভি",
+    "air_conditioning": "এয়ার কন্ডিশনিং",
+    "water_24_7": "২৪/৭ পানি",
+    "garden": "বাগান"
+  },
   "tours": {
     "eyebrow": "ভিজিটের অনুরোধ",
     "title": "ভিজিট অনুরোধসমূহ",
@@ -644,44 +629,5 @@
     "whoLandlord": "বাড়িওয়ালা",
     "whoTenantShort": "ভাড়াটিয়া",
     "whoLandlordShort": "বাড়িওয়ালা"
-  },
-  "profileView": {
-      "loading": "প্রোফাইল লোড হচ্ছে…",
-      "notFound": "এই প্রোফাইলটি পাওয়া যায়নি।",
-      "loadFailed": "প্রোফাইল লোড করা যায়নি।",
-      "verified": "যাচাইকৃত",
-      "memberSince": "{date} থেকে সদস্য",
-      "reviewCount": "{count}টি রিভিউ",
-      "reviewCount_one": "{count}টি রিভিউ",
-      "noReviewsYet": "এখনো কোনো রিভিউ নেই",
-      "editProfile": "প্রোফাইল সম্পাদনা",
-      "background": "ব্যক্তিগত তথ্য",
-      "occupation": "পেশা",
-      "institution": "শিক্ষাপ্রতিষ্ঠান",
-      "business": "ব্যবসা",
-      "workplace": "কর্মস্থল",
-      "noBackground": "এখনো কোনো ব্যক্তিগত তথ্য যোগ করা হয়নি।",
-      "contact": "যোগাযোগ",
-      "email": "ইমেইল",
-      "phone": "ফোন",
-      "address": "ঠিকানা",
-      "availableListings": "ভাড়ার জন্য উপলব্ধ বাসা",
-      "monthlyRate": "{price}/মাস",
-      "bedCount": "{count}টি বেডরুম",
-      "bedCount_one": "{count}টি বেডরুম",
-      "bathCount": "{count}টি বাথরুম",
-      "bathCount_one": "{count}টি বাথরুম",
-      "squareFeet": "{count} বর্গফুট",
-      "reviews": "রিভিউসমূহ",
-      "noReviews": "এখনো কোনো রিভিউ নেই।",
-      "ratingOutOfFive": "৫-এর মধ্যে {rating}",
-      "occupations": {
-          "student": "শিক্ষার্থী",
-          "service_holder": "চাকরিজীবী",
-          "businessman": "ব্যবসায়ী",
-          "unemployed": "বেকার",
-          "retired": "অবসরপ্রাপ্ত",
-          "other": "অন্যান্য"
-      }
   }
 }

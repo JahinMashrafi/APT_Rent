@@ -356,36 +356,191 @@
 
 /* ============================ 6. PAGINATION ============================= */
 
+/* A compact floating control, using APT Rent's blueprint-and-brass palette. */
 .pagination-bar {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
-  margin-top: 2.5rem;
-  flex-wrap: wrap;
+  gap: 0.7rem;
+  margin: 2.8rem auto 1.25rem;
+  padding-inline: 0.75rem;
+}
+
+.pagination-shell {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  max-width: 100%;
+  padding: 0.38rem;
+  border: 1px solid rgba(27, 42, 65, 0.12);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 14px 34px -24px rgba(27, 42, 65, 0.48),
+    0 3px 10px rgba(27, 42, 65, 0.04);
+}
+
+.pagination-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.42rem;
+  min-width: 42px;
+  min-height: 42px;
+  padding: 0 0.82rem;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--color-ink, #1b2a41);
+  font-size: 0.8rem;
+  font-weight: 650;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+  transition: background-color 160ms ease, color 160ms ease,
+    border-color 160ms ease, transform 160ms ease;
+}
+
+.pagination-action:not(:disabled):hover {
+  border-color: rgba(200, 155, 60, 0.28);
+  background: rgba(200, 155, 60, 0.11);
+  transform: translateY(-1px);
+}
+
+.pagination-action:focus-visible,
+.pagination-number:focus-visible {
+  outline: 2px solid var(--color-blueprint, #2f5d8a);
+  outline-offset: 2px;
+}
+
+.pagination-action:disabled {
+  color: rgba(27, 42, 65, 0.3);
+  cursor: not-allowed;
+}
+
+.pagination-divider {
+  width: 1px;
+  height: 23px;
+  flex: 0 0 1px;
+  background: rgba(27, 42, 65, 0.11);
 }
 
 .pagination-numbers {
   display: flex;
-  gap: 0.4rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.2rem;
   list-style: none;
   padding: 0;
   margin: 0;
 }
 
-.pagination-btn {
-  min-width: 38px;
-  height: 38px;
-  border-radius: 8px;
-  border: 1px solid #ddd;
-  background: #fff;
-  cursor: pointer;
+.pagination-number {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 11px;
+  background: transparent;
+  color: #536174;
+  font-size: 0.88rem;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  transition: color 160ms ease, background-color 160ms ease,
+    border-color 160ms ease, transform 160ms ease, box-shadow 160ms ease;
+}
+
+.pagination-number:not(.is-current):hover {
+  border-color: rgba(27, 42, 65, 0.1);
+  background: #f7f5ef;
+  color: var(--color-ink, #1b2a41);
+  transform: translateY(-1px);
 }
 
 .pagination-number.is-current {
-  background: #111;
+  border-color: var(--color-ink, #1b2a41);
+  background: var(--color-ink, #1b2a41);
   color: #fff;
-  border-color: #111;
+  box-shadow: 0 5px 12px rgba(27, 42, 65, 0.2);
+}
+
+.pagination-number.is-current::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 4px;
+  width: 12px;
+  height: 2px;
+  border-radius: 999px;
+  background: var(--color-brass, #c89b3c);
+  transform: translateX(-50%);
+}
+
+.pagination-ellipsis {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 40px;
+  color: #9aa3af;
+  font-size: 1.05rem;
+  letter-spacing: 0.04em;
+  user-select: none;
+}
+
+.pagination-status {
+  margin: 0;
+  color: #8993a1;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+@media (max-width: 520px) {
+  .pagination-bar {
+    margin-top: 2rem;
+  }
+
+  .pagination-shell {
+    gap: 0.16rem;
+    padding: 0.28rem;
+    border-radius: 15px;
+  }
+
+  .pagination-action {
+    width: 38px;
+    min-width: 38px;
+    min-height: 38px;
+    padding: 0;
+    border-radius: 10px;
+  }
+
+  .pagination-action-label {
+    display: none;
+  }
+
+  .pagination-divider {
+    height: 20px;
+  }
+
+  .pagination-numbers {
+    gap: 0.06rem;
+  }
+
+  .pagination-number {
+    width: 34px;
+    height: 36px;
+    border-radius: 9px;
+    font-size: 0.82rem;
+  }
+
+  .pagination-ellipsis {
+    width: 17px;
+    height: 36px;
+  }
 }
 .search-clear-btn {
   background: transparent;

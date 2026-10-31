@@ -28,48 +28,71 @@ export default function PropertyDetails() {
   const [property, setProperty] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
-  // Collect the property address and title for translation.
-  const addressesToTranslate = useMemo(() => {
-    const values = [property?.address, property?.title];
+  // Collect all user-visible property text that should be translated:
+  // address, title, location address, and the listing description.
+  // The existing translation endpoint caches these strings in Supabase.
+  const propertyTextsToTranslate = useMemo(() => {
+    const values = [
+      property?.address,
+      property?.location?.address,
+      property?.title,
+      property?.description,
+    ];
 
     return [
       ...new Set(
         values
           .filter((value) => typeof value === "string")
           .map((value) => value.trim())
-          .filter(Boolean)
+          // The existing backend translation endpoint accepts up to 500 UTF-8 bytes per item.
+          // Skip longer text so it cannot block translation of the other property fields.
+          .filter(
+            (value) =>
+              value.length > 0 &&
+              new TextEncoder().encode(value).length <= 500
+          )
       ),
     ];
-  }, [property?.address, property?.title]);
+  }, [
+    property?.address,
+    property?.location?.address,
+    property?.title,
+    property?.description,
+  ]);
 
   // Translate only when Bangla is selected.
-  const addressTranslations = useAddressTranslations(
-    addressesToTranslate,
+  const propertyTextTranslations = useAddressTranslations(
+    propertyTextsToTranslate,
     lang === "bn"
   );
 
-  // Get the translated address.
-  const displayAddress =
-    typeof property?.address === "string"
-      ? lang === "bn"
-        ? addressTranslations[property.address.trim()] || property.address
-        : property.address
-      : property?.address;
+  // Keep the original value in English and fall back to it if translation
+  // is unavailable. This is also used for owner-written descriptions.
+  const getDisplayText = (value) => {
+    if (typeof value !== "string" || lang !== "bn") return value;
 
-  // Get the translated title.
-  const displayTitle =
-    typeof property?.title === "string"
-      ? lang === "bn"
-        ? addressTranslations[property.title.trim()] || property.title
-        : property.title
-      : property?.title;
+    return propertyTextTranslations[value.trim()] || value;
+  };
 
-  // Create a display-only property object.
+  const displayAddress = getDisplayText(property?.address);
+  const displayLocationAddress = getDisplayText(property?.location?.address);
+  const displayTitle = getDisplayText(property?.title);
+  const displayDescription = getDisplayText(property?.description);
+
+  // Create a display-only property object. Do not alter the original data
+  // used by the API or saved in the database.
   const displayProperty = property
     ? {
         ...property,
         address: displayAddress,
         title: displayTitle,
+        description: displayDescription,
+        location: property.location
+          ? {
+              ...property.location,
+              address: displayLocationAddress,
+            }
+          : property.location,
       }
     : property;
 
