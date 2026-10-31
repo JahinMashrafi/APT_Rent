@@ -38,6 +38,8 @@
 }
 
 .hero-inner {
+  position: relative;
+  z-index: 2;
   max-width: 760px;
   margin-inline: auto;
   text-align: center;

@@ -54,9 +54,7 @@ export default function Login() {
               alt="APT Rent logo"
               className="brand-logo"
             />
-            <span className="brand-name">
-              APT<span> Rent</span>
-            </span>
+            
           </a>
 
           <div className="auth-brand-copy">

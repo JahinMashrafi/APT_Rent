@@ -47,7 +47,36 @@ export default function SearchFilterBar({
     ...initialRest,
   });
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const filterWrapperRef = useRef(null);
   const skipInitialLiveSearch = useRef(true);
+
+  // Close the popover when the user interacts anywhere outside the filter
+  // button/panel. Pointer events cover mouse, touch, and pen input. Because
+  // the toggle lives inside the wrapper, clicking it again still toggles it
+  // closed through its own onClick handler.
+  useEffect(() => {
+    if (!isFilterOpen) return undefined;
+
+    function handleOutsidePointerDown(event) {
+      if (!filterWrapperRef.current?.contains(event.target)) {
+        setIsFilterOpen(false);
+      }
+    }
+
+    function handleEscape(event) {
+      if (event.key === "Escape") {
+        setIsFilterOpen(false);
+      }
+    }
+
+    document.addEventListener("pointerdown", handleOutsidePointerDown);
+    document.addEventListener("keydown", handleEscape);
+
+    return () => {
+      document.removeEventListener("pointerdown", handleOutsidePointerDown);
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, [isFilterOpen]);
 
   // Keep the input in sync when the URL changes from outside.
   // For example: Home hero -> /browse?search=Gulshan, or browser back/forward.
@@ -153,7 +182,10 @@ export default function SearchFilterBar({
       </div>
 
       {/* ================= FILTER BUTTON (beside search) ================= */}
-      <div className="newsfeed-filter-wrapper">
+      <div
+        ref={filterWrapperRef}
+        className={`newsfeed-filter-wrapper${isFilterOpen ? " is-open" : ""}`}
+      >
         <button
           type="button"
           className="btn btn-outline newsfeed-filter-toggle"
