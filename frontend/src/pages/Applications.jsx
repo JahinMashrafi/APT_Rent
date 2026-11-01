@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { FileText, Clock } from "lucide-react";
 import AppNavbar from "../components/AppNavbar.jsx";
@@ -8,6 +9,7 @@ import "../css/global.css";
 import "../css/navbar.css";
 import "../css/modules.css";
 import { useLanguage } from "../i18n/LanguageContext.jsx";
+import { useAddressTranslations } from "../hooks/useAddressTranslations.js";
 
 const STATUS_BADGE = {
   pending: "badge-warn",
@@ -26,14 +28,31 @@ function appliedWhen(iso, t) {
   const days = Math.floor(diff / (1000 * 60 * 60 * 24));
 
   if (days < 1) return t("applications.today");
-  if (days === 1) return t("applications.oneDayAgo");
-
-  return t("applications.daysAgo", { count: days });
+  return t("time.daysAgo", { count: days });
 }
 
 export default function Applications() {
-  const { t, tx } = useLanguage();
+  const { t, tx, lang } = useLanguage();
   const [applications, setApplications] = useState([]);
+
+  // The tenant application API currently supplies the property address as
+  // the property's display title. Translate those addresses only in Bangla.
+  const applicationAddresses = useMemo(
+    () =>
+      applications
+        .map(
+          (application) =>
+            application.propertyAddress ??
+            application.propertyTitle ??
+            application.property?.address
+        )
+        .filter((address) => typeof address === "string" && address.trim()),
+    [applications]
+  );
+  const translatedAddresses = useAddressTranslations(
+    applicationAddresses,
+    lang === "bn"
+  );
   const [loadError, setLoadError] = useState("");
 
   useEffect(() => {
@@ -51,10 +70,10 @@ export default function Applications() {
         setApplications(items);
         setLoadError("");
       })
-      .catch((error) => {
+      .catch(() => {
         if (!cancelled) {
           setApplications([]);
-          setLoadError(error.message || "__default__");
+          setLoadError("__default__");
         }
       });
 
@@ -138,57 +157,74 @@ export default function Applications() {
               gap: "12px",
             }}
           >
-            {applications.map((application) => (
-              <div
-                key={application.id}
-                className="mod-card mod-card-pad"
-                style={{
-                  display: "flex",
-                  flexWrap: "wrap",
-                  alignItems: "center",
-                  gap: "1rem",
-                  justifyContent: "space-between",
-                }}
-              >
-                <div style={{ flex: "1 1 220px" }}>
-                  <Link
-                    to={`/property/${application.propertyId}`}
-                    style={{
-                      fontWeight: 600,
-                      color: "var(--color-text-strong)",
-                      fontFamily: "var(--font-display)",
-                    }}
-                  >
-                    {application.propertyTitle ??
-                      application.property?.title}
-                  </Link>
+            {applications.map((application) => {
+              const propertyAddress =
+                application.propertyAddress ??
+                application.propertyTitle ??
+                application.property?.address;
+              const displayPropertyAddress =
+                (lang === "bn" &&
+                  typeof propertyAddress === "string" &&
+                  translatedAddresses[propertyAddress.trim()]) ||
+                propertyAddress ||
+                t("applications.untitledProperty");
+              const normalizedStatus = String(
+                application.status ?? "pending"
+              )
+                .trim()
+                .toLowerCase();
 
-                  <p
-                    style={{
-                      fontSize: "0.82rem",
-                      color: "var(--color-blueprint)",
-                      marginTop: "2px",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "4px",
-                    }}
-                  >
-                    <Clock size={13} />
-                    {t("applications.applied", {
-                      when: appliedWhen(application.appliedAt, t),
-                    })}
-                  </p>
-                </div>
-
-                <span
-                  className={`badge ${
-                    STATUS_BADGE[application.status] ?? "badge-neutral"
-                  }`}
+              return (
+                <div
+                  key={application.id}
+                  className="mod-card mod-card-pad"
+                  style={{
+                    display: "flex",
+                    flexWrap: "wrap",
+                    alignItems: "center",
+                    gap: "1rem",
+                    justifyContent: "space-between",
+                  }}
                 >
-                  {tx("status", application.status ?? "pending")}
-                </span>
-              </div>
-            ))}
+                  <div style={{ flex: "1 1 220px" }}>
+                    <Link
+                      to={`/property/${application.propertyId}`}
+                      style={{
+                        fontWeight: 600,
+                        color: "var(--color-ink)",
+                        fontFamily: "var(--font-display)",
+                      }}
+                    >
+                      {displayPropertyAddress}
+                    </Link>
+
+                    <p
+                      style={{
+                        fontSize: "0.82rem",
+                        color: "var(--color-blueprint)",
+                        marginTop: "2px",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "4px",
+                      }}
+                    >
+                      <Clock size={13} />
+                      {t("applications.applied", {
+                        when: appliedWhen(application.appliedAt, t),
+                      })}
+                    </p>
+                  </div>
+
+                  <span
+                    className={`badge ${
+                      STATUS_BADGE[normalizedStatus] ?? "badge-neutral"
+                    }`}
+                  >
+                    {tx("status", normalizedStatus, t("status.pending"))}
+                  </span>
+                </div>
+              );
+            })}
           </div>
         )}
       </main>

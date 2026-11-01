@@ -28,7 +28,7 @@ router.get("/:id/profile", requireAuth, getProfileDetail);
 
 // Admin-only: these used to have no authentication at all.
 router.get("/", requireAuth, requireAdmin, getUsers);
-router.get("/:id", getPublicProfile);
+router.get("/:id", requireAuth, getPublicProfile);
 router.put("/:id", requireAuth, requireAdmin, updateUser);
 router.patch("/:id", requireAuth, requireAdmin, updateUser);
 router.delete("/:id", requireAuth, requireAdmin, deleteUser);

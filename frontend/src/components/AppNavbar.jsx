@@ -27,6 +27,8 @@ import LanguageSwitcher from "./LanguageSwitcher.jsx";
 import ThemeToggle from "./ThemeToggle.jsx";
 import Breadcrumbs from "./Breadcrumbs.jsx";
 
+import logoEnglish from "../assets/images/logo/apt-rent-logo1.png";
+import logoBangla from "../assets/images/logo/apt-rent-logo2.png";
 // =============================================================================
 // AppNavbar.jsx — Unified role-aware navigation bar
 // =============================================================================
@@ -42,6 +44,7 @@ import Breadcrumbs from "./Breadcrumbs.jsx";
 // NOTE: `label` is now a translation key, rendered with t(label)
 const navLinks = {
   tenant: [
+    { label: "nav.dashboard", to: "/tenant", icon: LayoutDashboard },
     { label: "nav.browse", to: "/dashboard", icon: Home },
     { label: "nav.applications", to: "/applications", icon: FileText },
     { label: "nav.contracts", to: "/contracts", icon: FileSignature },
@@ -81,7 +84,7 @@ function notificationDestination(notification, role) {
   }
 
   if (link === "/notifications") return role === "landlord" ? "/landlord" : "/inbox";
-  if (link.startsWith("/applications/")) return "/applications";
+  if (link.startsWith("/applications/")) return role === "landlord" ? "/landlord?tab=applications" : "/applications";
   if (link === "/appointments" || link.startsWith("/appointments/")) {
     return role === "landlord" ? "/tour-requests" : "/dashboard";
   }
@@ -152,7 +155,11 @@ export default function AppNavbar() {
     <header className="app-navbar">
       <div className="app-navbar-inner">
         <Link to="/" className="app-navbar-brand">
-          <img src="/assets/images/logo/apt-rent-logo.png" alt="APT Rent" className="app-navbar-logo" />
+          <img
+            src={i18n.lang === "bn" ? logoBangla : logoEnglish}
+            alt={i18n.lang === "bn" ? "আপাতে রেন্ট" : "APT Rent"}
+            className="app-navbar-logo"
+          />
         </Link>
 
         <nav className="app-nav-links" aria-label={t("nav.mainNavigation")}>
@@ -291,6 +298,7 @@ export default function AppNavbar() {
                         })
                       )}
                     </ul>
+                    <Link to="/notifications" className="notif-view-all" onClick={() => setNotifOpen(false)}>{t("notif.viewAll")}</Link>
 
                     {notifications.length > 0 && (
                       <div className="app-dropdown-footer">

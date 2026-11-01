@@ -6,6 +6,7 @@ import { useLanguage } from "../i18n/LanguageContext.jsx";
 import { useToast } from "./ui/Toast.jsx";
 import { hasLiftIn } from "../services/adapters";
 import SaveButton from "./SaveButton.jsx";
+import AvailabilityBadge from "./AvailabilityBadge.jsx";
 
 // Clipboard API needs HTTPS/localhost; this fallback covers plain-http and older browsers.
 async function copyText(text) {
@@ -34,7 +35,7 @@ async function copyText(text) {
   }
 }
 
-export default function ApartmentCard({ apartment }) {
+export default function ApartmentCard({ apartment, translatedAddress }) {
   const { showToast } = useToast();
   const { t, pick, timeAgo, formatNumber, formatCurrency } = useLanguage();
 
@@ -43,10 +44,12 @@ export default function ApartmentCard({ apartment }) {
   const listedAt =
     apartment.listedAt ?? apartment.createdAt ?? apartment.created_at;
 
-  const address =
-    pick(apartment, "address") ??
-    pick(apartment, "title") ??
-    t("listing.untitled");
+  const originalAddress =
+  pick(apartment, "address") ??
+  pick(apartment, "title") ??
+  t("listing.untitled");
+
+const address = translatedAddress || originalAddress;
 
   const pricePerMonth = apartment.pricePerMonth ?? apartment.rate ?? 0;
   const bedrooms = apartment.bedrooms ?? apartment.bedroom ?? "—";
@@ -96,6 +99,7 @@ export default function ApartmentCard({ apartment }) {
       className="apartment-card"
       aria-label={t("listing.viewDetails", { address })}
     >
+      <span className="apartment-card-badge"><AvailabilityBadge status={apartment.availabilityStatus} /></span>
       <div className="apartment-card-tools">
         <SaveButton propertyId={id} />
       </div>

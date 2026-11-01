@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+
+import { useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { ArrowLeft, Building2 } from "lucide-react";
 import AppNavbar from "../components/AppNavbar.jsx";
@@ -11,23 +12,92 @@ import api from "../services/api";
 import { adaptProperty } from "../services/adapters";
 import { useApp } from "../context/AppContext.jsx";
 import SaveButton from "../components/SaveButton.jsx";
+import AvailabilityBadge from "../components/AvailabilityBadge.jsx";
 import { useBreadcrumbLabel } from "../hooks/useBreadcrumbLabel.js";
 import "../css/global.css";
 import "../css/navbar.css";
 import "../css/newsfeed-home.css";
 import "../css/modules.css";
 import { useLanguage } from "../i18n/LanguageContext.jsx";
+import { useAddressTranslations } from "../hooks/useAddressTranslations.js";
 
 export default function PropertyDetails() {
   const { id, propertyId } = useParams();
   const navigate = useNavigate();
   const { currentUser, authReady } = useApp();
-  const { t } = useLanguage();
+  const { t, lang } = useLanguage();
 
   const targetId = id || propertyId;
   const [property, setProperty] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
+  // Collect all user-visible property text that should be translated:
+  // address, title, location address, and the listing description.
+  // The existing translation endpoint caches these strings in Supabase.
+  const propertyTextsToTranslate = useMemo(() => {
+    const values = [
+      property?.address,
+      property?.location?.address,
+      property?.title,
+      property?.description,
+    ];
+
+    return [
+      ...new Set(
+        values
+          .filter((value) => typeof value === "string")
+          .map((value) => value.trim())
+          // The existing backend translation endpoint accepts up to 500 UTF-8 bytes per item.
+          // Skip longer text so it cannot block translation of the other property fields.
+          .filter(
+            (value) =>
+              value.length > 0 &&
+              new TextEncoder().encode(value).length <= 500
+          )
+      ),
+    ];
+  }, [
+    property?.address,
+    property?.location?.address,
+    property?.title,
+    property?.description,
+  ]);
+
+  // Translate only when Bangla is selected.
+  const propertyTextTranslations = useAddressTranslations(
+    propertyTextsToTranslate,
+    lang === "bn"
+  );
+
+  // Keep the original value in English and fall back to it if translation
+  // is unavailable. This is also used for owner-written descriptions.
+  const getDisplayText = (value) => {
+    if (typeof value !== "string" || lang !== "bn") return value;
+
+    return propertyTextTranslations[value.trim()] || value;
+  };
+
+  const displayAddress = getDisplayText(property?.address);
+  const displayLocationAddress = getDisplayText(property?.location?.address);
+  const displayTitle = getDisplayText(property?.title);
+  const displayDescription = getDisplayText(property?.description);
+
+  // Create a display-only property object. Do not alter the original data
+  // used by the API or saved in the database.
+  const displayProperty = property
+    ? {
+        ...property,
+        address: displayAddress,
+        title: displayTitle,
+        description: displayDescription,
+        location: property.location
+          ? {
+              ...property.location,
+              address: displayLocationAddress,
+            }
+          : property.location,
+      }
+    : property;
 
   useEffect(() => {
     let cancelled = false;
@@ -161,7 +231,7 @@ export default function PropertyDetails() {
             <ArrowLeft size={15} />{" "}
             {t("propertyDetails.backToListings")}
           </button>
-          <SaveButton propertyId={property.id} variant="full" />
+          <div className="fx-actions"><AvailabilityBadge status={property.availabilityStatus} /><SaveButton propertyId={property.id} variant="full" /></div>
         </div>
 
         {/* Two-column layout */}
@@ -174,12 +244,12 @@ export default function PropertyDetails() {
               gap: "2.5rem",
             }}
           >
-            <ImageSlider
-              images={property.photos}
-              title={property.title}
-            />
+                <ImageSlider
+                  images={property.photos}
+                  title={displayTitle}
+                />
 
-            <PropertyInfo property={property} />
+            <PropertyInfo property={displayProperty} />
 
             <div
               style={{
@@ -190,8 +260,8 @@ export default function PropertyDetails() {
               <PropertyLocation
                 lat={property.lat}
                 lng={property.lng}
-                title={property.title}
-                address={property.address}
+                title={displayTitle}
+                address={displayAddress}
               />
             </div>
 

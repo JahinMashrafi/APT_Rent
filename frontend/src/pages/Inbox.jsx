@@ -34,6 +34,9 @@ const formatConvTime = (iso) => {
   const [searchParams, setSearchParams] = useSearchParams();
 
   const [conversations, setConversations] = useState([]);
+  // Newly created threads stay out of the inbox list until their first
+  // message is saved. Keep one such thread available for the open chat view.
+  const [draftConversation, setDraftConversation] = useState(null);
   const [messagesByConv, setMessagesByConv] = useState({});
   const [activeConvId, setActiveConvId] = useState(null);
   const [messageText, setMessageText] = useState('');
@@ -49,12 +52,15 @@ const formatConvTime = (iso) => {
   // Whether a successful list response has landed yet — decides if a
   // failure should fall back to demo data.
   const loadedOnceRef = useRef(false);
+  const conversationsRequestRef = useRef(0);
   // Last lastMessageTime we've rendered per conversation. Used to decide
   // whether a poll actually brought anything new, so polling never yanks
   // the view around while someone is reading or typing.
   const lastSeenRef = useRef({});
 
-  const activeConv = conversations.find((c) => c.id === activeConvId);
+  const activeConv =
+    conversations.find((c) => String(c.id) === String(activeConvId)) ||
+    (String(draftConversation?.id) === String(activeConvId) ? draftConversation : null);
   const activeMessages = activeConvId ? messagesByConv[activeConvId] ?? [] : [];
 
   useEffect(() => {
@@ -67,6 +73,7 @@ const formatConvTime = (iso) => {
 
   const applyMockData = useCallback(() => {
     setConversations(mockConversations);
+    setDraftConversation(null);
     const seeded = {};
     mockConversations.forEach((c) => {
       seeded[c.id] = c.messages ?? [];
@@ -85,11 +92,19 @@ const formatConvTime = (iso) => {
   }, []);
 
   const loadConversations = useCallback(async () => {
+    const requestId = ++conversationsRequestRef.current;
     try {
       const data = await api.conversations.list();
       const items = data?.data ?? [];
+      // An older poll must not overwrite a more recent conversation list.
+      if (requestId !== conversationsRequestRef.current) return items;
       loadedOnceRef.current = true;
       setConversations(items);
+      setDraftConversation((current) =>
+        current && items.some((item) => String(item.id) === String(current.id))
+          ? null
+          : current
+      );
       setListReady(true);
       return items;
     } catch {
@@ -143,12 +158,13 @@ const formatConvTime = (iso) => {
   }, [authReady, currentUser, navigate, location.search]);
 
   const openConversation = useCallback(
-    (convId) => {
+    (convId, fallbackConversation = null) => {
       setActiveConvId(convId);
       setMobileView('chat');
       // Seed the change-detector so opening a thread isn't mistaken for
       // "new messages arrived" by the poll effect below.
-      const conv = conversations.find((c) => c.id === convId);
+      const conv = conversations.find((c) => String(c.id) === String(convId));
+      setDraftConversation(!conv && fallbackConversation ? fallbackConversation : null);
       if (conv) lastSeenRef.current[convId] = String(conv.lastMessageTime);
       loadMessages(convId);
       api.conversations.markRead(convId).catch(() => {});
@@ -199,7 +215,13 @@ const formatConvTime = (iso) => {
           const created = (items ?? []).find(
             (c) => String(c.id) === String(result?.conversation_id)
           );
-          if (created) openConversation(created.id);
+          if (created) {
+            openConversation(created.id);
+          } else if (result?.conversation) {
+            // The new conversation is intentionally missing from the list
+            // because it has no messages yet; open it as a draft instead.
+            openConversation(result.conversation.id, result.conversation);
+          }
         })
         .catch((error) => {
           showToast({
@@ -257,6 +279,44 @@ const formatConvTime = (iso) => {
             m.id === tempId ? { ...saved, pending: false } : m
           ),
         }));
+
+        // A draft becomes a visible inbox conversation only after the first
+        // message has been successfully persisted by the backend.
+        setConversations((prev) => {
+          const alreadyListed = prev.some(
+            (conversation) => String(conversation.id) === String(activeConvId)
+          );
+
+          if (alreadyListed) {
+            return prev.map((conversation) =>
+              String(conversation.id) === String(activeConvId)
+                ? {
+                    ...conversation,
+                    lastMessage: saved?.text ?? text,
+                    lastMessageTime: saved?.timestamp ?? new Date().toISOString(),
+                  }
+                : conversation
+            );
+          }
+
+          if (draftConversation && String(draftConversation.id) === String(activeConvId)) {
+            return [
+              {
+                ...draftConversation,
+                lastMessage: saved?.text ?? text,
+                lastMessageTime: saved?.timestamp ?? new Date().toISOString(),
+              },
+              ...prev,
+            ];
+          }
+          return prev;
+        });
+
+        if (draftConversation && String(draftConversation.id) === String(activeConvId)) {
+          setDraftConversation(null);
+        }
+        // Reconcile the optimistic list entry with the persisted backend row.
+        loadConversations();
       })
       .catch(() => {
         setMessagesByConv((prev) => ({

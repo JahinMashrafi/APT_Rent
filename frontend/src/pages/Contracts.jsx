@@ -5,7 +5,7 @@
  * ============================================================================
  */
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { FileText, ChevronDown, ChevronUp, Clock, PenLine, Download, Receipt } from "lucide-react";
 import AppNavbar from "../components/AppNavbar.jsx";
@@ -16,6 +16,7 @@ import "../css/global.css";
 import "../css/navbar.css";
 import "../css/modules.css";
 import { useLanguage } from "../i18n/LanguageContext.jsx";
+import { useAddressTranslations } from "../hooks/useAddressTranslations.js";
 
 const STATUS_BADGE = {
   draft: "badge-warn",
@@ -23,7 +24,8 @@ const STATUS_BADGE = {
   signed_by_tenant: "badge-warn",
   fully_signed: "badge-ink",
   active: "badge-success",
-
+  terminated: "badge-error",
+  completed: "badge-neutral",
 };
 
 
@@ -32,6 +34,24 @@ export default function Contracts() {
   const { currentUser } = useApp();
   const { t, tx, lang, formatCurrency, digits } = useLanguage();
   const [contracts, setContracts] = useState([]);
+  // Collect contract property addresses.
+  const addressesToTranslate = useMemo(
+    () =>
+      contracts
+        .map((contract) =>
+          typeof contract.property_address === "string"
+            ? contract.property_address.trim()
+            : ""
+        )
+        .filter(Boolean),
+    [contracts]
+  );
+
+  // Translate contract addresses in Bangla mode.
+  const addressTranslations = useAddressTranslations(
+    addressesToTranslate,
+    lang === "bn"
+  );
   const [loadError, setLoadError] = useState("");
   const [openId, setOpenId] = useState(null);
   const [details, setDetails] = useState({});
@@ -75,6 +95,18 @@ export default function Contracts() {
         .getById(contractId)
         .then((contract) => setDetails((prev) => ({ ...prev, [contractId]: contract })))
         .catch(() => setDetails((prev) => ({ ...prev, [contractId]: null })));
+    }
+  };
+
+  // Landlord-only: confirm a fully signed lease is live, or terminate any open contract.
+  const runAction = async (contract, action) => {
+    if (action === "terminate" && !window.confirm(t("contracts.terminateConfirm"))) return;
+    try {
+      await api.contracts[action](contract.contract_id);
+      const fresh = await api.contracts.list();
+      setContracts(fresh?.data ?? []);
+    } catch (error) {
+      window.alert(error?.message || t("contracts.actionFailed"));
     }
   };
 
@@ -207,6 +239,15 @@ export default function Contracts() {
           <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
             {contracts.map((contract) => {
               const isOpen = openId === contract.contract_id;
+              const originalAddress =
+                typeof contract.property_address === "string"
+                  ? contract.property_address.trim()
+                  : "";
+
+              const displayAddress =
+                lang === "bn"
+                  ? addressTranslations[originalAddress] || originalAddress
+                  : originalAddress;
               const detail = details[contract.contract_id];
               const other = counterparty(contract);
               const isOwner = String(contract.owner?.user_id) === String(currentUser?.id);
@@ -226,7 +267,7 @@ export default function Contracts() {
                         onClick={(e) => e.stopPropagation()}
                         style={{ fontWeight: 600, color: "var(--color-text-strong)", fontFamily: "var(--font-display)" }}
                       >
-                        {contract.property_address}
+                        {displayAddress}
                       </Link>
                       <p style={{ fontSize: "0.82rem", color: "var(--color-blueprint)", marginTop: "2px", display: "flex", alignItems: "center", gap: "4px" }}>
                         <Clock size={13} /> {t("contracts.contractNo", { id: digits(contract.contract_id) })} · {other.label}: {other.name}
@@ -263,6 +304,20 @@ export default function Contracts() {
                     {isOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
                   </button>
 
+                  {/* Landlord actions: make a fully signed lease active, or terminate any open contract */}
+                  {isOwner && !["terminated", "completed"].includes(contract.status) && (
+                    <div className="fx-actions" style={{ marginTop: 12 }}>
+                      {contract.status === "fully_signed" && (
+                        <button type="button" className="btn btn-primary btn-sm" onClick={() => runAction(contract, "activate")}>
+                          {t("contracts.makeActive")}
+                        </button>
+                      )}
+                      <button type="button" className="btn btn-ghost btn-sm" onClick={() => runAction(contract, "terminate")}>
+                        {t("contracts.terminate")}
+                      </button>
+                    </div>
+                  )}
+
                   {isOpen && (
                     <div style={{ borderTop: "1px solid var(--color-line)", marginTop: "1rem", paddingTop: "1rem" }}>
                       {detail === undefined ? (
@@ -296,12 +351,12 @@ export default function Contracts() {
                                 <p style={{ color: "var(--color-blueprint)" }}>
                                   {t("contracts.proposalSentNote")} {t("contracts.awaitingResponse")}
                                 </p>
-                            )}
+                              )}
                               {detail.can_accept && (
                                 <button type="button" className="btn btn-primary" onClick={() => acceptContract(contract)} style={{ marginBottom: "0.75rem" }}>
                                   {isOwner ? t("contracts.acceptTenantProposal") : t("contracts.acceptTerms")}
                                 </button>
-                            )}
+                              )}
                               {acceptError[contract.contract_id] && <p role="alert" style={{ color: "var(--color-error)", marginBottom: "0.75rem" }}>{acceptError[contract.contract_id]}</p>}
                               {detail.can_counter && (
                                 <form onSubmit={(event) => { event.preventDefault(); submitNegotiation(contract); }}>
@@ -320,98 +375,98 @@ export default function Contracts() {
                                     {isOwner ? t("contracts.sendCounter") : t("contracts.sendProposal")}
                                   </button>
                                   {negotiationError[contract.contract_id] && <p role="alert" style={{ color: "var(--color-error)", marginTop: "0.5rem" }}>{negotiationError[contract.contract_id]}</p>}
-                              </form>
-                            )}
-                          </div>
-                        )}
-
-                        {detail.can_sign && (
-                          <div style={{ borderTop: "1px solid var(--color-line)", paddingTop: "1rem", marginBottom: "1rem" }}>
-                            <strong style={{ display: "block", marginBottom: "0.5rem", color: "var(--color-text-strong)" }}>{t("contracts.signTitle")}</strong>
-                            <p style={{ color: "var(--color-charcoal)", fontSize: "0.85rem" }}>{t("contracts.signHelp")}</p>
-                            <button type="button" className="btn btn-primary" disabled={signatureBusy[contract.contract_id]} onClick={() => uploadSignature(contract)}>
-                              {signatureBusy[contract.contract_id] ? t("contracts.uploading") : t("contracts.uploadSignature")}
-                            </button>
-                            {signatureError[contract.contract_id] && <p role="alert" style={{ color: "var(--color-error)" }}>{signatureError[contract.contract_id]}</p>}
-                          </div>
-                        )}
-
-                        {detail.negotiation_state === "TERMS_ACCEPTED" && contract.status === "draft" && (
-                          <p style={{ color: "var(--color-success)", marginTop: "0.5rem" }}>{t("contracts.acceptedNote")}</p>
-                      )}
-
-                        {detail.terms_and_conditions && (
-                          <div style={{ marginBottom: "1rem" }}>
-                            <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.72rem", color: "var(--color-blueprint)", display: "block", marginBottom: "4px" }}>{t("contracts.terms")}</span>
-                            <p style={{ color: "var(--color-charcoal)", fontSize: "0.9rem", lineHeight: 1.6, margin: 0 }}>{detail.terms_and_conditions}</p>
-                          </div>
-                        )}
-
-                        <div style={{ display: "flex", gap: "2rem", flexWrap: "wrap", marginBottom: "1.5rem" }}>
-                          {[
-                            { label: t("contracts.landlordSignature"), url: detail.owner_signature_url },
-                            { label: t("contracts.tenantSignature"), url: detail.tenant_signature_url },
-                          ].map((sig) => (
-                            <div key={sig.label}>
-                              <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.72rem", color: "var(--color-blueprint)", display: "block", marginBottom: "4px" }}>{sig.label}</span>
-                              {sig.url ? (
-                                <img src={sig.url} alt={sig.label} style={{ maxHeight: "56px", border: "1px solid var(--color-line)", borderRadius: "var(--radius-sm)", background: "#fff" }} />
-                              ) : (
-                                <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", color: "var(--color-charcoal)", fontSize: "0.85rem" }}>
-                                  <PenLine size={13} /> {t("contracts.notSigned")}
-                                </span>
+                                </form>
                               )}
                             </div>
-                          ))}
-                        </div>
-
-                        <div>
-                          <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.72rem", color: "var(--color-blueprint)", display: "block", marginBottom: "8px" }}>
-                            {t("contracts.leaseDocument")}
-                          </span>
-
-                          {detail.contract_pdf_url ? (
-                            <>
-                              <div
-                                style={{
-                                  border: "1px solid var(--color-line)",
-                                  borderRadius: "var(--radius-sm)",
-                                  overflow: "hidden",
-                                  height: "420px",
-                                  marginBottom: "10px",
-                                }}
-                              >
-                                <iframe
-                                  src={detail.contract_pdf_url}
-                                  title={t("contracts.pdfTitle", { id: digits(contract.contract_id) })}
-                                  style={{ width: "100%", height: "100%", border: "none" }}
-                                />
-                              </div>
-                              <a
-                                href={detail.contract_pdf_url}
-                                download={`lease-contract-${contract.contract_id}.pdf`}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="btn btn-primary"
-                                style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}
-                              >
-                                <Download size={16} /> {t("contracts.downloadPdf")}
-                              </a>
-                            </>
-                          ) : (
-                            <p style={{ color: "var(--color-charcoal)", fontSize: "0.85rem" }}>
-                              {t("contracts.pdfPending")}
-                            </p>
                           )}
-                        </div>
-                      </>
-                    )}
+
+                          {detail.can_sign && (
+                            <div style={{ borderTop: "1px solid var(--color-line)", paddingTop: "1rem", marginBottom: "1rem" }}>
+                              <strong style={{ display: "block", marginBottom: "0.5rem", color: "var(--color-text-strong)" }}>{t("contracts.signTitle")}</strong>
+                              <p style={{ color: "var(--color-charcoal)", fontSize: "0.85rem" }}>{t("contracts.signHelp")}</p>
+                              <button type="button" className="btn btn-primary" disabled={signatureBusy[contract.contract_id]} onClick={() => uploadSignature(contract)}>
+                                {signatureBusy[contract.contract_id] ? t("contracts.uploading") : t("contracts.uploadSignature")}
+                              </button>
+                              {signatureError[contract.contract_id] && <p role="alert" style={{ color: "var(--color-error)" }}>{signatureError[contract.contract_id]}</p>}
+                            </div>
+                          )}
+
+                          {detail.negotiation_state === "TERMS_ACCEPTED" && contract.status === "draft" && (
+                            <p style={{ color: "var(--color-success)", marginTop: "0.5rem" }}>{t("contracts.acceptedNote")}</p>
+                          )}
+
+                          {detail.terms_and_conditions && (
+                            <div style={{ marginBottom: "1rem" }}>
+                              <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.72rem", color: "var(--color-blueprint)", display: "block", marginBottom: "4px" }}>{t("contracts.terms")}</span>
+                              <p style={{ color: "var(--color-charcoal)", fontSize: "0.9rem", lineHeight: 1.6, margin: 0 }}>{detail.terms_and_conditions}</p>
+                            </div>
+                          )}
+
+                          <div style={{ display: "flex", gap: "2rem", flexWrap: "wrap", marginBottom: "1.5rem" }}>
+                            {[
+                              { label: t("contracts.landlordSignature"), url: detail.owner_signature_url },
+                              { label: t("contracts.tenantSignature"), url: detail.tenant_signature_url },
+                            ].map((sig) => (
+                              <div key={sig.label}>
+                                <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.72rem", color: "var(--color-blueprint)", display: "block", marginBottom: "4px" }}>{sig.label}</span>
+                                {sig.url ? (
+                                  <img src={sig.url} alt={sig.label} style={{ maxHeight: "56px", border: "1px solid var(--color-line)", borderRadius: "var(--radius-sm)", background: "#fff" }} />
+                                ) : (
+                                  <span style={{ display: "inline-flex", alignItems: "center", gap: "4px", color: "var(--color-charcoal)", fontSize: "0.85rem" }}>
+                                    <PenLine size={13} /> {t("contracts.notSigned")}
+                                  </span>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+
+                          <div>
+                            <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.72rem", color: "var(--color-blueprint)", display: "block", marginBottom: "8px" }}>
+                              {t("contracts.leaseDocument")}
+                            </span>
+
+                            {detail.contract_pdf_url ? (
+                              <>
+                                <div
+                                  style={{
+                                    border: "1px solid var(--color-line)",
+                                    borderRadius: "var(--radius-sm)",
+                                    overflow: "hidden",
+                                    height: "420px",
+                                    marginBottom: "10px",
+                                  }}
+                                >
+                                  <iframe
+                                    src={detail.contract_pdf_url}
+                                    title={t("contracts.pdfTitle", { id: digits(contract.contract_id) })}
+                                    style={{ width: "100%", height: "100%", border: "none" }}
+                                  />
+                                </div>
+                                <a
+                                  href={detail.contract_pdf_url}
+                                  download={`lease-contract-${contract.contract_id}.pdf`}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="btn btn-primary"
+                                  style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}
+                                >
+                                  <Download size={16} /> {t("contracts.downloadPdf")}
+                                </a>
+                              </>
+                            ) : (
+                              <p style={{ color: "var(--color-charcoal)", fontSize: "0.85rem" }}>
+                                {t("contracts.pdfPending")}
+                              </p>
+                            )}
+                          </div>
+                        </>
+                      )}
                     </div>
-                )}
+                  )}
                 </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
         )}
       </main>
 

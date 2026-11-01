@@ -7,6 +7,7 @@ const path = require("path");
 
 const authRoutes = require("./routes/authRoutes");
 const userRoutes = require("./routes/userRoutes");
+const addressTranslationRoutes = require("./routes/addressTranslation");
 const propertyRoutes = require('./routes/propertyRoutes');
 const applicationRoutes = require("./routes/applicationRoutes");
 const appointmentRoutes = require("./routes/appointmentRoutes");
@@ -23,6 +24,9 @@ const { initSocket } = require("./utils/socket.js");
 const appointmentRescheduleRoutes = require("./routes/appointmentRescheduleRoutes");
 const { startAppointmentSweeper } = require("./services/appointmentLifecycle.js");
 const savedRoutes = require("./routes/savedRoutes");
+const tenantRoutes = require("./routes/tenantRoutes");
+const unitsRoutes = require("./routes/unitsRoutes");
+const contractActionRoutes = require("./routes/contractActionRoutes");
 const { envelopeLegacyResponses, notFoundHandler, errorHandler } = require("./middleware/errorEnvelope.js");
 
 const app = express();
@@ -35,6 +39,10 @@ app.use(cors({
 }));
 app.use(express.json());
 app.use(cookieParser());
+
+// Address translation API
+app.use("/api/translate", addressTranslationRoutes);
+
 app.use(envelopeLegacyResponses);
 
 app.use("/api/auth", authRoutes);
@@ -53,6 +61,9 @@ app.use("/api/notifications", notificationRoutes);
 app.use("/api/users", reviewRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/saved", savedRoutes);
+app.use("/api/tenant", tenantRoutes);
+app.use("/api/units", unitsRoutes);
+app.use("/api/contracts", contractActionRoutes);
 //app,use(cors());
 
 app.get("/", (req, res) => {

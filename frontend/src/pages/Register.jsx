@@ -158,7 +158,7 @@ export default function Register() {
                 </div>
 
                 <div className="field" data-field="nidPhoto">
-                  <label htmlFor="nidPhoto">{t("register.nidPhoto")} <span className="req">*</span></label>
+                  <label htmlFor="nidPhoto">{t("register.nidPhoto")} <span className="req"></span></label>
                   <label className="upload-zone" htmlFor="nidPhoto">
                     <img src="/assets/icons/upload.svg" alt="" />
                     <span className="upload-copy">
@@ -172,7 +172,7 @@ export default function Register() {
               </div>
 
               <div className="field" data-field="address" data-required="true">
-                <label htmlFor="address">{t("register.address")} <span className="req">*</span></label>
+                <label htmlFor="address">{t("register.address")} <span className="req"></span></label>
                 <div className="input-shell">
                   <input type="text" id="address" name="address" placeholder={t("register.addressPlaceholder")} value={formData.address} onChange={handleInputChange} />
                 </div>
