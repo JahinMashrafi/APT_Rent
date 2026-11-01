@@ -26,6 +26,7 @@ const { startAppointmentSweeper } = require("./services/appointmentLifecycle.js"
 const savedRoutes = require("./routes/savedRoutes");
 const tenantRoutes = require("./routes/tenantRoutes");
 const unitsRoutes = require("./routes/unitsRoutes");
+const contractActionRoutes = require("./routes/contractActionRoutes");
 const { envelopeLegacyResponses, notFoundHandler, errorHandler } = require("./middleware/errorEnvelope.js");
 
 const app = express();
@@ -62,6 +63,7 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/saved", savedRoutes);
 app.use("/api/tenant", tenantRoutes);
 app.use("/api/units", unitsRoutes);
+app.use("/api/contracts", contractActionRoutes);
 //app,use(cors());
 
 app.get("/", (req, res) => {

@@ -165,15 +165,42 @@ const createContract = async (req, res) => {
       return res.status(403).json({ success: false, message: "You do not own this property" });
     }
 
-    const result = await pool.query(
-      `INSERT INTO contracts (owner_id, property_id, tenant_id, rate, deposit, start_date, end_date,
-                              terms_and_conditions, negotiation_status)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'owner_proposed')
-       RETURNING contract_id, owner_id, tenant_id, property_id, rate, deposit, start_date, end_date,
-                 status, negotiation_status, created_at`,
-      [ownerId, property_id, tenant_id, rate, deposit ?? 0, start_date, end_date, terms_and_conditions || null],
-    );
-    const contract = result.rows[0];
+    // One open contract per (property, tenant). The advisory lock makes two simultaneous
+    // "approve" clicks queue up, so the second one sees the first one's row and is refused.
+    const client = await pool.connect();
+    let contract;
+    try {
+      await client.query("BEGIN");
+      await client.query("SELECT pg_advisory_xact_lock($1)", [Number(property_id)]);
+      const dup = await client.query(
+        `SELECT contract_id, status::text AS status FROM contracts
+          WHERE property_id = $1 AND tenant_id = $2 AND status::text NOT IN ('terminated', 'completed')
+          ORDER BY contract_id DESC LIMIT 1`,
+        [property_id, tenant_id],
+      );
+      if (dup.rows.length > 0) {
+        await client.query("ROLLBACK");
+        return res.status(409).json({
+          success: false,
+          message: `A contract (#${dup.rows[0].contract_id}, ${dup.rows[0].status}) already exists for this tenant and property. Terminate it first if you need a new one.`,
+        });
+      }
+      const result = await client.query(
+        `INSERT INTO contracts (owner_id, property_id, tenant_id, rate, deposit, start_date, end_date,
+                                terms_and_conditions, negotiation_status)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'owner_proposed')
+         RETURNING contract_id, owner_id, tenant_id, property_id, rate, deposit, start_date, end_date,
+                   status, negotiation_status, created_at`,
+        [ownerId, property_id, tenant_id, rate, deposit ?? 0, start_date, end_date, terms_and_conditions || null],
+      );
+      await client.query("COMMIT");
+      contract = result.rows[0];
+    } catch (txErr) {
+      await client.query("ROLLBACK").catch(() => {});
+      throw txErr;
+    } finally {
+      client.release();
+    }
 
 
     let contractPdfUrl = null;
