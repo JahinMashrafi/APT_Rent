@@ -406,3 +406,135 @@
   padding-top: 10px;
   border-top: 1px solid var(--color-line);
 }
+
+/* ---- tenant dashboard ---- */
+.td-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 24px;
+  margin: 1.5rem 0 1.25rem;
+  padding: 28px;
+  border-radius: var(--radius-md);
+  background: linear-gradient(135deg, var(--color-ink) 0%, #2b4468 100%);
+  color: var(--color-on-ink);
+  box-shadow: var(--shadow-card);
+}
+
+.td-hero h2 {
+  margin: 6px 0 10px;
+  font-size: 1.6rem;
+  color: var(--color-on-ink);
+}
+
+.td-hero h2 a {
+  color: inherit;
+}
+
+.td-hero-label {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(247, 245, 239, 0.75);
+}
+
+.td-hero-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  margin: 0 0 14px;
+  font-size: 0.92rem;
+  color: rgba(247, 245, 239, 0.9);
+}
+
+.td-hero-meta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.td-hero .td-hero-btn {
+  color: var(--color-on-ink);
+  border-color: rgba(247, 245, 239, 0.45);
+}
+
+.td-hero-rent {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  min-width: 220px;
+  padding: 18px 20px;
+  border-radius: var(--radius-md);
+  background: rgba(247, 245, 239, 0.1);
+  border: 1px solid rgba(247, 245, 239, 0.22);
+}
+
+.td-hero-rent strong {
+  font-family: var(--font-stencil);
+  font-size: 2.2rem;
+  color: var(--color-on-ink);
+}
+
+.td-stats {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  margin-bottom: 1.25rem;
+}
+
+.td-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 18px;
+  background: var(--color-white);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  color: var(--color-blueprint);
+}
+
+.td-stat-label {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  color: var(--color-muted);
+}
+
+.td-stat strong {
+  font-size: 1.4rem;
+  color: var(--color-text-strong);
+}
+
+.td-stat strong.is-bad {
+  color: var(--color-error);
+}
+
+.td-stat strong.is-good {
+  color: var(--color-success);
+}
+
+.td-months {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.td-months li {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--color-line);
+  color: var(--color-charcoal);
+}
+
+.td-months li:last-child {
+  border-bottom: none;
+}
+
+@media (max-width: 720px) {
+  .td-hero {
+    grid-template-columns: 1fr;
+    padding: 20px;
+  }
+}

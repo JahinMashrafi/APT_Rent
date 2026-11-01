@@ -131,6 +131,10 @@ export const contracts = {
       .then((r) => r.data),
   payDeposit: (contractId, payload) =>
     apiClient.post(`/contracts/${contractId}/deposit`, payload).then((r) => r.data),
+  activate: (contractId) =>
+    apiClient.patch(`/contracts/${contractId}/activate`).then((r) => r.data),
+  terminate: (contractId) =>
+    apiClient.patch(`/contracts/${contractId}/terminate`).then((r) => r.data),
 };
 
 // ---------------------------------------------------------------------------

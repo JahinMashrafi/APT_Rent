@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Home, Search } from "lucide-react";
+import { Home, Search, BedDouble, Ruler, Calendar, Banknote, CheckCircle2, AlertTriangle, Clock } from "lucide-react";
 import AppNavbar from "../components/AppNavbar.jsx";
+import AvailabilityBadge from "../components/AvailabilityBadge.jsx";
 import api from "../services/api";
 import { useApp } from "../context/AppContext.jsx";
 import { useLanguage } from "../i18n/LanguageContext.jsx";
@@ -10,6 +11,7 @@ import "../css/navbar.css";
 import "../css/modules.css";
 
 const PILL = { pending: "pill-muted", paid: "pill-done", due: "pill-open", overdue: "pill-danger" };
+const ICON = { pending: Clock, paid: CheckCircle2, due: Clock, overdue: AlertTriangle };
 
 export default function TenantDashboard() {
   const { t, formatCurrency, formatDate, formatNumber } = useLanguage();
@@ -26,6 +28,8 @@ export default function TenantDashboard() {
 
   const d = state.data;
   const month = (ym) => formatDate(`${ym}-01T00:00:00`, "monthYear");
+  const day = (iso) => (iso ? formatDate(`${iso}T00:00:00`, "medium") : "—");
+  const Status = d ? ICON[d.current_month.status] : Clock;
 
   return (
     <div className="module-shell">
@@ -43,33 +47,58 @@ export default function TenantDashboard() {
           </div>
         ) : (
           <>
-            <div className="td-grid" style={{ marginTop: "1.5rem" }}>
-              <section className="mod-card mod-card-pad">
-                <span className="fx-label">{t("dash.myProperty")}</span>
-                <h2 style={{ fontSize: "1.1rem", margin: "6px 0" }}><Link to={`/property/${d.property.property_id}`}>{d.property.address}</Link></h2>
-                <p className="fx-help">{t("dash.landlord")}: {d.landlord}</p>
-                {d.lease.start_date && <p className="fx-help">{t("dash.leaseTerm", { from: formatDate(`${d.lease.start_date}T00:00:00`, "medium"), to: formatDate(`${d.lease.end_date}T00:00:00`, "medium") })}</p>}
-                <p style={{ marginTop: 8 }}><strong>{formatCurrency(d.lease.rate)}</strong> {t("dash.perMonth")}</p>
-                <Link to="/contracts" className="btn btn-ghost btn-sm" style={{ marginTop: 10 }}>{t("dash.viewLease")}</Link>
-              </section>
+            <section className="td-hero">
+              <div className="td-hero-main">
+                <span className="td-hero-label">{t("dash.myProperty")}</span>
+                <h2><Link to={`/property/${d.property.property_id}`}>{d.property.address}</Link></h2>
+                <p className="td-hero-meta">
+                  <span><BedDouble size={15} /> {t("dash.bedsBaths", { beds: formatNumber(d.property.bedroom ?? 0), baths: formatNumber(d.property.bathroom ?? 0) })}</span>
+                  {d.property.size_sqft ? <span><Ruler size={15} /> {formatNumber(d.property.size_sqft)} {t("compare.sqft")}</span> : null}
+                  <span>{t("dash.landlord")}: {d.landlord}</span>
+                </p>
+                <div className="fx-actions">
+                  <AvailabilityBadge status="rented" />
+                  <Link to="/contracts" className="btn btn-ghost btn-sm td-hero-btn">{t("dash.viewLease")}</Link>
+                </div>
+              </div>
+              <div className="td-hero-rent">
+                <span className="td-hero-label">{t("dash.thisMonth")} · {month(d.current_month.month)}</span>
+                <strong>{formatCurrency(d.lease.rate)}</strong>
+                <span className={`pill ${PILL[d.current_month.status]}`}><Status size={13} /> {t(`dash.status.${d.current_month.status}`)}</span>
+                <Link to="/rent" className="btn btn-primary btn-sm">{t("nav.payRent")}</Link>
+              </div>
+            </section>
 
-              <section className="mod-card mod-card-pad">
-                <span className="fx-label">{t("dash.thisMonth")} · {month(d.current_month.month)}</span>
-                <p className="td-big">{formatCurrency(d.lease.rate)}</p>
-                <span className={`pill ${PILL[d.current_month.status]}`}>{t(`dash.status.${d.current_month.status}`)}</span>
-                {d.current_month.status !== "paid" && <p className="fx-help" style={{ marginTop: 8 }}>{t("dash.dueBy", { date: formatDate(`${d.current_month.due_by}T00:00:00`, "long") })}</p>}
-                <br /><Link to="/rent" className="btn btn-primary btn-sm" style={{ marginTop: 10 }}>{t("nav.payRent")}</Link>
-              </section>
+            <div className="td-stats">
+              <div className="td-stat">
+                <Banknote size={20} />
+                <span className="td-stat-label">{t("dash.rentDue")}</span>
+                <strong className={d.total_due > 0 ? "is-bad" : "is-good"}>{formatCurrency(d.total_due)}</strong>
+                <span className="fx-help">{d.months_due_count === 0 ? t("dash.allPaid") : t("dash.monthsDue", { count: d.months_due_count, n: formatNumber(d.months_due_count) })}</span>
+              </div>
+              <div className="td-stat">
+                <Calendar size={20} />
+                <span className="td-stat-label">{t("dash.leaseEnds")}</span>
+                <strong>{day(d.lease.end_date)}</strong>
+                {d.lease.start_date && <span className="fx-help">{t("dash.leaseTerm", { from: day(d.lease.start_date), to: day(d.lease.end_date) })}</span>}
+              </div>
+              <div className="td-stat">
+                <Banknote size={20} />
+                <span className="td-stat-label">{t("dash.deposit")}</span>
+                <strong>{d.lease.deposit != null ? formatCurrency(d.lease.deposit) : "—"}</strong>
+              </div>
+            </div>
 
+            {d.months_due.length > 0 && (
               <section className="mod-card mod-card-pad">
-                <span className="fx-label">{t("dash.rentDue")}</span>
-                <p className="td-big">{formatCurrency(d.total_due)}</p>
-                <p className="fx-help">{d.months_due_count === 0 ? t("dash.allPaid") : t("dash.monthsDue", { count: d.months_due_count, n: formatNumber(d.months_due_count) })}</p>
-                <ul style={{ margin: "8px 0 0", padding: 0, listStyle: "none", fontSize: "0.85rem", color: "var(--color-charcoal)" }}>
-                  {d.months_due.slice(-6).map((m) => <li key={m.month}>{month(m.month)} — {formatCurrency(m.amount)}</li>)}
+                <h3 style={{ fontSize: "1rem", marginBottom: 10 }}>{t("dash.rentDue")}</h3>
+                <ul className="td-months">
+                  {d.months_due.slice(-6).map((m) => (
+                    <li key={m.month}><span>{month(m.month)}</span><strong>{formatCurrency(m.amount)}</strong></li>
+                  ))}
                 </ul>
               </section>
-            </div>
+            )}
           </>
         )}
       </main>
