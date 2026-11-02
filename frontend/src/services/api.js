@@ -229,6 +229,14 @@ export const saved = {
   remove: (propertyId) => apiClient.delete(`/saved/${propertyId}`).then((r) => r.data),
 };
 
+export const leaseSummary = {
+  preview: (propertyId, tenantId) =>
+    apiClient.get("/lease-summary/preview", { params: { property_id: propertyId, tenant_id: tenantId } }).then((r) => r.data),
+  get: (contractId) => apiClient.get(`/lease-summary/${contractId}`).then((r) => r.data),
+  update: (contractId, payload) => apiClient.patch(`/lease-summary/${contractId}`, payload).then((r) => r.data),
+  defaultTerms: (params) => apiClient.get("/lease-summary/default-terms", { params }).then((r) => r.data),
+};
+
 export const tenant = {
   dashboard: () => apiClient.get("/tenant/dashboard").then((r) => r.data),
 };
@@ -244,6 +252,7 @@ export const addressTranslations = {
       .post("/translate/addresses", { addresses })
       .then((response) => response.data),
 };
+
 const api = {
   auth,
   users,
@@ -258,6 +267,7 @@ const api = {
   landlord,
   admin,
   saved,
+  leaseSummary,
   tenant,
   units,
   addressTranslations,

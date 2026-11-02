@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Home, Search, BedDouble, Ruler, Calendar, Banknote, CheckCircle2, AlertTriangle, Clock } from "lucide-react";
 import AppNavbar from "../components/AppNavbar.jsx";
-import AvailabilityBadge from "../components/AvailabilityBadge.jsx";
 import api from "../services/api";
 import { useApp } from "../context/AppContext.jsx";
 import { useLanguage } from "../i18n/LanguageContext.jsx";
@@ -16,13 +15,13 @@ const ICON = { pending: Clock, paid: CheckCircle2, due: Clock, overdue: AlertTri
 export default function TenantDashboard() {
   const { t, formatCurrency, formatDate, formatNumber } = useLanguage();
   const { currentUser } = useApp();
-  const [state, setState] = useState({ loading: true, data: null });
+  const [state, setState] = useState({ loading: true, data: null, pending: null });
 
   useEffect(() => {
     let cancelled = false;
     api.tenant.dashboard()
-      .then((res) => { if (!cancelled) setState({ loading: false, data: res?.data ?? null }); })
-      .catch(() => { if (!cancelled) setState({ loading: false, data: null }); });
+      .then((res) => { if (!cancelled) setState({ loading: false, data: res?.data ?? null, pending: res?.pending_lease ?? null }); })
+      .catch(() => { if (!cancelled) setState({ loading: false, data: null, pending: null }); });
     return () => { cancelled = true; };
   }, []);
 
@@ -43,6 +42,13 @@ export default function TenantDashboard() {
             <Home size={44} aria-hidden="true" />
             <h2>{t("dash.noProperty")}</h2>
             <p>{t("dash.noPropertyBody")}</p>
+            {state.pending && (
+              <p className="fx-help" style={{ marginTop: 8 }}>
+                Your lease for {state.pending.address} is{" "}
+                {state.pending.status === "fully_signed" ? "fully signed — waiting for your landlord to activate it." : "still being negotiated or signed."}{" "}
+                <Link to="/contracts">View contract</Link>
+              </p>
+            )}
             <Link to="/dashboard" className="btn btn-primary" style={{ marginTop: 14 }}><Search size={15} /> {t("saved.browse")}</Link>
           </div>
         ) : (
@@ -57,7 +63,7 @@ export default function TenantDashboard() {
                   <span>{t("dash.landlord")}: {d.landlord}</span>
                 </p>
                 <div className="fx-actions">
-                  <AvailabilityBadge status="rented" />
+                  <span className="pill pill-done">{t("contracts.status.active")}</span>
                   <Link to="/contracts" className="btn btn-ghost btn-sm td-hero-btn">{t("dash.viewLease")}</Link>
                 </div>
               </div>

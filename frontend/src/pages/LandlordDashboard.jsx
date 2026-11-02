@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import AppNavbar from '../components/AppNavbar.jsx';
 import UnitsPanel from '../components/UnitsPanel.jsx';
+import LeaseSummaryModal from '../components/lease/LeaseSummaryModal.jsx';
 import Modal from '../components/ui/Modal.jsx';
 import { TrendingUp, Users, Calendar, Edit3, Eye, EyeOff, Trash2, ChevronRight, Building2, DollarSign, AlertTriangle, User, FileText, MessageSquare, Wallet } from 'lucide-react';
 import PropertyFormModal from '../components/property/PropertyFormModal.jsx';
@@ -63,6 +64,8 @@ export default function LandlordDashboard() {
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [selectedApplicant, setSelectedApplicant] = useState(null);
   const [decisionBusy, setDecisionBusy] = useState(false);
+  // Lease offer is its own step (separate from approving the application)
+  const [leaseTarget, setLeaseTarget] = useState(null);
 
   // POST /appointments — landlord proposes 3 tour slots
   const [tourTarget, setTourTarget] = useState(null);
@@ -237,9 +240,6 @@ export default function LandlordDashboard() {
     setDecisionBusy(true);
 
     const applicationId = selectedApplicant.id;
-    const propertyId = selectedApplicant.propertyId;
-    const tenantId = selectedApplicant.tenant?.id;
-    const property = properties.find((p) => p.id === propertyId);
 
     try {
       await api.applications.updateStatus(applicationId, 'approved');
@@ -251,40 +251,10 @@ export default function LandlordDashboard() {
       return;
     }
 
-    try {
-      if (!tenantId || !property) {
-        throw new Error('Application approved, but a contract could not be created (missing tenant or property).');
-      }
-
-      const today = new Date();
-      const oneYearLater = new Date(today);
-      oneYearLater.setFullYear(oneYearLater.getFullYear() + 1);
-
-      const payload = {
-        property_id: propertyId,
-        tenant_id: tenantId,
-        rate: property.pricePerMonth,
-        start_date: toLocalISODate(today),
-        end_date: toLocalISODate(oneYearLater),
-      };
-      // Spec also takes deposit; send it when the listing has one.
-      if (property.deposit != null) payload.deposit = property.deposit;
-
-      await api.contracts.create(payload);
-      showToast({
-        message: 'Lease contract created — the tenant can review, sign, and pay the deposit from Contracts.',
-        type: 'success',
-      });
-      loadLedger();
-    } catch (error) {
-      showToast({
-        message: error.message || 'Application approved, but the lease contract could not be created.',
-        type: 'error',
-      });
-    } finally {
-      setDecisionBusy(false);
-      setShowProfileModal(false);
-    }
+    // Approving only records the decision. The lease is offered separately via "Offer Lease".
+    showToast({ message: 'Application approved. Use “Offer Lease” to prepare and send the lease.', type: 'success' });
+    setDecisionBusy(false);
+    setShowProfileModal(false);
   };
 
   const handleMessageApplicant = () => {
@@ -388,7 +358,7 @@ export default function LandlordDashboard() {
         <div className="pill-tabs" style={{ marginBottom: '2rem' }}>
           <button
             className={`pill-tab ${activeTab === 'overview' ? 'is-active' : ''}`}
-            onClick={() => setActiveTab('overview')}
+            onClick={() => { setActiveTab('overview'); loadStats(); }}
           >
             {t('landlord.tabOverview')}
           </button>
@@ -652,7 +622,7 @@ export default function LandlordDashboard() {
                     </button>
                     <button
                       className="icon-action-btn primary"
-                      onClick={() => navigate(`/lease/${app.propertyId}`)}
+                      onClick={() => setLeaseTarget({ propertyId: app.propertyId, tenantId: app.tenant?.id })}
                       style={app.status !== 'approved' ? { opacity: 0.4, pointerEvents: 'none' } : {}}
                     >
                       <FileText size={18} /> {t('landlord.offerLease')}
@@ -848,6 +818,15 @@ export default function LandlordDashboard() {
             </button>
           </div>
         </Modal>
+      )}
+
+      {leaseTarget && (
+        <LeaseSummaryModal
+          propertyId={leaseTarget.propertyId}
+          tenantId={leaseTarget.tenantId}
+          onClose={() => setLeaseTarget(null)}
+          onSaved={() => { loadStats(); loadLedger(); }}
+        />
       )}
 
       {showAddModal && (
