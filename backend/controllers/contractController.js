@@ -8,6 +8,7 @@ const { notify } = require("../utils/notify.js");
 // --- propertyController.js already uses for photos.
 const { buildContractPdfBuffer } = require("../utils/contractPdf.js");
 const { uploadToBucket } = require("../utils/storage.js");
+const { buildDefaultTerms, monthsBetween, formatDuration } = require("../utils/leaseDefaults.js");
 
 const negotiateContract = async (req, res) => {
   try {
@@ -41,13 +42,19 @@ const negotiateContract = async (req, res) => {
     const isOwner = perms.viewer_role === "owner";
     const nextStatus = isOwner ? "owner_proposed" : "tenant_proposed";
 
+    // Default terms quote the deposit; if the wording is still the untouched default, keep it in step with the new number.
+    const ymd = (v) => toDateOnly(v);
+    const oldDefault = buildDefaultTerms({ startDate: ymd(c.start_date), endDate: ymd(c.end_date), deposit: Number(c.deposit) });
+    const newDefault = buildDefaultTerms({ startDate: ymd(c.start_date), endDate: ymd(c.end_date), deposit: nextDeposit });
+
     // Compare-and-swap: only update if nobody changed the negotiation since we read it.
     const result = await pool.query(
       `UPDATE contracts
-       SET rate = $1, deposit = $2, negotiation_message = $3, negotiation_status = $4, updated_at = NOW()
+       SET rate = $1, deposit = $2, negotiation_message = $3, negotiation_status = $4, updated_at = NOW(),
+           terms_and_conditions = CASE WHEN terms_and_conditions = $7 THEN $8 ELSE terms_and_conditions END
        WHERE contract_id = $5 AND status = 'draft' AND negotiation_status = $6
        RETURNING *`,
-      [nextRate, nextDeposit, message?.trim() || null, nextStatus, id, c.negotiation_status],
+      [nextRate, nextDeposit, message?.trim() || null, nextStatus, id, c.negotiation_status, oldDefault, newDefault],
     );
     if (result.rows.length === 0) {
       return res.status(409).json({ success: false, message: "This lease changed while you were editing. Refresh and try again." });
@@ -150,7 +157,7 @@ const createContract = async (req, res) => {
     const infoResult = await pool.query(
       `SELECT p.owner_id, p.address, p.deposit,
               owner.name AS owner_name,
-              tenant.name AS tenant_name
+              tenant.name AS tenant_name, tenant.email AS tenant_email
        FROM properties p
        JOIN users owner ON owner.user_id = p.owner_id
        JOIN users tenant ON tenant.user_id = $2
@@ -164,6 +171,12 @@ const createContract = async (req, res) => {
     if (info.owner_id !== ownerId && !req.user.is_admin) {
       return res.status(403).json({ success: false, message: "You do not own this property" });
     }
+
+    const finalDeposit = deposit ?? info.deposit ?? 0;
+    // Default wording only when the landlord did not supply their own; it is stored, so it stays editable.
+    const finalTerms = typeof terms_and_conditions === "string" && terms_and_conditions.trim()
+      ? terms_and_conditions
+      : buildDefaultTerms({ startDate: start_date, endDate: end_date, deposit: finalDeposit });
 
     // One open contract per (property, tenant). The advisory lock makes two simultaneous
     // "approve" clicks queue up, so the second one sees the first one's row and is refused.
@@ -191,7 +204,7 @@ const createContract = async (req, res) => {
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'owner_proposed')
          RETURNING contract_id, owner_id, tenant_id, property_id, rate, deposit, start_date, end_date,
                    status, negotiation_status, created_at`,
-        [ownerId, property_id, tenant_id, rate, deposit ?? 0, start_date, end_date, terms_and_conditions || null],
+        [ownerId, property_id, tenant_id, rate, finalDeposit, start_date, end_date, finalTerms],
       );
       await client.query("COMMIT");
       contract = result.rows[0];
@@ -208,13 +221,15 @@ const createContract = async (req, res) => {
       const pdfBuffer = await buildContractPdfBuffer({
         landlordName: info.owner_name,
         tenantName: info.tenant_name,
+        tenantEmail: info.tenant_email,
         propertyAddress: info.address,
         rate,
-        depositAmount: deposit ?? info.deposit,
+        depositAmount: finalDeposit,
         startDate: start_date,
         endDate: end_date,
         contractId: contract.contract_id,
-        termsAndConditions: terms_and_conditions,
+        termsAndConditions: finalTerms,
+        durationLabel: formatDuration(monthsBetween(start_date, end_date)),
       });
 
       const path = `contracts/${contract.contract_id}.pdf`;
@@ -237,7 +252,7 @@ const createContract = async (req, res) => {
       linkUrl: "/contracts",
     });
 
-    return res.status(201).json({ ...contract, contract_pdf_url: contractPdfUrl });
+    return res.status(201).json({ ...contract, terms_and_conditions: finalTerms, contract_pdf_url: contractPdfUrl });
   } catch (err) {
     console.error("createContract error: ", err);
     return res.status(500).json({ success: false, message: "Failed to create contract" });
@@ -421,7 +436,7 @@ const signContract = async (req, res) => {
       ...contractPermissions(row, userId),
       message:
         signed.status === "fully_signed"
-          ? "Both parties have signed. Proceed to security deposit payment."
+          ? "Both parties have signed. Waiting for the landlord to activate the lease."
           : "Signature registered. Waiting on the other party to sign.",
     });
   } catch (err) {
@@ -455,7 +470,7 @@ const payDeposit = async (req, res) => {
     if (contract.tenant_id !== tenantId) {
       return res.status(403).json({ success: false, message: "This contract does not belong to you" });
     }
-    if (contract.status !== "fully_signed") {
+    if (!["fully_signed", "active"].includes(contract.status)) {
       return res.status(422).json({
         success: false,
         message: `Contract must be fully signed by both parties before the deposit can be paid (current status: ${contract.status})`,
@@ -483,9 +498,7 @@ const payDeposit = async (req, res) => {
     });
 
     await pool.query("UPDATE payments SET receipt_url = $1 WHERE payment_id = $2", [receiptPath, payment.payment_id]);
-    await pool.query("UPDATE contracts SET status = 'active', updated_at = NOW() WHERE contract_id = $1", [id]);
-    // The flat is now occupied: listings, the landlord's units view and the tenant dashboard all read this.
-    await pool.query("UPDATE properties SET availability_status = 'rented' WHERE property_id = $1 AND availability_status::text <> 'archived'", [contract.property_id]);
+    // Occupancy and lease status are changed ONLY by the landlord's activation (see contractActionsController).
 
     await pool.query(
       `INSERT INTO history (owner_id, tenant_id, property_id, contract_id, payment_status, due_amount, deposit_amount, deposit_paid_at, deadline)
@@ -497,7 +510,7 @@ const payDeposit = async (req, res) => {
       userId: contract.owner_id,
       type: "deposit_paid",
       title: "Security deposit received",
-      message: `Deposit paid for contract #${id}. Lease is now active.`,
+      message: `Deposit recorded for contract #${id}.`,
       linkUrl: `/contracts/${id}`,
     });
 
@@ -508,7 +521,7 @@ const payDeposit = async (req, res) => {
       contract_id: Number(id),
       deposit_paid: amount,
       payment_status: payment.status,
-      contract_status: "active",
+      contract_status: contract.status,
       receipt_url: signedPayment.receipt_url,
     });
   } catch (err) {

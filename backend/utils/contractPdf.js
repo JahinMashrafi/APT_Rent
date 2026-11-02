@@ -46,6 +46,7 @@ function buildContractPdfBuffer(opts) {
   const {
     landlordName,
     tenantName,
+    tenantEmail,
     propertyAddress,
     rate,
     depositAmount,
@@ -53,6 +54,7 @@ function buildContractPdfBuffer(opts) {
     endDate,
     contractId,
     termsAndConditions,
+    durationLabel,
   } = opts;
 
   return new Promise((resolve, reject) => {
@@ -91,11 +93,12 @@ function buildContractPdfBuffer(opts) {
 
     partyRow("Landlord", landlordName || "—");
     partyRow("Tenant", tenantName || "—");
+    if (tenantEmail) partyRow("Tenant Email", tenantEmail);
     partyRow("Property Address", propertyAddress || "—");
     doc.moveDown(1);
 
     // ------------------------------ TERMS ------------------------------------
-    partyRow("Lease Term", `${formatDate(startDate)} to ${formatDate(endDate)}`);
+    partyRow("Lease Term", `${formatDate(startDate)} to ${formatDate(endDate)}${durationLabel ? ` (${durationLabel})` : ""}`);
     partyRow("Monthly Rent", `BDT ${Number(rate || 0).toLocaleString("en-BD")}`);
     if (depositAmount != null) {
       partyRow("Security Deposit", `BDT ${Number(depositAmount).toLocaleString("en-BD")}`);
@@ -110,7 +113,7 @@ function buildContractPdfBuffer(opts) {
       .fontSize(10)
       .text(
         termsAndConditions && termsAndConditions.trim().length > 0
-          ? termsAndConditions
+          ? termsAndConditions.replace(/৳\s?/g, "BDT ") // the built-in PDF font has no taka glyph
           : [
               "1. Rent is due on the 1st of each calendar month.",
               "2. The security deposit is refundable at the end of the tenancy, subject to the condition of the property.",
