@@ -1,3 +1,4 @@
+import Avatar from "./ui/Avatar.jsx";
 import { useState, useRef, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import {
@@ -334,13 +335,12 @@ export default function AppNavbar() {
                   className="user-chip-btn"
                   aria-label={t("user.menu")}
                 >
-                  <span className="user-chip-avatar">
-                    {currentUser?.profilePictureUrl ? (
-                      <img src={currentUser.profilePictureUrl} alt="" referrerPolicy="no-referrer" />
-                    ) : (
-                      initials
-                    )}
-                  </span>
+                    <Avatar
+                    className="user-chip-avatar"
+                    src={currentUser?.profilePictureUrl}
+                    name={currentUser?.name}
+                    fallback={initials}
+                  />
                   <span className="user-chip-name">{currentUser?.name?.split(" ")[0]}</span>
                   <ChevronDown size={14} />
                 </button>

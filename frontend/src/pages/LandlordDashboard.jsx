@@ -16,7 +16,7 @@ import '../css/global.css';
 import '../css/navbar.css';
 import '../css/newsfeed-home.css';
 import '../css/modules.css';
-
+import Avatar from '../components/ui/Avatar.jsx';
 // ---------------------------------------------------------------------------
 // helpers
 // ---------------------------------------------------------------------------
@@ -677,9 +677,12 @@ export default function LandlordDashboard() {
               {filteredApps.map(app => (
                 <div key={app.id} className="mod-card mod-card-pad" style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '1rem', justifyContent: 'space-between' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: '1 1 200px' }}>
-                    <div className="landlord-avatar" style={{ width: '44px', height: '44px', fontSize: '1.2rem' }}>
-                      {app.tenantName?.charAt(0) || '—'}
-                    </div>
+                                        <Avatar
+                      className="landlord-avatar"
+                      style={{ width: '44px', height: '44px', fontSize: '1.2rem' }}
+                      src={app.profilePictureUrl}
+                      name={app.tenantName}
+                    />
                     <div>
                       <div style={{ fontWeight: 600, color: 'var(--color-text-strong)' }}>{app.tenantName || '—'}</div>
                       <div style={{ fontSize: '0.85rem', color: 'var(--color-charcoal)' }}>{app.occupation || '—'}</div>
@@ -812,9 +815,12 @@ export default function LandlordDashboard() {
       {showProfileModal && selectedApplicant && (
         <Modal isOpen={showProfileModal} onClose={() => setShowProfileModal(false)} title="Applicant Profile" size="lg">
           <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center', marginBottom: '1.5rem' }}>
-            <div className="landlord-avatar" style={{ width: '64px', height: '64px', background: 'var(--color-ink)', color: '#fff', border: '2px solid var(--color-brass)', fontSize: '1.8rem' }}>
-              {selectedApplicant.tenantName?.charAt(0) || '—'}
-            </div>
+                       <Avatar
+              className="landlord-avatar"
+              style={{ width: '64px', height: '64px', background: 'var(--color-ink)', color: '#fff', border: '2px solid var(--color-brass)', fontSize: '1.8rem' }}
+              src={selectedApplicant.profilePictureUrl}
+              name={selectedApplicant.tenantName}
+            />
             <div>
               <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.3rem', margin: '0 0 4px 0', color: 'var(--color-text-strong)' }}>
                 {selectedApplicant.tenantName || '—'}

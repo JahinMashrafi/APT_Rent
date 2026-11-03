@@ -17,7 +17,8 @@ const getUnits = async (req, res) => {
     `SELECT p.property_id, p.address, p.rate::float AS listing_rate, p.availability_status::text AS availability_status,
             p.is_hidden, p.floor, p.total_floors,
             a.contract_id AS active_id, a.rate::float AS lease_rate, a.end_date::text AS end_date,
-            at.name AS tenant_name, at.user_id AS tenant_id, at.contact_number AS tenant_phone,
+                       at.name AS tenant_name, at.user_id AS tenant_id, at.contact_number AS tenant_phone,
+            at.profile_picture_url AS tenant_picture,
             q.contract_id AS pending_id, q.status::text AS pending_status, qt.name AS pending_tenant
        FROM properties p
        LEFT JOIN LATERAL (
@@ -55,7 +56,7 @@ const getUnits = async (req, res) => {
     if (r.active_id) {
       occupied.push({
         ...base, availability_status: "rented",
-        tenant: { user_id: r.tenant_id, name: r.tenant_name, phone: r.tenant_phone },
+        tenant: { user_id: r.tenant_id, name: r.tenant_name, phone: r.tenant_phone, profile_picture_url: r.tenant_picture },
         contract_id: r.active_id, contract_status: "active",
         rent: r.lease_rate ?? r.listing_rate, lease_end: r.end_date,
         rent_status: paid.has(r.active_id) ? "paid" : day > 5 ? "overdue" : "due",

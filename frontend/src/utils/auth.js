@@ -26,7 +26,16 @@ export const normalizeUserPayload = (user) => {
 // Set-Cookie on this response — there's nothing to store client-side.
 export const loginUser = async (email, password) => {
   const data = await api.auth.login({ email, password });
-  return normalizeUserPayload(data.user);
+  const fromLogin = normalizeUserPayload(data.user);
+
+  // Hydrate with the same full profile a page refresh loads, so the picture and
+  // other profile fields are in context before the first render after login.
+  try {
+    const full = await fetchCurrentUser();
+    return full ? { ...fromLogin, ...full } : fromLogin;
+  } catch {
+    return fromLogin; // login succeeded; fall back to the trimmed payload
+  }
 };
 
 // Registers against POST /auth/register (same cookie behavior as login).

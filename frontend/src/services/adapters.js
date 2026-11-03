@@ -65,6 +65,7 @@ export function adaptApplication(a) {
       monthlyIncome: a.monthly_income ?? tenant.monthlyIncome,
       familySize: a.family_size ?? tenant.familySize,
       message: a.message,
+      profilePictureUrl: tenant.profile_picture_url ?? tenant.profilePictureUrl,
     },
     appliedAt: a.created_at ?? a.appliedAt,
     status: a.status,
@@ -85,6 +86,7 @@ export function flattenApplication(a) {
     phone: tenant.phone ?? a.phone,
     monthlyIncome: tenant.monthlyIncome ?? a.monthlyIncome,
     familySize: tenant.familySize ?? a.familySize,
+    profilePictureUrl: tenant.profilePictureUrl ?? a.profilePictureUrl,
     message: tenant.message ?? a.message,
     propertyAddress: a.propertyAddress ?? a.property_address,
   };

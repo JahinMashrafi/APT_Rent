@@ -166,10 +166,17 @@ const loginUser = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      user: {
+        user: {
         id: user.user_id,
         name: user.name,
         email: user.email,
+        contact_number: user.contact_number,
+        address: user.address,
+        occupation: user.occupation,
+        profile_picture_url: user.profile_picture_url,
+        is_landlord: user.is_landlord,
+        is_tenant: user.is_tenant,
+        is_admin: user.is_admin,
         islandlord: user.is_landlord,
         istenant: user.is_tenant,
         isadmin: user.is_admin,
