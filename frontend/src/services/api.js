@@ -220,6 +220,24 @@ export const admin = {
 };
 
 // ---------------------------------------------------------------------------
+// Disputes & maintenance (tenant + landlord side). Both parties read the same
+// record; resolving a dispute stays admin-only (api.admin.resolveDispute).
+// ---------------------------------------------------------------------------
+export const disputes = {
+  list: () => apiClient.get("/disputes").then((r) => r.data),
+  get: (disputeId) => apiClient.get(`/disputes/${disputeId}`).then((r) => r.data),
+  create: (payload) => apiClient.post("/disputes", payload).then((r) => r.data),
+};
+
+export const maintenance = {
+  list: () => apiClient.get("/maintenance").then((r) => r.data),
+  get: (maintenanceId) => apiClient.get(`/maintenance/${maintenanceId}`).then((r) => r.data),
+  create: (payload) => apiClient.post("/maintenance", payload).then((r) => r.data),
+  updateStatus: (maintenanceId, payload) =>
+    apiClient.patch(`/maintenance/${maintenanceId}/status`, payload).then((r) => r.data),
+};
+
+// ---------------------------------------------------------------------------
 // Saved listings
 // ---------------------------------------------------------------------------
 export const saved = {
@@ -269,6 +287,8 @@ const api = {
   saved,
   leaseSummary,
   tenant,
+  disputes,
+  maintenance,
   units,
   addressTranslations,
 };

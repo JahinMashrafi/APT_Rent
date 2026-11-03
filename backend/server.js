@@ -28,6 +28,8 @@ const tenantRoutes = require("./routes/tenantRoutes");
 const unitsRoutes = require("./routes/unitsRoutes");
 const contractActionRoutes = require("./routes/contractActionRoutes");
 const leaseSummaryRoutes = require("./routes/leaseSummaryRoutes");
+const disputeRoutes = require("./routes/disputeRoutes");
+const maintenanceRoutes = require("./routes/maintenanceRoutes");
 const { envelopeLegacyResponses, notFoundHandler, errorHandler } = require("./middleware/errorEnvelope.js");
 
 const app = express();
@@ -66,6 +68,8 @@ app.use("/api/tenant", tenantRoutes);
 app.use("/api/units", unitsRoutes);
 app.use("/api/contracts", contractActionRoutes);
 app.use("/api/lease-summary", leaseSummaryRoutes);
+app.use("/api/disputes", disputeRoutes);
+app.use("/api/maintenance", maintenanceRoutes);
 //app,use(cors());
 
 app.get("/", (req, res) => {

@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Home, Search, BedDouble, Ruler, Calendar, Banknote, CheckCircle2, AlertTriangle, Clock } from "lucide-react";
 import AppNavbar from "../components/AppNavbar.jsx";
+import MaintenancePanel from "../components/cases/MaintenancePanel.jsx";
+import DisputesPanel from "../components/cases/DisputesPanel.jsx";
 import api from "../services/api";
 import { useApp } from "../context/AppContext.jsx";
 import { useLanguage } from "../i18n/LanguageContext.jsx";
@@ -107,6 +109,10 @@ export default function TenantDashboard() {
             )}
           </>
         )}
+
+        {/* Always shown: disputes and requests outlive an active lease. */}
+        <MaintenancePanel role="tenant" />
+        <DisputesPanel role="tenant" />
       </main>
       <footer className="site-footer"><div className="container"><p>{t("footer.brand")}</p></div></footer>
     </div>
