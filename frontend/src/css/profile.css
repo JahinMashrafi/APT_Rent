@@ -307,3 +307,42 @@
 @media (max-width: 700px) {
   .pv-header { flex-direction: column; align-items: flex-start; }
 }
+.pv-review-open { margin: 8px 0 4px; }
+
+.pv-review-form {
+  display: grid;
+  gap: 8px;
+  margin: 12px 0 18px;
+  padding: 14px;
+  border: 1px solid rgba(128, 128, 128, 0.3);
+  border-radius: 10px;
+}
+.pv-review-form h3 { margin: 0; font-size: 1rem; }
+.pv-review-form textarea {
+  width: 100%;
+  padding: 10px;
+  font: inherit;
+  border: 1px solid rgba(128, 128, 128, 0.4);
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  resize: vertical;
+}
+.pv-review-label { font-size: 0.85rem; font-weight: 600; }
+.pv-review-count { justify-self: end; font-size: 0.75rem; opacity: 0.7; }
+.pv-review-actions { display: flex; gap: 8px; }
+
+.pv-star-input { display: flex; gap: 2px; }
+.pv-star {
+  background: none;
+  border: 0;
+  padding: 2px 4px;
+  font-size: 1.7rem;
+  line-height: 1;
+  cursor: pointer;
+  color: #cbd5e1;
+  transition: transform 0.1s;
+}
+.pv-star:hover { transform: scale(1.12); }
+.pv-star.is-on { color: #f59e0b; }
+.pv-star:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; border-radius: 4px; }

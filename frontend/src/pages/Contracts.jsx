@@ -254,7 +254,7 @@ export default function Contracts() {
               const detail = details[contract.contract_id];
               const other = counterparty(contract);
               const isOwner = String(contract.owner?.user_id) === String(currentUser?.id);
-
+              const otherUserId = isOwner ? contract.tenant?.user_id : contract.owner?.user_id;
               const transactionId = contract.transaction_id;
               const isPaid = contract.payment_status === "yes";
 
@@ -306,7 +306,14 @@ export default function Contracts() {
                     </span>
                     {isOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
                   </button>
-
+                  {/* Review entry point: ACTIVE contracts only, links to the other party's profile */}
+                  {contract.status === "active" && otherUserId ? (
+                    <div className="fx-actions" style={{ marginTop: 12 }}>
+                      <Link className="btn btn-primary btn-sm" to={`/users/${otherUserId}#reviews`}>
+                        {t("contracts.reviewUser", { name: other.name })}
+                      </Link>
+                    </div>
+                  ) : null}
                   {/* Landlord actions: make a fully signed lease active, or terminate any open contract */}
                   {isOwner && !["terminated", "completed"].includes(contract.status) && (
                     <div className="fx-actions" style={{ marginTop: 12 }}>

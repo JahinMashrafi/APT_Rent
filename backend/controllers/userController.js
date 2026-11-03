@@ -1,3 +1,4 @@
+const { getReviewEligibility } = require("../utils/reviewEligibility.js");
 const pool = require("../config/db.js");
 const path = require("path");
 const AppError = require("../utils/AppError.js");
@@ -421,6 +422,9 @@ const getProfileDetail = async (req, res) => {
        FROM reviews WHERE reviewed_user_id = $1`,
     [id],
   );
+  const elig = isSelf
+    ? { canReview: false, reason: "SELF_REVIEW" }
+    : await getReviewEligibility(viewerId, id);
 
   let listings = [];
   if (user.is_landlord) {
@@ -462,6 +466,12 @@ const getProfileDetail = async (req, res) => {
     member_since: user.created_at,
     average_rating: Number(stats.rows[0].average_rating.toFixed(2)),
     total_reviews: stats.rows[0].total_reviews,
+    review_eligibility: {
+      can_review: elig.canReview,
+      reason: elig.reason,
+      reviewer_role: elig.reviewerRole ?? null,
+      reviewed_role: elig.reviewedRole ?? null,
+    },
     listings,
     is_self: isSelf,
     contact,

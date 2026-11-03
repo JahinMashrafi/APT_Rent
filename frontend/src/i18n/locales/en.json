@@ -185,6 +185,7 @@
     "untitledProperty": "Property address unavailable"
   },
   "contracts": {
+    "reviewUser": "Write a review for {name}",
     "eyebrow": "Lease Documents",
     "title": "My Contracts",
     "subtitle": "Every lease agreement you're part of — review terms, payment status, and signatures anytime.",
@@ -774,6 +775,17 @@
     "squareFeet": "{count} sqft",
     "reviews": "Reviews",
     "noReviews": "No reviews yet.",
+    "writeReview": "Write a review",
+    "reviewFormTitle": "Review {name}",
+    "yourRating": "Your rating",
+    "yourComment": "Your comment (optional)",
+    "commentPlaceholder": "Share your experience…",
+    "submitReview": "Submit review",
+    "submitting": "Submitting…",
+    "cancelReview": "Cancel",
+    "ratingRequired": "Please choose a star rating.",
+    "reviewSubmitted": "Thanks! Your review has been posted.",
+    "reviewFailed": "Could not submit your review. Please try again.",
     "ratingOutOfFive": "{rating} out of 5",
     "occupations": {
       "student": "Student",
