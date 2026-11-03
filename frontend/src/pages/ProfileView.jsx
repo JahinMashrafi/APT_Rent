@@ -86,12 +86,12 @@ export default function ProfileView() {
       /* the review was saved; the list will refresh on next visit */
     }
   };
-  useEffect(() => {
+    useEffect(() => {
     if (profile && window.location.hash === "#reviews") {
       document.getElementById("reviews")?.scrollIntoView({ behavior: "smooth", block: "start" });
     }
   }, [profile]);
-
+  
   const initial = (profile?.name?.trim()?.[0] || "U").toUpperCase();
   const memberSince = profile?.member_since
     ? formatDate(profile.member_since, "monthYear")
@@ -231,7 +231,7 @@ export default function ProfileView() {
                 </div>
               ) : null}
 
-              <div className="profile-card" id="reviews">
+                <div className="profile-card" id="reviews">
                 <h2>{t("profileView.reviews")}</h2>
                 {canReview ? (
                   <ReviewForm
