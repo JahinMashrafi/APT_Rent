@@ -90,7 +90,8 @@ function notificationDestination(notification, role) {
   }
   if (link.startsWith("/landlord/")) return "/landlord";
   if (link.startsWith("/admin/")) return "/admin";
-  if (link.startsWith("/disputes/")) return "/admin";
+  // /disputes/:id and /maintenance/:id are role-neutral exact-record pages: keep the link as-is.
+  if (link.startsWith("/disputes/") || link.startsWith("/maintenance/")) return link;
   if (link.startsWith("/users/")) return "/profile";
   if (link.startsWith("/conversations/")) return "/inbox";
   return link;

@@ -18,6 +18,10 @@ const TITLES = {
   "Verification approved": "notifText.verifyApprovedTitle",
   "Verification rejected": "notifText.verifyRejectedTitle",
   "Dispute resolved": "notifText.disputeTitle",
+  "Dispute filed against you": "notifText.disputeAgainstTitle",
+  "New maintenance request": "notifText.maintRequestTitle",
+  "New maintenance notice": "notifText.maintNoticeTitle",
+  "Maintenance update": "notifText.maintUpdateTitle",
   "New message": "notifText.newMessageTitle",
   "New tour request": "notifText.tourRequestedTitle",
   "Tour slots proposed": "notifText.tourProposedTitle",
@@ -63,6 +67,16 @@ const RULES = [
     re: /^Dispute #(\d+): ([\s\S]+)$/,
     key: "notifText.disputeFiledBody",
     params: (m, c) => ({ id: c.digits(m[1]), reason: m[2] }),
+  },
+  {
+    re: /^Maintenance #(\d+): ([\s\S]+)$/,
+    key: "notifText.maintBody",
+    params: (m, c) => ({ id: c.digits(m[1]), title: m[2] }),
+  },
+  {
+    re: /^Maintenance #(\d+) was marked "(open|in_progress|resolved|cancelled)"\.$/,
+    key: "notifText.maintUpdateBody",
+    params: (m, c) => ({ id: c.digits(m[1]), status: c.t(`cases.maint.status.${m[2]}`) }),
   },
   {
     re: /^A tour for property #(\d+) moved to (\d{4}-\d{2}-\d{2}) at (.+?)\. Please confirm the new time\.(?: Reason: ([\s\S]+))?$/,
