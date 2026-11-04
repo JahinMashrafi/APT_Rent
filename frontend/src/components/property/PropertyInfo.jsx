@@ -10,6 +10,7 @@ import {
   ArrowUpDown,
 } from 'lucide-react';
 import StarRating from '../ui/StarRating.jsx';
+import Avatar from '../ui/Avatar.jsx';
 import { useLanguage } from '../../i18n/LanguageContext.jsx';
 import '../../css/modules.css';
 import '../../css/global.css';
@@ -330,16 +331,16 @@ export default function PropertyInfo({ property }) {
               gap: '16px',
             }}
           >
-            <div
+            <Avatar
               className="landlord-avatar"
+              src={property?.landlord?.profilePictureUrl}
+              name={property?.landlord?.name}
               style={{
                 border: property?.landlord?.isVerified
                   ? '2px solid var(--color-brass)'
                   : 'none',
               }}
-            >
-              {property?.landlord?.name?.charAt(0)}
-            </div>
+            />
 
             <div style={{ flex: 1 }}>
               <div

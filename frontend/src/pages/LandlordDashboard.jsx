@@ -6,7 +6,7 @@ import MaintenancePanel from '../components/cases/MaintenancePanel.jsx';
 import DisputesPanel from '../components/cases/DisputesPanel.jsx';
 import LeaseSummaryModal from '../components/lease/LeaseSummaryModal.jsx';
 import Modal from '../components/ui/Modal.jsx';
-import { TrendingUp, Users, Calendar, Edit3, Eye, EyeOff, Trash2, ChevronRight, Building2, DollarSign, AlertTriangle, User, FileText, MessageSquare, Wallet, ArrowDown, ArrowUp } from 'lucide-react';
+import { TrendingUp, Users, Calendar, Edit3, Eye, EyeOff, Trash2, ChevronRight, Building2, DollarSign, AlertTriangle, User, FileText, MessageSquare, ArrowDown, ArrowUp } from 'lucide-react';
 import PropertyFormModal from '../components/property/PropertyFormModal.jsx';
 import { useToast } from '../components/ui/Toast.jsx';
 import api from '../services/api';
@@ -17,6 +17,7 @@ import '../css/navbar.css';
 import '../css/newsfeed-home.css';
 import '../css/modules.css';
 import Avatar from '../components/ui/Avatar.jsx';
+import { occupationLabel } from '../utils/occupations';
 // ---------------------------------------------------------------------------
 // helpers
 // ---------------------------------------------------------------------------
@@ -59,7 +60,7 @@ export default function LandlordDashboard() {
   const taka = (n) => formatCurrency(Number(n ?? 0));
 
   const [searchParams] = useSearchParams();
-  const TABS = ['overview', 'units', 'properties', 'applications', 'ledger', 'maintenance', 'disputes'];
+  const TABS = ['overview', 'units', 'properties', 'applications', 'maintenance', 'disputes'];
   // ?tab=applications (from a notification) opens that tab, even if the dashboard is already open
   const tabParam = searchParams.get('tab');
   const [activeTab, setActiveTab] = useState(TABS.includes(tabParam) ? tabParam : 'overview');
@@ -71,9 +72,8 @@ export default function LandlordDashboard() {
   const [properties, setProperties] = useState([]);
   const [applications, setApplications] = useState([]);
 
-  // GET /landlord/stats and GET /landlord/rent-ledger
+  // GET /landlord/stats
   const [stats, setStats] = useState(null);
-  const [ledger, setLedger] = useState(null);
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [propertyToDelete, setPropertyToDelete] = useState(null);
@@ -111,10 +111,6 @@ export default function LandlordDashboard() {
     api.landlord.stats().then(setStats).catch(() => setStats(null));
   };
 
-  const loadLedger = () => {
-    api.landlord.rentLedger().then(setLedger).catch(() => setLedger(null));
-  };
-
   useEffect(() => {
     let cancelled = false;
 
@@ -139,11 +135,6 @@ export default function LandlordDashboard() {
       .then((data) => { if (!cancelled) setStats(data); })
       .catch(() => { if (!cancelled) setStats(null); });
 
-    api.landlord
-      .rentLedger()
-      .then((data) => { if (!cancelled) setLedger(data); })
-      .catch(() => { if (!cancelled) setLedger(null); });
-
     return () => {
       cancelled = true;
     };
@@ -167,7 +158,6 @@ export default function LandlordDashboard() {
       setProperties((prev) => prev.filter((p) => p.id !== target.id));
       showToast({ message: 'Listing deleted.', type: 'success' });
       loadStats();
-      loadLedger();
     } catch (error) {
       showToast({ message: error.message || 'Could not delete the listing.', type: 'error' });
     } finally {
@@ -352,7 +342,6 @@ export default function LandlordDashboard() {
 
   const pendingApps = stats?.pending_applications ?? 0;
   const upcomingTours = stats?.upcoming_tours ?? 0;
-  const pendingRent = stats?.pending_rent_amount ?? 0;
 
   const statusBadgeProps = (status) => {
     if (status === 'approved') return { className: 'badge badge-success' };
@@ -403,12 +392,6 @@ export default function LandlordDashboard() {
             {t('landlord.tabApplications', { count: applications.length })}
           </button>
           <button
-            className={`pill-tab ${activeTab === 'ledger' ? 'is-active' : ''}`}
-            onClick={() => { setActiveTab('ledger'); loadLedger(); }}
-          >
-            {t('landlord.tabLedger')}
-          </button>
-          <button
             className={`pill-tab ${activeTab === 'maintenance' ? 'is-active' : ''}`}
             onClick={() => setActiveTab('maintenance')}
           >
@@ -436,7 +419,6 @@ export default function LandlordDashboard() {
                 </div>
                 <p className="stat-card-label">{t('landlord.revenue')}</p>
                 <h3 className="stat-card-num">{stats ? taka(stats.monthly_gross_revenue) : '—'}</h3>
-                <p className="stat-card-sub">{stats ? t('landlord.revenuePending', { amount: taka(pendingRent) }) : t('common.loading')}</p>
               </div>
               <div className="stat-card">
                 <div className="stat-card-icon" style={{ background: 'rgba(76,122,93,0.12)', color: 'var(--color-success)' }}>
@@ -496,22 +478,7 @@ export default function LandlordDashboard() {
                   <ChevronRight size={20} color="var(--color-line-strong)" />
                 </div>
               )}
-              {pendingRent > 0 && (
-                <div
-                  className="mod-card mod-card-pad"
-                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }}
-                  onClick={() => { setActiveTab('ledger'); loadLedger(); }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <Wallet size={20} color="var(--color-error)" />
-                    <span style={{ color: 'var(--color-text-strong)', fontWeight: 500 }}>
-                      {t('landlord.rentToCollect', { amount: taka(pendingRent) })}
-                    </span>
-                  </div>
-                  <ChevronRight size={20} color="var(--color-line-strong)" />
-                </div>
-              )}
-              {stats && pendingApps === 0 && upcomingTours === 0 && pendingRent === 0 && (
+              {stats && pendingApps === 0 && upcomingTours === 0 && (
                 <div className="mod-card mod-card-pad" style={{ color: 'var(--color-charcoal)' }}>
                   {t('landlord.allCaughtUp')}
                 </div>
@@ -685,7 +652,7 @@ export default function LandlordDashboard() {
                     />
                 <div>
                       <div style={{ fontWeight: 600, color: 'var(--color-text-strong)' }}>{app.tenantName || '—'}</div>
-                      <div style={{ fontSize: '0.85rem', color: 'var(--color-charcoal)' }}>{app.occupation || '—'}</div>
+                      <div style={{ fontSize: '0.85rem', color: 'var(--color-charcoal)' }}>{occupationLabel(app.occupation) || app.occupation || '—'}</div>
                 </div>
             </div>
 
@@ -733,63 +700,6 @@ export default function LandlordDashboard() {
           </div>
         )}
 
-        {/* TAB: Rent Ledger — GET /landlord/rent-ledger */}
-        {activeTab === 'ledger' && (
-          <div>
-            <h2 className="section-heading">{t('landlord.ledgerTitle')}</h2>
-            {!ledger ? (
-              <div className="mod-card mod-card-pad" style={{ textAlign: 'center', color: 'var(--color-charcoal)' }}>
-                {t('landlord.ledgerUnavailable')}
-              </div>
-            ) : (
-              <>
-                <div className="stat-grid" style={{ marginBottom: '1.5rem' }}>
-                  <div className="stat-card">
-                    <p className="stat-card-label">{t('landlord.receivableThisMonth')}</p>
-                    <h3 className="stat-card-num">{taka(ledger.summary?.total_monthly_receivable)}</h3>
-                  </div>
-                  <div className="stat-card">
-                    <p className="stat-card-label">{t('landlord.collected')}</p>
-                    <h3 className="stat-card-num">{taka(ledger.summary?.total_collected)}</h3>
-                  </div>
-                  <div className="stat-card">
-                    <p className="stat-card-label">{t('landlord.pendingAmount')}</p>
-                    <h3 className="stat-card-num">{taka(ledger.summary?.total_pending)}</h3>
-                  </div>
-                </div>
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  {(ledger.records ?? []).map((rec) => (
-                    <div
-                      key={rec.contract_id}
-                      className="mod-card mod-card-pad"
-                      style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '1rem', justifyContent: 'space-between' }}
-                    >
-                      <div style={{ flex: '1 1 200px' }}>
-                        <div style={{ fontWeight: 600, color: 'var(--color-text-strong)' }}>{rec.tenant_name}</div>
-                        <div style={{ fontSize: '0.85rem', color: 'var(--color-blueprint)' }}>{rec.property_address}</div>
-                      </div>
-                      <div style={{ fontFamily: 'var(--font-stencil)', color: 'var(--color-text-strong)' }}>{taka(rec.amount)}</div>
-                      <div style={{ fontSize: '0.85rem', color: 'var(--color-charcoal)' }}>
-                        {t('landlord.dueBy', {
-                          date: formatDate(`${String(rec.deadline).slice(0, 10)}T00:00:00`, 'medium'),
-                        })}
-                      </div>
-                      <span className={`badge ${rec.status === 'paid' ? 'badge-success' : 'badge-warn'}`}>
-                        {tx('status', rec.status)}
-                      </span>
-                    </div>
-                  ))}
-                  {(ledger.records ?? []).length === 0 && (
-                    <div className="mod-card mod-card-pad" style={{ textAlign: 'center', color: 'var(--color-charcoal)' }}>
-                      {t('landlord.noContracts')}
-                    </div>
-                  )}
-                </div>
-              </>
-            )}
-          </div>
-        )}
       </main>
 
       {/* Delete Modal */}
@@ -833,15 +743,35 @@ export default function LandlordDashboard() {
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
             <div className="mod-card mod-card-pad">
-              <span className="mod-label">Occupation & Income</span>
+              <span className="mod-label">Occupation</span>
               <div style={{ fontWeight: 500, color: 'var(--color-text-strong)', marginTop: '4px' }}>
-                {selectedApplicant.occupation || '—'} • {selectedApplicant.monthlyIncome != null ? `${taka(selectedApplicant.monthlyIncome)}/mo` : '—'}
+                {occupationLabel(selectedApplicant.occupation) || selectedApplicant.occupation || '—'}
+                {(selectedApplicant.institutionName || selectedApplicant.workplaceName) &&
+                  ` • ${selectedApplicant.institutionName || selectedApplicant.workplaceName}`}
+              </div>
+            </div>
+            {selectedApplicant.address && (
+              <div className="mod-card mod-card-pad">
+                <span className="mod-label">Address</span>
+                <div style={{ fontWeight: 500, color: 'var(--color-text-strong)', marginTop: '4px' }}>
+                  {selectedApplicant.address}
+                </div>
+              </div>
+            )}
+            <div className="mod-card mod-card-pad">
+              <span className="mod-label">Monthly Income</span>
+              <div style={{ fontWeight: 500, color: 'var(--color-text-strong)', marginTop: '4px' }}>
+                {selectedApplicant.monthlyIncome != null && selectedApplicant.monthlyIncome !== ''
+                  ? `${taka(selectedApplicant.monthlyIncome)}/mo`
+                  : 'Not provided'}
               </div>
             </div>
             <div className="mod-card mod-card-pad">
               <span className="mod-label">Family Size</span>
               <div style={{ fontWeight: 500, color: 'var(--color-text-strong)', marginTop: '4px' }}>
-                {selectedApplicant.familySize != null ? `${selectedApplicant.familySize} members` : '—'}
+                {selectedApplicant.familySize != null && selectedApplicant.familySize !== ''
+                  ? `${selectedApplicant.familySize} ${Number(selectedApplicant.familySize) === 1 ? 'member' : 'members'}`
+                  : 'Not provided'}
               </div>
             </div>
           </div>
@@ -922,7 +852,7 @@ export default function LandlordDashboard() {
           propertyId={leaseTarget.propertyId}
           tenantId={leaseTarget.tenantId}
           onClose={() => setLeaseTarget(null)}
-          onSaved={() => { loadStats(); loadLedger(); }}
+          onSaved={() => { loadStats(); }}
         />
       )}
 

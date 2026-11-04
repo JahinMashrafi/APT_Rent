@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useSearchParams, useNavigate, useLocation } from 'react-router-dom';
 import AppNavbar from '../components/AppNavbar.jsx';
+import Avatar from '../components/ui/Avatar.jsx';
 import { Send, Search, ArrowLeft, MessageSquare, MoreVertical } from 'lucide-react';
 import api from '../services/api';
 import { useApp } from '../context/AppContext.jsx';
@@ -504,8 +505,13 @@ const formatConvTime = (iso) => {
                 className={`contact-item ${activeConvId === conv.id ? 'is-active' : ''}`}
                 onClick={() => openConversation(conv.id)}
               >
-                <div className="contact-avatar">
-                  {conv.participant.initials}
+                <div className="contact-avatar" style={{ position: 'relative' }}>
+                  <Avatar
+                    src={conv.participant.profile_picture_url}
+                    name={conv.participant.name}
+                    fallback={conv.participant.initials}
+                    style={{ position: 'absolute', inset: 0, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                  />
                   {conv.participant.isOnline && <span className="online-dot" />}
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
@@ -545,8 +551,13 @@ const formatConvTime = (iso) => {
                   <button className="mobile-back-btn" onClick={() => setMobileView('list')}>
                     <ArrowLeft size={20} color="var(--color-text-strong)" />
                   </button>
-                  <div className="contact-avatar small" style={{ marginRight: '12px' }}>
-                    {activeConv.participant.initials}
+                  <div className="contact-avatar small" style={{ marginRight: '12px', position: 'relative' }}>
+                    <Avatar
+                      src={activeConv.participant.profile_picture_url}
+                      name={activeConv.participant.name}
+                      fallback={activeConv.participant.initials}
+                      style={{ position: 'absolute', inset: 0, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                    />
                     {activeConv.participant.isOnline && <span className="online-dot" />}
                   </div>
                   <div>

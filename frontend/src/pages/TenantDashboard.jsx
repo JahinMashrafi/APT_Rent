@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Home, Search, BedDouble, Ruler, Calendar, Banknote, CheckCircle2, AlertTriangle, Clock } from "lucide-react";
+import { Home, Search, BedDouble, Ruler, Calendar, Banknote } from "lucide-react";
 import AppNavbar from "../components/AppNavbar.jsx";
 import MaintenancePanel from "../components/cases/MaintenancePanel.jsx";
 import DisputesPanel from "../components/cases/DisputesPanel.jsx";
@@ -10,9 +10,6 @@ import { useLanguage } from "../i18n/LanguageContext.jsx";
 import "../css/global.css";
 import "../css/navbar.css";
 import "../css/modules.css";
-
-const PILL = { pending: "pill-muted", paid: "pill-done", due: "pill-open", overdue: "pill-danger" };
-const ICON = { pending: Clock, paid: CheckCircle2, due: Clock, overdue: AlertTriangle };
 
 export default function TenantDashboard() {
   const { t, formatCurrency, formatDate, formatNumber } = useLanguage();
@@ -30,7 +27,6 @@ export default function TenantDashboard() {
   const d = state.data;
   const month = (ym) => formatDate(`${ym}-01T00:00:00`, "monthYear");
   const day = (iso) => (iso ? formatDate(`${iso}T00:00:00`, "medium") : "—");
-  const Status = d ? ICON[d.current_month.status] : Clock;
 
   return (
     <div className="module-shell">
@@ -72,18 +68,10 @@ export default function TenantDashboard() {
               <div className="td-hero-rent">
                 <span className="td-hero-label">{t("dash.thisMonth")} · {month(d.current_month.month)}</span>
                 <strong>{formatCurrency(d.lease.rate)}</strong>
-                <span className={`pill ${PILL[d.current_month.status]}`}><Status size={13} /> {t(`dash.status.${d.current_month.status}`)}</span>
-                <Link to="/rent" className="btn btn-primary btn-sm">{t("nav.payRent")}</Link>
               </div>
             </section>
 
             <div className="td-stats">
-              <div className="td-stat">
-                <Banknote size={20} />
-                <span className="td-stat-label">{t("dash.rentDue")}</span>
-                <strong className={d.total_due > 0 ? "is-bad" : "is-good"}>{formatCurrency(d.total_due)}</strong>
-                <span className="fx-help">{d.months_due_count === 0 ? t("dash.allPaid") : t("dash.monthsDue", { count: d.months_due_count, n: formatNumber(d.months_due_count) })}</span>
-              </div>
               <div className="td-stat">
                 <Calendar size={20} />
                 <span className="td-stat-label">{t("dash.leaseEnds")}</span>
@@ -97,16 +85,6 @@ export default function TenantDashboard() {
               </div>
             </div>
 
-            {d.months_due.length > 0 && (
-              <section className="mod-card mod-card-pad">
-                <h3 style={{ fontSize: "1rem", marginBottom: 10 }}>{t("dash.rentDue")}</h3>
-                <ul className="td-months">
-                  {d.months_due.slice(-6).map((m) => (
-                    <li key={m.month}><span>{month(m.month)}</span><strong>{formatCurrency(m.amount)}</strong></li>
-                  ))}
-                </ul>
-              </section>
-            )}
           </>
         )}
 

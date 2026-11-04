@@ -7,7 +7,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { FileText, ChevronDown, ChevronUp, Clock, PenLine, Download, Receipt } from "lucide-react";
+import { FileText, ChevronDown, ChevronUp, Clock, PenLine, Download } from "lucide-react";
 import AppNavbar from "../components/AppNavbar.jsx";
 import LeaseSummaryModal from "../components/lease/LeaseSummaryModal.jsx";
 import api from "../services/api";
@@ -20,14 +20,35 @@ import "../css/modules.css";
 import { useLanguage } from "../i18n/LanguageContext.jsx";
 import { useAddressTranslations } from "../hooks/useAddressTranslations.js";
 
-const STATUS_BADGE = {
-  draft: "badge-warn",
-  signed_by_owner: "badge-warn",
-  signed_by_tenant: "badge-warn",
-  fully_signed: "badge-ink",
-  active: "badge-success",
-  terminated: "badge-error",
-  completed: "badge-neutral",
+// One section per contract status, in display order.
+const SECTIONS = [
+  { key: "active", badge: "badge-success" },
+  { key: "fully_signed", badge: "badge-ink" },
+  { key: "landlord_signed", badge: "badge-warn" },
+  { key: "tenant_signed", badge: "badge-warn" },
+  { key: "lease_accepted", badge: "badge-warn" },
+  { key: "tenant_proposal_sent", badge: "badge-warn" },
+  { key: "terminated", badge: "badge-error" },
+];
+
+// Maps a contract onto exactly one of the sections above.
+const sectionKeyOf = (contract) => {
+  switch (contract.status) {
+    case "active":
+      return "active";
+    case "fully_signed":
+      return "fully_signed";
+    case "signed_by_owner":
+      return "landlord_signed";
+    case "signed_by_tenant":
+      return "tenant_signed";
+    case "terminated":
+      return "terminated";
+    case "draft":
+      return contract.negotiation_state === "TERMS_ACCEPTED" ? "lease_accepted" : "tenant_proposal_sent";
+    default:
+      return "other"; // e.g. legacy "completed" rows — shown in an extra section so nothing disappears
+  }
 };
 
 
@@ -57,6 +78,7 @@ export default function Contracts() {
   const [loadError, setLoadError] = useState("");
   const [summaryEdit, setSummaryEdit] = useState(null); // contract whose lease summary the landlord is editing
   const [openId, setOpenId] = useState(null);
+  const [statusFilter, setStatusFilter] = useState("all"); // landlord pill filter: "all" or a section key
   const [details, setDetails] = useState({});
   const [negotiation, setNegotiation] = useState({});
   const [negotiationError, setNegotiationError] = useState({});
@@ -202,45 +224,36 @@ export default function Contracts() {
     input.click();
   };
 
-  return (
-    <div className="module-shell">
-      <AppNavbar />
+  const sectionLabel = (key, contract) => {
+    if (key === "other") return tx("contracts.status", contract.status);
+    return t(`contracts.sections.${key}`);
+  };
 
-      <main className="module-main">
-        <div style={{ marginBottom: "2rem" }}>
-          <span className="eyebrow">{t("contracts.eyebrow")}</span>
-          <h1 className="module-title">{t("contracts.title")}</h1>
-          <p className="module-subtitle">{t("contracts.subtitle")}</p>
-        </div>
+  // Status sections are a landlord-only view. Contracts where the viewer is the
+  // tenant are shown as a plain list with no status sections.
+  const landlordContracts = useMemo(
+    () => contracts.filter((c) => String(c.owner?.user_id) === String(currentUser?.id)),
+    [contracts, currentUser?.id],
+  );
+  const tenantContracts = useMemo(
+    () => contracts.filter((c) => String(c.owner?.user_id) !== String(currentUser?.id)),
+    [contracts, currentUser?.id],
+  );
 
-        {loadError && (
-          <p
-            style={{
-              fontFamily: "var(--font-mono)",
-              fontSize: "0.72rem",
-              color: "var(--color-blueprint)",
-              background: "var(--color-paper-dim)",
-              border: "1px dashed var(--color-line-strong)",
-              borderRadius: "var(--radius-sm)",
-              padding: "8px 12px",
-              marginBottom: "1.5rem",
-            }}
-          >
-            {loadError === "__default__" ? t("contracts.loadError") : loadError}
-          </p>
-        )}
+  const sectionList = useMemo(() => {
+    const groups = SECTIONS.map((section) => ({
+      ...section,
+      label: t(`contracts.sections.${section.key}`),
+      items: landlordContracts.filter((c) => sectionKeyOf(c) === section.key),
+    }));
+    const others = landlordContracts.filter((c) => sectionKeyOf(c) === "other");
+    if (others.length) {
+      groups.push({ key: "other", badge: "badge-neutral", label: t("contracts.sections.other"), items: others });
+    }
+    return groups;
+  }, [landlordContracts, t]);
 
-        {contracts.length === 0 ? (
-          <div className="mod-card mod-card-pad" style={{ textAlign: "center", color: "var(--color-charcoal)" }}>
-            <FileText size={28} style={{ color: "var(--color-line-strong)", margin: "0 auto 12px" }} />
-            <p>{t("contracts.empty")}</p>
-            <Link to="/dashboard" className="btn btn-primary" style={{ marginTop: "1rem", display: "inline-flex" }}>
-              {t("common.browseListings")}
-            </Link>
-          </div>
-        ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-            {contracts.map((contract) => {
+  const renderContract = (contract) => {
               const isOpen = openId === contract.contract_id;
               const originalAddress =
                 typeof contract.property_address === "string"
@@ -255,8 +268,6 @@ export default function Contracts() {
               const other = counterparty(contract);
               const isOwner = String(contract.owner?.user_id) === String(currentUser?.id);
               const otherUserId = isOwner ? contract.tenant?.user_id : contract.owner?.user_id;
-              const transactionId = contract.transaction_id;
-              const isPaid = contract.payment_status === "yes";
 
               return (
                 <div key={contract.contract_id} className="mod-card mod-card-pad">
@@ -277,32 +288,8 @@ export default function Contracts() {
                       </p>
                     </div>
 
-
-                    <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "4px" }}>
-                      <span
-                        style={{
-                          fontFamily: "var(--font-mono)",
-                          fontSize: "0.72rem",
-                          color: "var(--color-blueprint)",
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "4px",
-                        }}
-                      >
-                        <Receipt size={12} /> {transactionId ? t("contracts.txn", { id: transactionId }) : t("contracts.noTxn")}
-                      </span>
-                      <span className={`badge ${isPaid ? "badge-success" : "badge-warn"}`}>
-                        {t("contracts.payment", { value: isPaid ? t("common.yes") : t("common.no") })}
-                      </span>
-                    </div>
-
-                    <span className={`badge ${STATUS_BADGE[contract.status] ?? "badge-neutral"}`}>
-                      {contract.negotiation_state === "TERMS_ACCEPTED" && contract.status === "draft"
-                        ? t("contracts.leaseAccepted")
-                        : contract.negotiation_state === "TENANT_PROPOSAL_SENT" ||
-                            contract.negotiation_state === "LANDLORD_PROPOSAL_SENT"
-                          ? t("contracts.proposalSent")
-                          : tx("contracts.status", contract.status)}
+                    <span className={`badge ${SECTIONS.find((x) => x.key === sectionKeyOf(contract))?.badge ?? "badge-neutral"}`}>
+                      {sectionLabel(sectionKeyOf(contract), contract)}
                     </span>
                     {isOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
                   </button>
@@ -436,6 +423,7 @@ export default function Contracts() {
                             ))}
                           </div>
 
+                          {!(contract.status === "active" && !detail.contract_pdf_url) && (
                           <div>
                             <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.72rem", color: "var(--color-blueprint)", display: "block", marginBottom: "8px" }}>
                               {t("contracts.leaseDocument")}
@@ -475,13 +463,106 @@ export default function Contracts() {
                               </p>
                             )}
                           </div>
+                          )}
                         </>
                       )}
                     </div>
                   )}
                 </div>
               );
-            })}
+  };
+
+  return (
+    <div className="module-shell">
+      <AppNavbar />
+
+      <main className="module-main">
+        <div style={{ marginBottom: "2rem" }}>
+          <span className="eyebrow">{t("contracts.eyebrow")}</span>
+          <h1 className="module-title">{t("contracts.title")}</h1>
+          <p className="module-subtitle">{t("contracts.subtitle")}</p>
+        </div>
+
+        {loadError && (
+          <p
+            style={{
+              fontFamily: "var(--font-mono)",
+              fontSize: "0.72rem",
+              color: "var(--color-blueprint)",
+              background: "var(--color-paper-dim)",
+              border: "1px dashed var(--color-line-strong)",
+              borderRadius: "var(--radius-sm)",
+              padding: "8px 12px",
+              marginBottom: "1.5rem",
+            }}
+          >
+            {loadError === "__default__" ? t("contracts.loadError") : loadError}
+          </p>
+        )}
+
+        {contracts.length === 0 ? (
+          <div className="mod-card mod-card-pad" style={{ textAlign: "center", color: "var(--color-charcoal)" }}>
+            <FileText size={28} style={{ color: "var(--color-line-strong)", margin: "0 auto 12px" }} />
+            <p>{t("contracts.empty")}</p>
+            <Link to="/dashboard" className="btn btn-primary" style={{ marginTop: "1rem", display: "inline-flex" }}>
+              {t("common.browseListings")}
+            </Link>
+          </div>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: "2rem" }}>
+            {tenantContracts.length > 0 && (
+              <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                {tenantContracts.map(renderContract)}
+              </div>
+            )}
+            {landlordContracts.length > 0 && (
+              <div className="pill-tabs" style={{ alignSelf: "flex-start", maxWidth: "100%", overflowX: "auto" }}>
+                <button
+                  className={`pill-tab ${statusFilter === "all" ? "is-active" : ""}`}
+                  onClick={() => setStatusFilter("all")}
+                >
+                  {t("contracts.filterAll")}
+                </button>
+                {sectionList.map((section) => (
+                  <button
+                    key={section.key}
+                    className={`pill-tab ${statusFilter === section.key ? "is-active" : ""}`}
+                    onClick={() => setStatusFilter(section.key)}
+                  >
+                    {section.label}
+                  </button>
+                ))}
+              </div>
+            )}
+            {landlordContracts.length > 0 && sectionList
+              .filter((section) => statusFilter === "all" || section.key === statusFilter)
+              .map((section) => (
+              <section key={section.key}>
+                <h2
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    fontSize: "1.05rem",
+                    fontFamily: "var(--font-display)",
+                    color: "var(--color-text-strong)",
+                    marginBottom: "12px",
+                  }}
+                >
+                  {section.label}
+                  <span className={`badge ${section.badge}`}>{digits(section.items.length)}</span>
+                </h2>
+                {section.items.length === 0 ? (
+                  <p style={{ color: "var(--color-charcoal)", fontSize: "0.85rem", margin: 0 }}>
+                    {t("contracts.sectionEmpty")}
+                  </p>
+                ) : (
+                  <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                    {section.items.map(renderContract)}
+                  </div>
+                )}
+              </section>
+            ))}
           </div>
         )}
       </main>

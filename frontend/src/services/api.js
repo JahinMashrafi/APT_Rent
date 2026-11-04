@@ -138,20 +138,6 @@ export const contracts = {
 };
 
 // ---------------------------------------------------------------------------
-// 7. Rent Billing & Payment Engine
-// ---------------------------------------------------------------------------
-export const rent = {
-  current: () => apiClient.get("/rent/current").then((r) => r.data),
-  payments: {
-    create: (payload) => apiClient.post("/payments", payload).then((r) => r.data),
-  },
-  scheduleCashPickup: (payload) =>
-    apiClient.post("/rent/cash-schedule", payload).then((r) => r.data),
-  history: () => apiClient.get("/history").then((r) => r.data),
-  landlordLedger: () => apiClient.get("/landlord/rent-ledger").then((r) => r.data),
-};
-
-// ---------------------------------------------------------------------------
 // 8. Conversations & Live Messaging
 // ---------------------------------------------------------------------------
 export const conversations = {
@@ -191,7 +177,6 @@ export const reviews = {
 export const landlord = {
   stats: () => apiClient.get("/landlord/stats").then((r) => r.data),
   properties: () => apiClient.get("/landlord/properties").then((r) => r.data),
-  rentLedger: () => apiClient.get("/landlord/rent-ledger").then((r) => r.data),
 };
 
 // ---------------------------------------------------------------------------
@@ -212,6 +197,7 @@ export const admin = {
     apiClient
       .patch(`/admin/verifications/${userId}/reject`, { rejection_reason: rejectionReason })
       .then((r) => r.data),
+  disputes: () => apiClient.get("/admin/disputes").then((r) => r.data),
   createDispute: (payload) => apiClient.post("/admin/disputes", payload).then((r) => r.data),
   resolveDispute: (disputeId, resolutionNotes) =>
     apiClient
@@ -278,7 +264,6 @@ const api = {
   applications,
   appointments,
   contracts,
-  rent,
   conversations,
   notifications,
   reviews,

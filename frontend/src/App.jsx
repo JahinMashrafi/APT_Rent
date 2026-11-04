@@ -13,8 +13,6 @@ import Dashboard from "./pages/dashboard.jsx";
 import PropertyDetails from "./pages/PropertyDetails.jsx";
 import TourScheduling from "./pages/TourScheduling.jsx";
 import TourRequests from "./pages/TourRequests.jsx";
-import LeaseDeposit from "./pages/LeaseDeposit.jsx";
-import RentCollection from "./pages/RentCollection.jsx";
 import Inbox from "./pages/Inbox.jsx";
 import LandlordDashboard from "./pages/LandlordDashboard.jsx";
 import AdminDashboard from "./pages/AdminDashboard.jsx";
@@ -96,8 +94,6 @@ function App() {
             the page renders rather than after filling in a form. */}
         <Route path="/tour/:propertyId" element={<RequireAuth><TourScheduling /></RequireAuth>} />
         <Route path="/tour-requests" element={<RequireAuth roles={["landlord"]}><TourRequests /></RequireAuth>} />
-        <Route path="/lease/:propertyId" element={<RequireAuth><LeaseDeposit /></RequireAuth>} />
-        <Route path="/rent" element={<RequireAuth roles={["tenant"]}><RentCollection /></RequireAuth>} />
         <Route path="/inbox" element={<RequireAuth><Inbox /></RequireAuth>} />
         <Route path="/applications" element={<RequireAuth><Applications /></RequireAuth>} />
         <Route path="/contracts" element={<RequireAuth><Contracts /></RequireAuth>} />

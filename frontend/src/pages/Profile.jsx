@@ -19,6 +19,8 @@ const toFormState = (user) => ({
   occupation: user?.occupation ?? "",
   institution_name: user?.institution_name ?? "",
   workplace_name: user?.workplace_name ?? "",
+  monthly_income: user?.monthly_income ?? "",
+  family_size: user?.family_size ?? "",
 });
 
 const errorMessage = (err, fallback) => err?.details?.[0]?.issue || err?.message || fallback;
@@ -88,6 +90,8 @@ export default function Profile() {
         contact_number: form.contact_number,
         address: form.address,
         occupation: form.occupation,
+        monthly_income: form.monthly_income === "" ? null : Number(form.monthly_income),
+        family_size: form.family_size === "" ? null : Number(form.family_size),
       };
       if (takesInstitution(form.occupation)) payload.institution_name = form.institution_name;
       if (takesWorkplace(form.occupation)) payload.workplace_name = form.workplace_name;
@@ -257,6 +261,15 @@ export default function Profile() {
                   />
                 </label>
               ) : null}
+
+              <label className="field">
+                <span>{t("profileEdit.monthlyIncome")}</span>
+                <input type="number" name="monthly_income" min="0" step="any" value={form.monthly_income} onChange={handleInputChange} />
+              </label>
+              <label className="field">
+                <span>{t("profileEdit.familySize")}</span>
+                <input type="number" name="family_size" min="1" max="50" step="1" value={form.family_size} onChange={handleInputChange} />
+              </label>
 
               <label className="field field-wide">
                 <span>{t("profileEdit.address")}</span>

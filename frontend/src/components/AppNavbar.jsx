@@ -6,7 +6,6 @@ import {
   ChevronDown,
   Home,
   MessageSquare,
-  CreditCard,
   LayoutDashboard,
   ShieldCheck,
   User,
@@ -50,7 +49,6 @@ const navLinks = {
     { label: "nav.applications", to: "/applications", icon: FileText },
     { label: "nav.contracts", to: "/contracts", icon: FileSignature },
     { label: "nav.inbox", to: "/inbox", icon: MessageSquare },
-    { label: "nav.payRent", to: "/rent", icon: CreditCard },
   ],
   landlord: [
     { label: "nav.dashboard", to: "/landlord", icon: LayoutDashboard },
@@ -348,9 +346,17 @@ export default function AppNavbar() {
                 {userMenuOpen && (
                   <div className="app-dropdown user-dropdown" role="menu">
                     <div className="user-dropdown-header">
-                      <p className="user-dropdown-name">{currentUser?.name}</p>
-                      <p className="user-dropdown-email">{currentUser?.email}</p>
-                      <span className="badge badge-neutral">{t(roleLabelKeys[role])}</span>
+                      <Avatar
+                        className="user-dropdown-avatar"
+                        src={currentUser?.profilePictureUrl}
+                        name={currentUser?.name}
+                        fallback={initials}
+                      />
+                      <div className="user-dropdown-info">
+                        <p className="user-dropdown-name">{currentUser?.name}</p>
+                        <p className="user-dropdown-email">{currentUser?.email}</p>
+                        <span className="badge badge-neutral">{t(roleLabelKeys[role])}</span>
+                      </div>
                     </div>
                     <Link to={`/users/${currentUser?.id}`} className="app-dropdown-item" onClick={() => setUserMenuOpen(false)}>
                       <User size={15} /> {t("user.viewProfile")}
