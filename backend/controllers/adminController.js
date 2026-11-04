@@ -3,6 +3,25 @@ const pool = require("../config/db.js");
 const { signFields, USER_SIGNED_FIELDS } = require("../utils/signFields.js");
 const { notify } = require("../utils/notify.js");
 
+// Documents every account must submit, by occupation:
+//   everyone      -> National ID (nid_photo)   [mandatory]
+//   student       -> + Student ID card
+//   businessman   -> + Trade License
+//   service_holder-> + Job ID card
+const REQUIRED_DOCS = {
+  student: ["nid_photo", "student_id_card"],
+  service_holder: ["nid_photo", "job_id_card"],
+  businessman: ["nid_photo", "trade_license"],
+};
+const requiredDocsFor = (occupation) => REQUIRED_DOCS[occupation] || ["nid_photo"];
+const DOC_ORDER = ["nid_photo", "student_id_card", "job_id_card", "trade_license"];
+const DOC_FIELD = {
+  nid_photo: "nid_photo_url",
+  student_id_card: "student_id_card_url",
+  job_id_card: "job_id_card_url",
+  trade_license: "trade_license_url",
+};
+
 // Uploading new documents bumps documents_submitted_at, which makes an
 // unverified user pending again.
 const PENDING_FILTER = `
@@ -56,7 +75,11 @@ const getAdminStats = async (req, res) => {
 const getVerificationQueue = async (req, res) => {
   try {
     const result = await pool.query(
-      `SELECT u.user_id, u.name, u.contact_number, u.nid_photo_url, u.job_id_card_url, u.documents_submitted_at
+      `SELECT u.user_id, u.name, u.email, u.contact_number, u.occupation::text AS occupation,
+              u.institution_name, u.workplace_name,
+              u.is_landlord, u.is_tenant,
+              u.nid_photo_url, u.student_id_card_url, u.job_id_card_url, u.trade_license_url,
+              u.documents_submitted_at
        FROM users u
        WHERE ${PENDING_FILTER}
        ORDER BY u.documents_submitted_at ASC`,
@@ -68,9 +91,22 @@ const getVerificationQueue = async (req, res) => {
         return {
           user_id: signed.user_id,
           name: signed.name,
+          email: signed.email,
           contact_number: signed.contact_number,
+          occupation: signed.occupation,
+          institution_name: signed.institution_name,
+          workplace_name: signed.workplace_name,
+          role: signed.is_landlord && signed.is_tenant ? "Landlord & Tenant" : signed.is_landlord ? "Landlord" : "Tenant",
+          // National ID is mandatory for everyone; the second document depends on occupation.
+          // Documents for the user's occupation, plus anything else they uploaded,
+          // so a submitted Job ID / Student ID / Trade License is never hidden.
+          required_documents: DOC_ORDER.filter(
+            (doc) => requiredDocsFor(signed.occupation).includes(doc) || Boolean(signed[DOC_FIELD[doc]]),
+          ),
           nid_photo_url: signed.nid_photo_url,
+          student_id_card_url: signed.student_id_card_url,
           job_id_card_url: signed.job_id_card_url,
+          trade_license_url: signed.trade_license_url,
           submitted_at: signed.documents_submitted_at,
         };
       }),
@@ -100,7 +136,7 @@ const approveVerification = async (req, res) => {
       type: "verification_approved",
       title: "Verification approved",
       message: "Your identity documents have been verified.",
-      linkUrl: `/disputes/${dispute.dispute_id}`,
+      linkUrl: "/profile",
     });
 
     return res.status(200).json({

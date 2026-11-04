@@ -104,6 +104,7 @@ const getProperties = async (req, res) => {
       SELECT p.*,
              u.user_id AS owner_user_id, u.name AS owner_name,
              u.is_verified AS owner_is_verified,
+             u.profile_picture_url AS owner_profile_picture_url,
              COALESCE(r.avg_rating, 0)::float AS owner_rating,
              COALESCE(
                (SELECT array_agg(pp.photo_url ORDER BY pp.photo_id)
@@ -143,6 +144,7 @@ const getProperties = async (req, res) => {
         user_id: row.owner_user_id,
         name: row.owner_name,
         is_verified: row.owner_is_verified,
+        profile_picture_url: row.owner_profile_picture_url,
         rating: Number(row.owner_rating.toFixed(2)),
       },
     }));
@@ -176,6 +178,7 @@ const getPropertyById = async (req, res) => {
     const propResult = await pool.query(
       `SELECT p.*, u.user_id AS owner_user_id, u.name AS owner_name,
               u.contact_number AS owner_contact_number, u.is_verified AS owner_is_verified,
+              u.profile_picture_url AS owner_profile_picture_url,
               COALESCE(r.avg_rating, 0)::float AS owner_rating
        FROM properties p
        JOIN users u ON u.user_id = p.owner_id
@@ -224,6 +227,7 @@ const getPropertyById = async (req, res) => {
         name: row.owner_name,
         contact_number: row.owner_contact_number,
         is_verified: row.owner_is_verified,
+        profile_picture_url: row.owner_profile_picture_url,
         average_rating: Number(row.owner_rating.toFixed(2)),
       },
     });
