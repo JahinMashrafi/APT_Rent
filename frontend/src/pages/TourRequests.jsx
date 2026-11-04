@@ -36,7 +36,9 @@ export default function TourRequests() {
   // Collect property addresses from tour requests.
   const addressesToTranslate = useMemo(
     () =>
-      requests
+      // requests
+      //   .map((request) =>
+              appointments
         .map((request) =>
           typeof request.address === "string"
             ? request.address.trim()
@@ -86,6 +88,17 @@ export default function TourRequests() {
       .filter((row) => row.status === 'confirmed' && !row.is_request)
       .map((row) => [row.appointment_batch_id, row]),
   );
+  
+  // Tours the landlord offered on their own ("Propose Tour" on an application) have no
+  // tenant request row, so they never showed up in history. Add the confirmed ones here.
+  const requestBatchIds = new Set(requests.map((row) => row.appointment_batch_id));
+  const standaloneTours = appointments.filter(
+    (row) =>
+      row.is_proposal &&
+      row.status === 'confirmed' &&
+      !requestBatchIds.has(row.appointment_batch_id),
+  );
+  const historyRows = [...standaloneTours, ...pastRequests];
 
   // Tour date used for sorting: the confirmed slot if there is one, otherwise
   // the requested date. Date-less requests have no tour date (null).
@@ -100,7 +113,7 @@ export default function TourRequests() {
 
   // Sorted by tour date (not creation date). Cancelled always sink to the bottom;
   // requests with no tour date go after dated ones within their group.
-  const sortedPastRequests = [...pastRequests].sort((a, b) => {
+  const sortedHistoryRows = [...historyRows].sort((a, b) => {
     const aCancelled = a.status === 'cancelled' ? 1 : 0;
     const bCancelled = b.status === 'cancelled' ? 1 : 0;
     if (aCancelled !== bCancelled) return aCancelled - bCancelled;
@@ -457,7 +470,8 @@ export default function TourRequests() {
               )}
             </section>
 
-            {(pastRequests.length > 0 || confirmed) && (
+            {/* {(pastRequests.length > 0 || confirmed) && ( */}
+                          {(historyRows.length > 0 || confirmed) && (
               <section style={{ marginTop: '3rem' }}>
                 <div
                   style={{

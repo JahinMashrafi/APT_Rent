@@ -647,6 +647,7 @@
     "tourProposedBody": "The landlord proposed 3 tour times for {address}. Please pick one or reject them.",
     "tourConfirmedTitle": "Tour confirmed",
     "tourConfirmedBody": "Tenant confirmed a tour for {date} at {time}.",
+        "tourConfirmedNamedBody": "{name} confirmed a tour for {date} at {time}.",
     "tourRejectedTitle": "Tour times rejected",
     "tourRejectedReason": "The tenant asked for different times: {reason}",
     "tourRejectedBody": "The tenant rejected the proposed times and is waiting for new ones.",

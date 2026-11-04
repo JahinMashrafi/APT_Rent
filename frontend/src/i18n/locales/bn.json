@@ -647,6 +647,7 @@
     "tourProposedBody": "বাড়িওয়ালা {address}-এর জন্য ৩টি ভিজিটের সময় প্রস্তাব করেছেন। অনুগ্রহ করে একটি বেছে নিন বা সবগুলো বাতিল করুন।",
     "tourConfirmedTitle": "ভিজিট নিশ্চিত হয়েছে",
     "tourConfirmedBody": "ভাড়াটিয়া {date}, {time}-এ ভিজিট নিশ্চিত করেছেন।",
+        "tourConfirmedNamedBody": "{name} {date}, {time}-এ ভিজিট নিশ্চিত করেছেন।",
     "tourRejectedTitle": "ভিজিটের সময় প্রত্যাখ্যাত",
     "tourRejectedReason": "ভাড়াটিয়া অন্য সময় চেয়েছেন: {reason}",
     "tourRejectedBody": "ভাড়াটিয়া প্রস্তাবিত সময়গুলো প্রত্যাখ্যান করেছেন এবং নতুন সময়ের অপেক্ষায় আছেন।",

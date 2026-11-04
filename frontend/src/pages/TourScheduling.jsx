@@ -170,7 +170,8 @@ export default function TourScheduling() {
         <Link to="/tour-requests" className="btn btn-primary">Go to Tour Requests</Link>
       </>
     );
-  } else if (confirmed && !isRebooking && !openRequest) {
+  // } else if (confirmed && !isRebooking && !openRequest) {
+      } else if (confirmed && !isRebooking && !openRequest && currentProposals.length === 0) {
     content = (
       <div className="success-screen">
         <div className="success-icon"><CheckCircle size={36} /></div>
