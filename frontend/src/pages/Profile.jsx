@@ -2,6 +2,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import AppNavbar from "../components/AppNavbar.jsx";
 import VerificationCard from "../components/profile/VerificationCard.jsx";
+import Avatar from "../components/ui/Avatar.jsx";
+import ImageLightbox from "../components/ui/ImageLightbox.jsx";
 import { logoutUser, normalizeUserPayload } from "../utils/auth";
 import { OCCUPATIONS, takesInstitution, takesWorkplace } from "../utils/occupations";
 import { useApp } from "../context/AppContext.jsx";
@@ -19,7 +21,18 @@ const toFormState = (user) => ({
   occupation: user?.occupation ?? "",
   institution_name: user?.institution_name ?? "",
   workplace_name: user?.workplace_name ?? "",
+  monthly_income: user?.monthly_income ?? "",
+  family_size: user?.family_size ?? "",
 });
+
+// Verification documents shown at the bottom of the profile.
+const DOC_LIST = [
+  { column: "nid_photo_url", labelKey: "nid" },
+  { column: "student_id_card_url", labelKey: "studentId" },
+  { column: "job_id_card_url", labelKey: "jobId" },
+  { column: "trade_license_url", labelKey: "tradeLicense" },
+];
+const isPdfUrl = (url) => /\.pdf($|\?)/i.test(String(url || "").split("#")[0]);
 
 const errorMessage = (err, fallback) => err?.details?.[0]?.issue || err?.message || fallback;
 
@@ -39,6 +52,7 @@ export default function Profile() {
   const [success, setSuccess] = useState("");
   const [avatarBusy, setAvatarBusy] = useState(false);
   const [avatarError, setAvatarError] = useState("");
+  const [docPreview, setDocPreview] = useState(null); // { url, label }
 
   // Keep the navbar (which reads the app context) in step with what was just saved,
   // without disturbing the role the person is currently viewing the app as.
@@ -88,6 +102,8 @@ export default function Profile() {
         contact_number: form.contact_number,
         address: form.address,
         occupation: form.occupation,
+        monthly_income: form.monthly_income === "" ? null : Number(form.monthly_income),
+        family_size: form.family_size === "" ? null : Number(form.family_size),
       };
       if (takesInstitution(form.occupation)) payload.institution_name = form.institution_name;
       if (takesWorkplace(form.occupation)) payload.workplace_name = form.workplace_name;
@@ -169,11 +185,14 @@ export default function Profile() {
         <div className="profile-container">
           <div className="profile-card">
             <div className="profile-header">
-              {pictureUrl ? (
-                <img src={pictureUrl} alt={t("profileEdit.profilePhotoAlt")} className="profile-avatar profile-avatar-lg" referrerPolicy="no-referrer" />
-              ) : (
-                <span className="profile-avatar profile-avatar-lg">{avatarInitial}</span>
-              )}
+              <Avatar
+                zoomable
+                className="profile-avatar profile-avatar-lg"
+                src={pictureUrl}
+                fallback={avatarInitial}
+                alt={t("profileEdit.profilePhotoAlt")}
+                style={{ display: "flex", alignItems: "center", justifyContent: "center" }}
+              />
               <div className="profile-header-text">
                 <h1>{t("profileEdit.title")}</h1>
                 <p>{t("profileEdit.subtitle")}</p>
@@ -202,6 +221,21 @@ export default function Profile() {
                 {avatarError ? <p className="profile-error">{avatarError}</p> : null}
               </div>
             </div>
+
+            {me ? (
+              <div className="profile-summary" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: "12px", margin: "0 0 1.25rem" }}>
+                {[
+                  [t("profileEdit.occupation"), me.occupation ? t(`profileEdit.occupations.${me.occupation}`) : t("profileEdit.notProvided")],
+                  [t("profileEdit.monthlyIncome"), me.monthly_income != null && me.monthly_income !== "" ? `৳${Number(me.monthly_income).toLocaleString("en-BD")}` : t("profileEdit.notProvided")],
+                  [t("profileEdit.familySize"), me.family_size != null && me.family_size !== "" ? String(me.family_size) : t("profileEdit.notProvided")],
+                ].map(([label, value]) => (
+                  <div key={label} style={{ border: "1px solid var(--color-line)", borderRadius: "var(--radius-sm)", padding: "10px 12px" }}>
+                    <div style={{ fontSize: "0.75rem", color: "var(--color-charcoal)" }}>{label}</div>
+                    <div style={{ fontWeight: 600, color: "var(--color-text-strong)", marginTop: "2px" }}>{value}</div>
+                  </div>
+                ))}
+              </div>
+            ) : null}
 
             {loading ? <p>{t("profileEdit.loading")}</p> : null}
             {error ? <p className="profile-error">{error}</p> : null}
@@ -258,6 +292,15 @@ export default function Profile() {
                 </label>
               ) : null}
 
+              <label className="field">
+                <span>{t("profileEdit.monthlyIncome")}</span>
+                <input type="number" name="monthly_income" min="0" step="any" value={form.monthly_income} onChange={handleInputChange} />
+              </label>
+              <label className="field">
+                <span>{t("profileEdit.familySize")}</span>
+                <input type="number" name="family_size" min="1" max="50" step="1" value={form.family_size} onChange={handleInputChange} />
+              </label>
+
               <label className="field field-wide">
                 <span>{t("profileEdit.address")}</span>
                 <input type="text" name="address" value={form.address} onChange={handleInputChange} />
@@ -286,6 +329,44 @@ export default function Profile() {
               onUpdated={(user) => setMe((prev) => ({ ...prev, ...user }))}
             />
           ) : null}
+
+          {me ? (
+            <div className="profile-card" style={{ marginTop: "1.5rem" }}>
+              <h2 style={{ fontFamily: "var(--font-display)", fontSize: "1.1rem", margin: "0 0 12px" }}>
+                {t("profileEdit.myDocuments")}
+              </h2>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "14px" }}>
+                {DOC_LIST.filter(
+                  (doc) => me[doc.column] || (me.verification?.required_documents ?? []).some((r) => DOC_LIST.find((d) => d.column === `${r}_url`)?.column === doc.column),
+                ).map((doc) => {
+                  const url = me[doc.column];
+                  const label = t(`profileEdit.documents.${doc.labelKey}`);
+                  return (
+                    <div key={doc.column} style={{ border: "1px solid var(--color-line)", borderRadius: "var(--radius-sm)", padding: "10px" }}>
+                      <div style={{ fontSize: "0.8rem", fontWeight: 600, marginBottom: "8px" }}>{label}</div>
+                      {!url ? (
+                        <div style={{ height: "120px", display: "flex", alignItems: "center", justifyContent: "center", background: "var(--color-paper-dim)", fontSize: "0.8rem", color: "var(--color-charcoal)" }}>
+                          {t("profileEdit.notUploaded")}
+                        </div>
+                      ) : isPdfUrl(url) ? (
+                        <a href={url} target="_blank" rel="noreferrer" style={{ display: "flex", height: "120px", alignItems: "center", justifyContent: "center", background: "var(--color-paper-dim)", fontSize: "0.85rem" }}>
+                          {t("profileEdit.openPdf")}
+                        </a>
+                      ) : (
+                        <img
+                          src={url}
+                          alt={label}
+                          onClick={() => setDocPreview({ url, label })}
+                          style={{ width: "100%", height: "120px", objectFit: "cover", cursor: "zoom-in", background: "var(--color-paper-dim)" }}
+                        />
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ) : null}
+          {docPreview ? <ImageLightbox src={docPreview.url} alt={docPreview.label} onClose={() => setDocPreview(null)} /> : null}
         </div>
       </section>
     </div>

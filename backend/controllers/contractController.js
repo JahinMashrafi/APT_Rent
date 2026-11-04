@@ -274,13 +274,6 @@ const listContracts = async (req, res) => {
        JOIN properties p ON p.property_id = c.property_id
        JOIN users owner ON owner.user_id = c.owner_id
        JOIN users tenant ON tenant.user_id = c.tenant_id
-       LEFT JOIN LATERAL (
-         SELECT transaction_reference, status
-         FROM payments
-         WHERE payments.contract_id = c.contract_id
-         ORDER BY payment_date DESC
-         LIMIT 1
-       ) latest_payment ON TRUE
        WHERE c.owner_id = $1 OR c.tenant_id = $1
        ORDER BY c.created_at DESC`,
       [userId],
@@ -302,8 +295,6 @@ const listContracts = async (req, res) => {
       negotiation_status: row.negotiation_status,
       created_at: row.created_at,
       contract_pdf_url: row.contract_pdf_url,
-      transaction_id: row.transaction_reference || null,
-      payment_status: row.payment_status === "paid" ? "yes" : "no",
       ...contractPermissions(row, userId),
     }));
 

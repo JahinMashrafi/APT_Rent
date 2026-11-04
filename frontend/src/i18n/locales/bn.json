@@ -185,10 +185,13 @@
     "untitledProperty": "সম্পত্তির ঠিকানা পাওয়া যায়নি"
   },
   "contracts": {
+    "filterAll": "সব",
+    "sections": {"active": "সক্রিয়", "fully_signed": "সম্পূর্ণ স্বাক্ষরিত", "landlord_signed": "বাড়িওয়ালা স্বাক্ষরিত", "tenant_signed": "ভাড়াটিয়া স্বাক্ষরিত", "lease_accepted": "লিজ গৃহীত", "tenant_proposal_sent": "ভাড়াটিয়ার প্রস্তাব পাঠানো হয়েছে", "terminated": "বাতিলকৃত", "other": "অন্যান্য"},
+    "sectionEmpty": "এই অবস্থায় কোনো চুক্তি নেই।",
     "reviewUser": "{name}-কে রিভিউ দিন",
     "eyebrow": "ভাড়া চুক্তির নথি",
     "title": "আমার চুক্তিসমূহ",
-    "subtitle": "আপনি যেসব ভাড়া চুক্তির অংশ — শর্ত, পরিশোধের অবস্থা ও স্বাক্ষর যেকোনো সময় দেখুন।",
+    "subtitle": "আপনি যেসব ভাড়া চুক্তির অংশ — শর্ত ও স্বাক্ষর যেকোনো সময় দেখুন।",
     "loadError": "চুক্তিসমূহ লোড করা যায়নি।",
     "empty": "এখনো কোনো ভাড়া চুক্তি নেই।",
     "contractNo": "চুক্তি #{id}",
@@ -527,6 +530,8 @@
     "tabDisputes": "বিরোধ"
   },
   "propertyDetails": {
+    "coverLetterLabel": "বাড়িওয়ালার জন্য বার্তা (ঐচ্ছিক)",
+    "coverLetterPlaceholder": "নিজের পরিচয় দিন এবং কেন এই বাসাটি ভাড়া নিতে চান তা লিখুন…",
     "backToListings": "তালিকায় ফিরে যান",
     "loadingTitle": "প্রপার্টি লোড হচ্ছে...",
     "loadingBody": "সর্বশেষ প্রপার্টির তথ্য আনা হচ্ছে।",
@@ -596,6 +601,9 @@
     "cancelled": "বাতিল",
     "propertyNum": "প্রপার্টি #{id}",
     "unknownTenant": "অজানা ভাড়াটিয়া",
+    "sortBy": "ট্যুরের তারিখ অনুযায়ী সাজান",
+    "sortNewest": "নতুন ট্যুর তারিখ আগে",
+    "sortOldest": "পুরনো ট্যুর তারিখ আগে",
     "noDateYet": "এখনও কোনো তারিখ চাওয়া হয়নি",
     "noDate": "কোনো তারিখ চাওয়া হয়নি",
     "askedFor": "{date}, {time}-এর জন্য অনুরোধ",
@@ -639,6 +647,7 @@
     "tourProposedBody": "বাড়িওয়ালা {address}-এর জন্য ৩টি ভিজিটের সময় প্রস্তাব করেছেন। অনুগ্রহ করে একটি বেছে নিন বা সবগুলো বাতিল করুন।",
     "tourConfirmedTitle": "ভিজিট নিশ্চিত হয়েছে",
     "tourConfirmedBody": "ভাড়াটিয়া {date}, {time}-এ ভিজিট নিশ্চিত করেছেন।",
+        "tourConfirmedNamedBody": "{name} {date}, {time}-এ ভিজিট নিশ্চিত করেছেন।",
     "tourRejectedTitle": "ভিজিটের সময় প্রত্যাখ্যাত",
     "tourRejectedReason": "ভাড়াটিয়া অন্য সময় চেয়েছেন: {reason}",
     "tourRejectedBody": "ভাড়াটিয়া প্রস্তাবিত সময়গুলো প্রত্যাখ্যান করেছেন এবং নতুন সময়ের অপেক্ষায় আছেন।",
@@ -758,6 +767,9 @@
     "leaseNotActive": "চুক্তি সক্রিয় নয়"
   },
   "profileView": {
+    "monthlyIncome": "মাসিক আয়",
+    "familySize": "পরিবারের সদস্য",
+    "notProvided": "দেওয়া হয়নি",
     "loading": "প্রোফাইল লোড হচ্ছে…",
     "notFound": "এই প্রোফাইলটি পাওয়া যায়নি।",
     "loadFailed": "প্রোফাইল লোড করা যায়নি।",
@@ -808,6 +820,12 @@
     }
   },
   "profileEdit": {
+    "notProvided": "দেওয়া হয়নি",
+    "myDocuments": "আমার যাচাইকরণ নথি",
+    "notUploaded": "আপলোড করা হয়নি",
+    "openPdf": "PDF খুলুন",
+    "monthlyIncome": "মাসিক আয় (৳)",
+    "familySize": "পরিবারের সদস্য সংখ্যা",
     "title": "আমার প্রোফাইল",
     "subtitle": "আপনার অ্যাকাউন্টের তথ্য দেখুন এবং পরিচালনা করুন।",
     "profilePhotoAlt": "প্রোফাইলের ছবি",
@@ -873,7 +891,7 @@
     "documentSizeError": "{document}: ফাইলের আকার সর্বোচ্চ ৫ MB হতে পারবে।",
     "onFile": "জমা আছে",
     "viewDocument": "দেখুন",
-    "notUploaded": "এখনো আপলোড করা হয়নি",
+    "notUploadedYet": "এখনো আপলোড করা হয়নি",
     "replace": "পরিবর্তন করুন",
     "chooseFile": "ফাইল নির্বাচন করুন",
     "uploading": "আপলোড হচ্ছে…",

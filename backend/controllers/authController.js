@@ -202,7 +202,7 @@ const getCurrentUser = async (req, res) => {
     }
 
     const userResult = await pool.query(
-      `select user_id, name, email, contact_number, address, occupation, profile_picture_url, is_landlord, is_tenant, is_admin
+      `select user_id, name, email, contact_number, address, occupation, monthly_income, family_size, profile_picture_url, is_landlord, is_tenant, is_admin
        from users
        where user_id = $1`,
       [userId],

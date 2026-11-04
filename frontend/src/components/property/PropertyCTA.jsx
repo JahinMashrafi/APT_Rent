@@ -20,6 +20,7 @@ export default function PropertyCTA({
 
   const [applyState, setApplyState] = useState('idle');
   const [applyError, setApplyError] = useState(null);
+  const [coverMessage, setCoverMessage] = useState('');
 
   // Only tenants can apply, and owners cannot apply to their own property.
   const canApply = Boolean(
@@ -61,6 +62,7 @@ export default function PropertyCTA({
 
       await api.applications.create({
         property_id: propertyId,
+        message: coverMessage.trim() || undefined,
       });
 
       setApplyState('sent');
@@ -216,6 +218,32 @@ export default function PropertyCTA({
           gap: '12px',
         }}
       >
+        {canApply && applyState !== 'sent' && (
+          <label style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <span style={{ fontSize: '0.8rem', color: 'var(--color-charcoal)' }}>
+              {t('propertyDetails.coverLetterLabel')}
+            </span>
+            <textarea
+              value={coverMessage}
+              onChange={(e) => setCoverMessage(e.target.value)}
+              maxLength={2000}
+              rows={4}
+              disabled={applyState === 'sending'}
+              placeholder={t('propertyDetails.coverLetterPlaceholder')}
+              style={{
+                width: '100%',
+                resize: 'vertical',
+                padding: '10px',
+                border: '1px solid var(--color-line)',
+                borderRadius: 'var(--radius-sm)',
+                background: 'var(--color-paper)',
+                color: 'var(--color-text-strong)',
+                fontFamily: 'inherit',
+                fontSize: '0.9rem',
+              }}
+            />
+          </label>
+        )}
         {canApply && (
           <button
             className="btn-primary"

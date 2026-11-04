@@ -2,6 +2,7 @@ import ReviewForm from "../components/profile/ReviewForm.jsx";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import AppNavbar from "../components/AppNavbar.jsx";
+import Avatar from "../components/ui/Avatar.jsx";
 import { occupationLabel } from "../utils/occupations";
 import { useLanguage } from "../i18n/LanguageContext.jsx";
 import { useAddressTranslations } from "../hooks/useAddressTranslations.js";
@@ -120,11 +121,13 @@ export default function ProfileView() {
           {profile ? (
             <>
               <div className="profile-card pv-header">
-                {profile.profile_picture_url ? (
-                  <img src={profile.profile_picture_url} alt="" className="profile-avatar profile-avatar-xl" referrerPolicy="no-referrer" />
-                ) : (
-                  <span className="profile-avatar profile-avatar-xl">{initial}</span>
-                )}
+                <Avatar
+                  zoomable
+                  className="profile-avatar profile-avatar-xl"
+                  src={profile.profile_picture_url}
+                  fallback={initial}
+                  style={{ display: "flex", alignItems: "center", justifyContent: "center" }}
+                />
                 <div className="pv-header-text">
                   <h1>
                     {profile.name}
@@ -171,6 +174,22 @@ export default function ProfileView() {
                         <dd>{profile.background.workplace_name}</dd>
                       </div>
                     ) : null}
+                    <div>
+                      <dt>{t("profileView.monthlyIncome")}</dt>
+                      <dd>
+                        {profile.background.monthly_income != null
+                          ? formatCurrency(Number(profile.background.monthly_income))
+                          : t("profileView.notProvided")}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>{t("profileView.familySize")}</dt>
+                      <dd>
+                        {profile.background.family_size != null
+                          ? formatNumber(Number(profile.background.family_size))
+                          : t("profileView.notProvided")}
+                      </dd>
+                    </div>
                   </dl>
                   {!profile.background.occupation && !profile.background.institution_name && !profile.background.workplace_name ? (
                     <p className="verification-note">{t("profileView.noBackground")}</p>

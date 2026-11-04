@@ -130,7 +130,7 @@ const DOC_CONTENT_TYPES = {
 };
 
 const ME_COLUMNS = `user_id, name, email, contact_number, address, occupation,
-  institution_name, workplace_name, profile_picture_url, nid_photo_url,
+  institution_name, workplace_name, monthly_income, family_size, profile_picture_url, nid_photo_url,
   student_id_card_url, job_id_card_url, trade_license_url,
   is_verified, is_tenant, is_landlord, is_admin, documents_submitted_at`;
 
@@ -247,6 +247,28 @@ const updateMe = async (req, res) => {
   if (has("occupation") || has("institution_name")) push("institution_name", institution);
   if (has("occupation") || has("workplace_name")) push("workplace_name", workplace);
 
+  if (has("monthly_income")) {
+    const raw = body.monthly_income;
+    if (raw === null || raw === undefined || String(raw).trim() === "") {
+      push("monthly_income", null);
+    } else {
+      const income = Number(raw);
+      if (!Number.isFinite(income) || income < 0 || income > 1e10) details.push({ field: "monthly_income", issue: "Enter a valid monthly income (0 or more)." });
+      else push("monthly_income", income);
+    }
+  }
+
+  if (has("family_size")) {
+    const raw = body.family_size;
+    if (raw === null || raw === undefined || String(raw).trim() === "") {
+      push("family_size", null);
+    } else {
+      const size = Number(raw);
+      if (!Number.isInteger(size) || size < 1 || size > 50) details.push({ field: "family_size", issue: "Family size must be a whole number from 1 to 50." });
+      else push("family_size", size);
+    }
+  }
+
   if (has("is_tenant")) push("is_tenant", Boolean(body.is_tenant));
   if (has("is_landlord")) push("is_landlord", Boolean(body.is_landlord));
 
@@ -256,6 +278,16 @@ const updateMe = async (req, res) => {
   values.push(userId);
   try {
     await pool.query(`UPDATE users SET ${sets.join(", ")}, updated_at = NOW() WHERE user_id = $${values.length}`, values);
+    // users and applications must always agree on income / family size.
+    if (body.monthly_income !== undefined || body.family_size !== undefined) {
+      await pool.query(
+        `UPDATE applications a
+            SET monthly_income = u.monthly_income, family_size = u.family_size
+           FROM users u
+          WHERE u.user_id = a.tenant_id AND a.tenant_id = $1`,
+        [userId],
+      );
+    }
   } catch (err) {
     if (err.code === "23505") throw AppError.conflict("Contact number already in use.", [{ field: "contact_number", issue: "Already used by another account." }]);
     throw err;
@@ -395,6 +427,7 @@ const getProfileDetail = async (req, res) => {
 
   const found = await pool.query(
     `SELECT user_id, name, email, contact_number, address, occupation, institution_name, workplace_name,
+            monthly_income, family_size,
             profile_picture_url, is_verified, is_landlord, is_tenant, created_at
        FROM users WHERE user_id = $1`,
     [id],
@@ -453,7 +486,13 @@ const getProfileDetail = async (req, res) => {
       : null;
   const background =
     seesAll || viewerIsTheirLandlord
-      ? { occupation: user.occupation, institution_name: user.institution_name, workplace_name: user.workplace_name }
+      ? {
+          occupation: user.occupation,
+          institution_name: user.institution_name,
+          workplace_name: user.workplace_name,
+          monthly_income: user.monthly_income,
+          family_size: user.family_size,
+        }
       : null;
 
   return res.status(200).json({

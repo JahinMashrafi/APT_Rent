@@ -185,10 +185,13 @@
     "untitledProperty": "Property address unavailable"
   },
   "contracts": {
+    "filterAll": "All",
+    "sections": {"active": "Active", "fully_signed": "Fully Signed", "landlord_signed": "Landlord Signed", "tenant_signed": "Tenant Signed", "lease_accepted": "Lease Accepted", "tenant_proposal_sent": "Tenant Proposal Sent", "terminated": "Terminated", "other": "Other"},
+    "sectionEmpty": "No contracts in this status.",
     "reviewUser": "Write a review for {name}",
     "eyebrow": "Lease Documents",
     "title": "My Contracts",
-    "subtitle": "Every lease agreement you're part of — review terms, payment status, and signatures anytime.",
+    "subtitle": "Every lease agreement you're part of — review terms and signatures anytime.",
     "loadError": "Could not load contracts.",
     "empty": "No lease contracts yet.",
     "contractNo": "Contract #{id}",
@@ -527,6 +530,8 @@
     "tabDisputes": "Disputes"
   },
   "propertyDetails": {
+    "coverLetterLabel": "Message to the landlord (optional)",
+    "coverLetterPlaceholder": "Introduce yourself and say why you'd like to rent this place…",
     "backToListings": "Back to listings",
     "loadingTitle": "Loading Property...",
     "loadingBody": "Fetching the latest property details from the API.",
@@ -596,6 +601,9 @@
     "cancelled": "Cancelled",
     "propertyNum": "Property #{id}",
     "unknownTenant": "Unknown tenant",
+    "sortBy": "Sort by tour date",
+    "sortNewest": "Newest tour date first",
+    "sortOldest": "Oldest tour date first",
     "noDateYet": "No date requested yet",
     "noDate": "No date requested",
     "askedFor": "Asked for {date} at {time}",
@@ -639,6 +647,7 @@
     "tourProposedBody": "The landlord proposed 3 tour times for {address}. Please pick one or reject them.",
     "tourConfirmedTitle": "Tour confirmed",
     "tourConfirmedBody": "Tenant confirmed a tour for {date} at {time}.",
+        "tourConfirmedNamedBody": "{name} confirmed a tour for {date} at {time}.",
     "tourRejectedTitle": "Tour times rejected",
     "tourRejectedReason": "The tenant asked for different times: {reason}",
     "tourRejectedBody": "The tenant rejected the proposed times and is waiting for new ones.",
@@ -758,6 +767,9 @@
     "leaseNotActive": "Lease not active"
   },
   "profileView": {
+    "monthlyIncome": "Monthly income",
+    "familySize": "Family members",
+    "notProvided": "Not provided",
     "loading": "Loading profile…",
     "notFound": "This profile doesn't exist.",
     "loadFailed": "Could not load this profile.",
@@ -808,6 +820,12 @@
     }
   },
   "profileEdit": {
+    "notProvided": "Not provided",
+    "myDocuments": "My verification documents",
+    "notUploaded": "Not uploaded",
+    "openPdf": "Open PDF",
+    "monthlyIncome": "Monthly income (৳)",
+    "familySize": "Family size",
     "title": "My Profile",
     "subtitle": "View and manage your account information.",
     "profilePhotoAlt": "Profile photo",
@@ -873,7 +891,7 @@
     "documentSizeError": "{document}: the file must be 5 MB or smaller.",
     "onFile": "On file",
     "viewDocument": "View",
-    "notUploaded": "Not uploaded yet",
+    "notUploadedYet": "Not uploaded yet",
     "replace": "Replace",
     "chooseFile": "Choose file",
     "uploading": "Uploading…",

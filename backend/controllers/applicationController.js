@@ -23,15 +23,23 @@ const createApplication = async (req, res) => {
       return res.status(404).json({ success: false, message: "Property not found" });
     }
 
-    // Defaults for NOT NULL columns in the current schema
-    const monthlyIncome = monthly_income ?? 0;
-    const familySize = family_size ?? 1;
+    // Never invent values: income / family size stay NULL unless the tenant
+    // supplied them, and occupation falls back to the tenant's own profile.
+    const profile = (await pool.query(
+      "SELECT occupation, monthly_income, family_size FROM users WHERE user_id = $1",
+      [tenantId],
+    )).rows[0] ?? {};
+    // Always copied from the tenant's profile so users and applications match.
+    const monthlyIncome = profile.monthly_income ?? null;
+    const familySize = profile.family_size ?? null;
+    const applicantOccupation = occupation ?? profile.occupation ?? null;
+    const coverMessage = typeof message === "string" && message.trim() ? message.trim().slice(0, 2000) : null;
 
     const result = await pool.query(
       `INSERT INTO applications (property_id, tenant_id, monthly_income, occupation, family_size, message)
        VALUES ($1, $2, $3, $4, $5, $6)
        RETURNING application_id, property_id, tenant_id, status, created_at`,
-      [property_id, tenantId, monthlyIncome, occupation, familySize, message],
+      [property_id, tenantId, monthlyIncome, applicantOccupation, familySize, coverMessage],
     );
 
     await notify({
@@ -57,16 +65,22 @@ const listApplications = async (req, res) => {
 
     const query = isLandlord
       ? `SELECT a.application_id, a.property_id, p.address AS property_address, a.status,
-                a.monthly_income, a.occupation, a.family_size, a.message, a.created_at,
-                u.user_id, u.name, u.contact_number, u.is_verified, u.profile_picture_url
+                COALESCE(a.monthly_income, u.monthly_income) AS monthly_income,
+                COALESCE(a.occupation, u.occupation::text) AS occupation,
+                COALESCE(a.family_size, u.family_size) AS family_size, a.message, a.created_at,
+                u.user_id, u.name, u.email, u.contact_number, u.is_verified, u.profile_picture_url,
+                u.address, u.institution_name, u.workplace_name
          FROM applications a
          JOIN properties p ON p.property_id = a.property_id
          JOIN users u ON u.user_id = a.tenant_id
          WHERE p.owner_id = $1
          ORDER BY a.created_at DESC`
       : `SELECT a.application_id, a.property_id, p.address AS property_address, a.status,
-                a.monthly_income, a.occupation, a.family_size, a.message, a.created_at,
-                u.user_id, u.name, u.contact_number, u.is_verified, u.profile_picture_url
+                COALESCE(a.monthly_income, u.monthly_income) AS monthly_income,
+                COALESCE(a.occupation, u.occupation::text) AS occupation,
+                COALESCE(a.family_size, u.family_size) AS family_size, a.message, a.created_at,
+                u.user_id, u.name, u.email, u.contact_number, u.is_verified, u.profile_picture_url,
+                u.address, u.institution_name, u.workplace_name
          FROM applications a
          JOIN properties p ON p.property_id = a.property_id
          JOIN users u ON u.user_id = a.tenant_id
@@ -87,9 +101,14 @@ const listApplications = async (req, res) => {
       tenant: {
         user_id: row.user_id,
         name: row.name,
+        email: row.email,
         contact_number: row.contact_number,
         is_verified: row.is_verified,
         profile_picture_url: row.profile_picture_url,
+        address: row.address,
+        occupation: row.occupation,
+        institution_name: row.institution_name,
+        workplace_name: row.workplace_name,
       },
       created_at: row.created_at,
     }));

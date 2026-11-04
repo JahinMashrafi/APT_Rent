@@ -4,11 +4,28 @@ import { useApp } from '../context/AppContext.jsx';
 import AppNavbar from '../components/AppNavbar.jsx';
 import Modal from '../components/ui/Modal.jsx';
 import { Search, ExternalLink, ArrowUpRight, Plus } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import api from '../services/api';
 import '../css/global.css';
 import '../css/navbar.css';
 import '../css/newsfeed-home.css';
 import '../css/modules.css';
+
+// Verification documents: label + the field the API returns it in.
+const DOC_META = {
+  nid_photo: { label: 'National ID (NID)', field: 'nid_photo_url', empty: 'NO NID UPLOADED' },
+  student_id_card: { label: 'Student ID Card', field: 'student_id_card_url', empty: 'NO STUDENT ID UPLOADED' },
+  job_id_card: { label: 'Job ID Card', field: 'job_id_card_url', empty: 'NO JOB ID UPLOADED' },
+  trade_license: { label: 'Trade License', field: 'trade_license_url', empty: 'NO TRADE LICENSE UPLOADED' },
+};
+const OCCUPATION_LABEL = {
+  student: 'Student',
+  service_holder: 'Service holder',
+  businessman: 'Business owner',
+  unemployed: 'Unemployed',
+  retired: 'Retired',
+  other: 'Other',
+};
 
 const INITIAL_NEW_USER = {
   name: '',
@@ -35,6 +52,10 @@ export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('overview');
   const [verificationQueue, setVerificationQueue] = useState([]);
   const [usersList, setUsersList] = useState([]);
+  const [disputesList, setDisputesList] = useState([]);
+  const [resolveTarget, setResolveTarget] = useState(null); // dispute being resolved from the Disputes tab
+  const [resolveNotes, setResolveNotes] = useState('');
+  const [resolveError, setResolveError] = useState('');
   const [platformStats, setPlatformStats] = useState({
     total_registered_users: 0,
     verified_landlords: 0,
@@ -79,15 +100,17 @@ export default function AdminDashboard() {
     if (role !== 'admin') return;
     setLoading(true);
     try {
-      const [statsRes, verifRes, usersRes] = await Promise.all([
+      const [statsRes, verifRes, usersRes, disputesRes] = await Promise.all([
         api.admin.stats().catch(() => null),
         api.admin.verifications().catch(() => null),
         api.admin.users ? api.admin.users().catch(() => null) : Promise.resolve(null),
+        api.admin.disputes().catch(() => null),
       ]);
 
       if (statsRes) setPlatformStats(statsRes);
       if (verifRes?.data) setVerificationQueue(verifRes.data);
       if (usersRes?.data) setUsersList(usersRes.data);
+      if (disputesRes?.data) setDisputesList(disputesRes.data);
     } finally {
       setLoading(false);
     }
@@ -108,11 +131,6 @@ export default function AdminDashboard() {
       year: 'numeric',
     });
   };
-
-  const currentMonthLabel = new Date().toLocaleDateString('en-US', {
-    month: 'short',
-    year: 'numeric',
-  });
 
   // Open Create Modal in either 'user' or 'admin' preset mode
   const openCreateAccountModal = (preset = 'user') => {
@@ -275,6 +293,34 @@ export default function AdminDashboard() {
     }
   };
 
+  // Disputes tab: resolve one dispute (PATCH /admin/disputes/:id/resolve)
+  const submitResolveDispute = async () => {
+    if (!resolveTarget) return;
+    if (!resolveNotes.trim()) {
+      setResolveError('Resolution notes are required to resolve a dispute.');
+      return;
+    }
+    setActionLoadingId(`dispute-row-${resolveTarget.dispute_id}`);
+    try {
+      await api.admin.resolveDispute(resolveTarget.dispute_id, resolveNotes.trim());
+      setDisputesList((prev) =>
+        prev.map((d) =>
+          d.dispute_id === resolveTarget.dispute_id
+            ? { ...d, status: 'resolved', resolution_notes: resolveNotes.trim() }
+            : d,
+        ),
+      );
+      setPlatformStats((prev) => ({ ...prev, open_disputes: Math.max(0, (prev.open_disputes || 1) - 1) }));
+      setResolveTarget(null);
+      setResolveNotes('');
+      setResolveError('');
+    } catch (err) {
+      setResolveError(err?.message || 'Failed to resolve dispute.');
+    } finally {
+      setActionLoadingId(null);
+    }
+  };
+
   const handleDisputeClick = (u) => {
     setDisputeUser(u);
     setDisputeNote('');
@@ -353,24 +399,18 @@ export default function AdminDashboard() {
   const ledgerMetrics = [
     {
       index: '01',
-      label: 'Monthly Turnover',
-      value: `৳${Number(platformStats.monthly_turnover_bdt || 0).toLocaleString('en-BD')}`,
-      sub: `Settled in ${currentMonthLabel}`,
-    },
-    {
-      index: '02',
       label: 'Active Contracts',
       value: Number(platformStats.active_contracts || 0).toLocaleString('en-BD'),
       sub: 'Executed leases',
     },
     {
-      index: '03',
+      index: '02',
       label: 'Active Listings',
       value: Number(platformStats.active_listings || 0).toLocaleString('en-BD'),
       sub: 'Non-archived properties',
     },
     {
-      index: '04',
+      index: '03',
       label: 'Registered Users',
       value: Number(
         platformStats.total_registered_users || usersList.length || 0
@@ -378,14 +418,14 @@ export default function AdminDashboard() {
       sub: `${Number(platformStats.verified_landlords || 0)} verified landlords`,
     },
     {
-      index: '05',
+      index: '04',
       label: 'Pending Reviews',
       value: Number(pendingCount).toLocaleString('en-BD'),
       sub: 'Awaiting document check',
       highlight: pendingCount > 0 ? 'var(--color-brass-dark)' : undefined,
     },
     {
-      index: '06',
+      index: '05',
       label: 'Open Disputes',
       value: Number(platformStats.open_disputes || 0).toLocaleString('en-BD'),
       sub: 'Unresolved cases',
@@ -551,7 +591,12 @@ export default function AdminDashboard() {
         >
           {[
             { id: 'overview', label: 'Overview' },
-            { id: 'verification', label: 'Verification Queue', count: pendingCount },
+            { id: 'verification', label: 'User Verification', count: pendingCount },
+            {
+              id: 'disputes',
+              label: 'Disputes',
+              count: disputesList.filter((d) => d.status === 'open').length,
+            },
             {
               id: 'users',
               label: 'User Management',
@@ -950,6 +995,16 @@ export default function AdminDashboard() {
                         <div
                           style={{
                             fontFamily: 'var(--font-mono)',
+                            fontSize: '0.78rem',
+                            color: 'var(--color-charcoal)',
+                            marginBottom: '4px',
+                          }}
+                        >
+                          {item.role || 'User'} · {OCCUPATION_LABEL[item.occupation] || 'Occupation not set'}
+                        </div>
+                        <div
+                          style={{
+                            fontFamily: 'var(--font-mono)',
                             fontSize: '0.75rem',
                             color: 'var(--color-charcoal)',
                             opacity: 0.75,
@@ -966,165 +1021,83 @@ export default function AdminDashboard() {
                           gap: '1.25rem',
                         }}
                       >
-                        <div
-                          style={{
-                            border: '1px solid var(--color-line-strong)',
-                            padding: '10px',
-                          }}
-                        >
-                          <div
-                            style={{
-                              display: 'flex',
-                              justifyContent: 'space-between',
-                              alignItems: 'center',
-                              fontFamily: 'var(--font-mono)',
-                              fontSize: '0.72rem',
-                              textTransform: 'uppercase',
-                              color: 'var(--color-charcoal)',
-                              marginBottom: '8px',
-                            }}
-                          >
-                            <span>01 / National ID (NID)</span>
-                            {item.nid_photo_url && (
-                              <a
-                                href={item.nid_photo_url}
-                                target="_blank"
-                                rel="noreferrer"
+                        {(item.required_documents?.length ? item.required_documents : ['nid_photo']).map((docKey, docIndex) => {
+                          const meta = DOC_META[docKey];
+                          if (!meta) return null;
+                          const url = item[meta.field];
+                          return (
+                            <div
+                              key={docKey}
+                              style={{ border: '1px solid var(--color-line-strong)', padding: '10px' }}
+                            >
+                              <div
                                 style={{
-                                  color: 'var(--color-blueprint)',
-                                  textDecoration: 'none',
-                                  display: 'inline-flex',
+                                  display: 'flex',
+                                  justifyContent: 'space-between',
                                   alignItems: 'center',
-                                  gap: '3px',
+                                  fontFamily: 'var(--font-mono)',
+                                  fontSize: '0.72rem',
+                                  textTransform: 'uppercase',
+                                  color: 'var(--color-charcoal)',
+                                  marginBottom: '8px',
                                 }}
                               >
-                                RAW <ExternalLink size={11} />
-                              </a>
-                            )}
-                          </div>
-
-                          {item.nid_photo_url ? (
-                            <div
-                              onClick={() =>
-                                setPreviewDoc({
-                                  title: `${item.name} — National ID`,
-                                  url: item.nid_photo_url,
-                                })
-                              }
-                              style={{
-                                height: '130px',
-                                background: 'var(--color-paper-dim)',
-                                overflow: 'hidden',
-                                cursor: 'zoom-in',
-                              }}
-                            >
-                              <img
-                                src={item.nid_photo_url}
-                                alt={`NID for ${item.name}`}
-                                style={{
-                                  width: '100%',
-                                  height: '100%',
-                                  objectFit: 'cover',
-                                }}
-                              />
+                                <span>
+                                  {String(docIndex + 1).padStart(2, '0')} / {meta.label}
+                                  {docKey === 'nid_photo' ? ' *' : ''}
+                                </span>
+                                {url && (
+                                  <a
+                                    href={url}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    style={{
+                                      color: 'var(--color-blueprint)',
+                                      textDecoration: 'none',
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      gap: '3px',
+                                    }}
+                                  >
+                                    RAW <ExternalLink size={11} />
+                                  </a>
+                                )}
+                              </div>
+                              {url ? (
+                                <div
+                                  onClick={() => setPreviewDoc({ title: `${item.name} — ${meta.label}`, url })}
+                                  style={{
+                                    height: '130px',
+                                    background: 'var(--color-paper-dim)',
+                                    overflow: 'hidden',
+                                    cursor: 'zoom-in',
+                                  }}
+                                >
+                                  <img
+                                    src={url}
+                                    alt={`${meta.label} for ${item.name}`}
+                                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                  />
+                                </div>
+                              ) : (
+                                <div
+                                  style={{
+                                    height: '130px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    background: 'var(--color-paper-dim)',
+                                    fontFamily: 'var(--font-mono)',
+                                    fontSize: '0.75rem',
+                                    color: 'var(--color-error)',
+                                  }}
+                                >
+                                  {meta.empty}
+                                </div>
+                              )}
                             </div>
-                          ) : (
-                            <div
-                              style={{
-                                height: '130px',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                background: 'var(--color-paper-dim)',
-                                fontFamily: 'var(--font-mono)',
-                                fontSize: '0.75rem',
-                                color: 'var(--color-charcoal)',
-                              }}
-                            >
-                              NO NID UPLOADED
-                            </div>
-                          )}
-                        </div>
-
-                        <div
-                          style={{
-                            border: '1px solid var(--color-line-strong)',
-                            padding: '10px',
-                          }}
-                        >
-                          <div
-                            style={{
-                              display: 'flex',
-                              justifyContent: 'space-between',
-                              alignItems: 'center',
-                              fontFamily: 'var(--font-mono)',
-                              fontSize: '0.72rem',
-                              textTransform: 'uppercase',
-                              color: 'var(--color-charcoal)',
-                              marginBottom: '8px',
-                            }}
-                          >
-                            <span>02 / Job ID Card</span>
-                            {item.job_id_card_url && (
-                              <a
-                                href={item.job_id_card_url}
-                                target="_blank"
-                                rel="noreferrer"
-                                style={{
-                                  color: 'var(--color-blueprint)',
-                                  textDecoration: 'none',
-                                  display: 'inline-flex',
-                                  alignItems: 'center',
-                                  gap: '3px',
-                                }}
-                              >
-                                RAW <ExternalLink size={11} />
-                              </a>
-                            )}
-                          </div>
-
-                          {item.job_id_card_url ? (
-                            <div
-                              onClick={() =>
-                                setPreviewDoc({
-                                  title: `${item.name} — Job ID Card`,
-                                  url: item.job_id_card_url,
-                                })
-                              }
-                              style={{
-                                height: '130px',
-                                background: 'var(--color-paper-dim)',
-                                overflow: 'hidden',
-                                cursor: 'zoom-in',
-                              }}
-                            >
-                              <img
-                                src={item.job_id_card_url}
-                                alt={`Job ID for ${item.name}`}
-                                style={{
-                                  width: '100%',
-                                  height: '100%',
-                                  objectFit: 'cover',
-                                }}
-                              />
-                            </div>
-                          ) : (
-                            <div
-                              style={{
-                                height: '130px',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                background: 'var(--color-paper-dim)',
-                                fontFamily: 'var(--font-mono)',
-                                fontSize: '0.75rem',
-                                color: 'var(--color-charcoal)',
-                              }}
-                            >
-                              NO JOB ID UPLOADED
-                            </div>
-                          )}
-                        </div>
+                          );
+                        })}
                       </div>
 
                       <div
@@ -1172,6 +1145,111 @@ export default function AdminDashboard() {
                   );
                 })}
               </div>
+            )}
+          </div>
+        )}
+
+        {/* TAB: DISPUTES */}
+        {activeTab === 'disputes' && (
+          <div>
+            {disputesList.length === 0 ? (
+              <div
+                style={{
+                  padding: '3rem 0',
+                  borderTop: '1px solid var(--color-line)',
+                  borderBottom: '1px solid var(--color-line)',
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: '0.85rem',
+                  color: 'var(--color-charcoal)',
+                }}
+              >
+                NO DISPUTES — Nothing has been filed yet.
+              </div>
+            ) : (
+              [
+                { key: 'open', title: 'Open Disputes' },
+                { key: 'resolved', title: 'Resolved Disputes' },
+              ].map((group) => {
+                const rows = disputesList.filter((d) => (group.key === 'open' ? d.status === 'open' : d.status !== 'open'));
+                return (
+                  <section key={group.key} style={{ marginBottom: '2.5rem' }}>
+                    <h2
+                      style={{
+                        fontFamily: 'var(--font-display)',
+                        fontSize: '1.05rem',
+                        margin: '0 0 12px 0',
+                        color: 'var(--color-text-strong)',
+                      }}
+                    >
+                      {group.title} ({rows.length})
+                    </h2>
+                    {rows.length === 0 ? (
+                      <p style={{ fontFamily: 'var(--font-mono)', fontSize: '0.8rem', color: 'var(--color-charcoal)' }}>
+                        None.
+                      </p>
+                    ) : (
+                      <div style={{ borderTop: '1px solid var(--color-ink)' }}>
+                        {rows.map((d) => (
+                          <div
+                            key={d.dispute_id}
+                            style={{
+                              display: 'grid',
+                              gridTemplateColumns: '1fr auto',
+                              gap: '1.5rem',
+                              padding: '1.25rem 0',
+                              borderBottom: '1px solid var(--color-line-strong)',
+                              alignItems: 'start',
+                            }}
+                          >
+                            <div>
+                              <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.72rem', color: 'var(--color-charcoal)', marginBottom: '4px' }}>
+                                DISPUTE #{d.dispute_id}
+                                {d.contract_id ? ` · CONTRACT #${d.contract_id}` : ''} · FILED {formatDate(d.created_at)}
+                              </div>
+                              <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '1.05rem', color: 'var(--color-text-strong)', marginBottom: '6px' }}>
+                                {d.reason || 'Dispute'}
+                              </div>
+                              <div style={{ fontSize: '0.85rem', color: 'var(--color-charcoal)', marginBottom: '6px' }}>
+                                <strong>{d.complainant_name}</strong> reported <strong>{d.reported_user_name}</strong>
+                              </div>
+                              {d.details && (
+                                <p style={{ fontSize: '0.85rem', color: 'var(--color-charcoal)', margin: '0 0 6px 0' }}>{d.details}</p>
+                              )}
+                              {d.resolution_notes && (
+                                <p style={{ fontSize: '0.85rem', color: 'var(--color-success)', margin: 0 }}>
+                                  <strong>Resolution:</strong> {d.resolution_notes}
+                                </p>
+                              )}
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', minWidth: '140px' }}>
+                              <Link
+                                to={`/disputes/${d.dispute_id}`}
+                                className="btn btn-ghost"
+                                style={{ borderRadius: 0, textAlign: 'center', fontFamily: 'var(--font-mono)', fontSize: '0.78rem', textTransform: 'uppercase', padding: '10px 14px' }}
+                              >
+                                View
+                              </Link>
+                              {d.status === 'open' && (
+                                <button
+                                  className="btn btn-primary"
+                                  onClick={() => {
+                                    setResolveTarget(d);
+                                    setResolveNotes('');
+                                    setResolveError('');
+                                  }}
+                                  style={{ borderRadius: 0, fontFamily: 'var(--font-mono)', fontSize: '0.78rem', textTransform: 'uppercase', padding: '10px 14px' }}
+                                >
+                                  Resolve
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </section>
+                );
+              })
             )}
           </div>
         )}
@@ -1965,6 +2043,41 @@ export default function AdminDashboard() {
               onClick={confirmReject}
             >
               Confirm Rejection
+            </button>
+          </div>
+        </Modal>
+      )}
+
+      {/* Resolve Dispute (Disputes tab) */}
+      {resolveTarget && (
+        <Modal
+          isOpen={!!resolveTarget}
+          onClose={() => setResolveTarget(null)}
+          title={`Resolve Dispute #${resolveTarget.dispute_id}`}
+          size="md"
+        >
+          <p style={{ fontSize: '0.9rem', color: 'var(--color-charcoal)', marginTop: 0 }}>
+            <strong>{resolveTarget.complainant_name}</strong> vs <strong>{resolveTarget.reported_user_name}</strong>
+            {resolveTarget.reason ? ` — ${resolveTarget.reason}` : ''}
+          </p>
+          <textarea
+            className={`mod-input ${resolveError ? 'has-error' : ''}`}
+            placeholder="Resolution notes (sent to both parties)"
+            value={resolveNotes}
+            onChange={(e) => setResolveNotes(e.target.value)}
+            style={{ width: '100%', minHeight: '110px' }}
+          />
+          {resolveError && (
+            <p role="alert" style={{ color: 'var(--color-error)', fontSize: '0.85rem' }}>{resolveError}</p>
+          )}
+          <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '1rem' }}>
+            <button className="btn btn-ghost" onClick={() => setResolveTarget(null)}>Cancel</button>
+            <button
+              className="btn btn-primary"
+              disabled={actionLoadingId === `dispute-row-${resolveTarget.dispute_id}`}
+              onClick={submitResolveDispute}
+            >
+              {actionLoadingId === `dispute-row-${resolveTarget.dispute_id}` ? 'Saving...' : 'Mark resolved'}
             </button>
           </div>
         </Modal>

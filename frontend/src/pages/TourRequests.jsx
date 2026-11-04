@@ -32,17 +32,20 @@ export default function TourRequests() {
 
   const [activeRequestId, setActiveRequestId] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [historySort, setHistorySort] = useState('newest'); // 'newest' | 'oldest' (by tour date)
   // Collect property addresses from tour requests.
   const addressesToTranslate = useMemo(
     () =>
-      requests
+      // requests
+      //   .map((request) =>
+      appointments
         .map((request) =>
           typeof request.address === "string"
             ? request.address.trim()
             : ""
         )
         .filter(Boolean),
-    [requests]
+    [appointments]
   );
 
   // Translate addresses when Bangla is selected.
@@ -85,6 +88,42 @@ export default function TourRequests() {
       .filter((row) => row.status === 'confirmed' && !row.is_request)
       .map((row) => [row.appointment_batch_id, row]),
   );
+  
+  // Tours the landlord offered on their own ("Propose Tour" on an application) have no
+  // tenant request row, so they never showed up in history. Add the confirmed ones here.
+  const requestBatchIds = new Set(requests.map((row) => row.appointment_batch_id));
+  const standaloneTours = appointments.filter(
+    (row) =>
+      row.is_proposal &&
+      row.status === 'confirmed' &&
+      !requestBatchIds.has(row.appointment_batch_id),
+  );
+  const historyRows = [...standaloneTours, ...pastRequests];
+
+  // Tour date used for sorting: the confirmed slot if there is one, otherwise
+  // the requested date. Date-less requests have no tour date (null).
+  const tourTimestamp = (request) => {
+    const slot = confirmedByBatch.get(request.appointment_batch_id);
+    const date = slot?.appointment_date ?? (request.is_date_less ? null : request.appointment_date);
+    if (!date) return null;
+    const time = String(slot?.appointment_time ?? request.appointment_time ?? '00:00').slice(0, 5);
+    const ts = new Date(`${String(date).slice(0, 10)}T${time}`).getTime();
+    return Number.isNaN(ts) ? null : ts;
+  };
+
+  // Sorted by tour date (not creation date). Cancelled always sink to the bottom;
+  // requests with no tour date go after dated ones within their group.
+  const sortedHistoryRows = [...historyRows].sort((a, b) => {
+    const aCancelled = a.status === 'cancelled' ? 1 : 0;
+    const bCancelled = b.status === 'cancelled' ? 1 : 0;
+    if (aCancelled !== bCancelled) return aCancelled - bCancelled;
+    const ta = tourTimestamp(a);
+    const tb = tourTimestamp(b);
+    if (ta === null && tb === null) return 0;
+    if (ta === null) return 1;
+    if (tb === null) return -1;
+    return historySort === 'newest' ? tb - ta : ta - tb;
+  });
 
   const handlePropose = async (slots) => {
     if (!activeRequest || isSubmitting) return;
@@ -431,19 +470,48 @@ export default function TourRequests() {
               )}
             </section>
 
-            {(pastRequests.length > 0 || confirmed) && (
+            {/* {(pastRequests.length > 0 || confirmed) && ( */}
+                          {(historyRows.length > 0 || confirmed) && (
               <section style={{ marginTop: '3rem' }}>
-                <h2
-                  className="section-heading"
+                <div
                   style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    gap: '1rem',
+                    flexWrap: 'wrap',
                     marginBottom: '1rem',
-                    fontSize: '1rem',
-                    fontFamily: 'var(--font-display)',
-                    color: 'var(--color-text-strong)',
                   }}
                 >
-                  {t('tours.history')}
-                </h2>
+                  <h2
+                    className="section-heading"
+                    style={{
+                      margin: 0,
+                      fontSize: '1rem',
+                      fontFamily: 'var(--font-display)',
+                      color: 'var(--color-text-strong)',
+                    }}
+                  >
+                    {t('tours.history')}
+                  </h2>
+
+                  <select
+                    value={historySort}
+                    onChange={(e) => setHistorySort(e.target.value)}
+                    aria-label={t('tours.sortBy')}
+                    style={{
+                      padding: '0.4rem 0.6rem',
+                      border: '1px solid var(--color-line)',
+                      borderRadius: 'var(--radius-sm)',
+                      background: 'var(--color-paper)',
+                      color: 'var(--color-text-strong)',
+                      fontSize: '0.85rem',
+                    }}
+                  >
+                    <option value="newest">{t('tours.sortNewest')}</option>
+                    <option value="oldest">{t('tours.sortOldest')}</option>
+                  </select>
+                </div>
 
                 <div
                   style={{
@@ -452,7 +520,7 @@ export default function TourRequests() {
                     gap: '0.75rem',
                   }}
                 >
-                  {pastRequests.map((request) => (
+                  {sortedHistoryRows.map((request) => (
                     <div
                       key={request.appointment_id}
                       style={{

@@ -6,9 +6,7 @@ import AvailabilityBadge from "./AvailabilityBadge.jsx";
 import { useLanguage } from "../i18n/LanguageContext.jsx";
 import Avatar from "./ui/Avatar.jsx";
 
-const PILL = { paid: "pill-done", due: "pill-open", overdue: "pill-danger", unknown: "pill-muted" };
-
-/** Landlord view: occupied units (tenant, rent, lease end, rent status) and vacant units (listing status). */
+/** Landlord view: occupied units (tenant, rent, lease end) and vacant units (listing status). */
 export default function UnitsPanel() {
   const { t, formatCurrency, formatDate, formatNumber } = useLanguage();
   const [state, setState] = useState({ loading: true, data: null });
@@ -51,10 +49,6 @@ export default function UnitsPanel() {
                 <div><dt><Banknote size={14} /> {t("units.rent")}</dt><dd>{formatCurrency(u.rent)}</dd></div>
                 <div><dt><Calendar size={14} /> {t("units.leaseEnd")}</dt><dd>{u.lease_end ? formatDate(`${u.lease_end}T00:00:00`, "medium") : "—"}</dd></div>
               </dl>
-              <footer>
-                <span className="fx-help">{t("units.rentStatus")}</span>
-                <span className={`pill ${PILL[u.rent_status]}`}>{u.rent_status === "unknown" ? t("units.leaseNotActive") : t(`dash.status.${u.rent_status}`)}</span>
-              </footer>
             </article>
           ))}
         </div>

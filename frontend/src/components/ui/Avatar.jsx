@@ -1,4 +1,5 @@
 import { useState } from "react";
+import ImageLightbox from "./ImageLightbox.jsx";
 
 // Accepts absolute http(s) URLs (Supabase storage), root-relative paths, blob: and data:image URIs.
 // Rejects "", null, "null", "undefined" and anything else that would render a broken image.
@@ -21,20 +22,35 @@ export const cleanAvatarUrl = (value) => {
  * Pass the existing avatar class (e.g. "unit-avatar", "landlord-avatar", "user-chip-avatar")
  * as className so size and colors stay as they were.
  */
-export default function Avatar({ src, name, fallback, className = "", style, alt = "", title }) {
+export default function Avatar({ src, name, fallback, className = "", style, alt = "", title, zoomable = false }) {
   const url = cleanAvatarUrl(src);
   const [status, setStatus] = useState({ url: "", state: "idle" });
+  const [zoomed, setZoomed] = useState(false);
   const state = status.url === url ? status.state : "idle"; // stale status for an old URL is ignored
 
   const initial = fallback ?? ((name || "").trim()[0] || "?").toUpperCase();
   const showImage = Boolean(url) && state !== "error";
 
+  const canZoom = zoomable && showImage && state === "loaded";
+
   return (
+    <>
     <span
       className={className}
-      style={{ position: "relative", overflow: "hidden", ...style }}
+      style={{ position: "relative", overflow: "hidden", ...(canZoom ? { cursor: "zoom-in" } : null), ...style }}
       title={title}
-      aria-hidden={alt ? undefined : "true"}
+      aria-hidden={alt || canZoom ? undefined : "true"}
+      role={canZoom ? "button" : undefined}
+      tabIndex={canZoom ? 0 : undefined}
+      onClick={
+        canZoom
+          ? (e) => {
+              e.stopPropagation();
+              setZoomed(true);
+            }
+          : undefined
+      }
+      onKeyDown={canZoom ? (e) => (e.key === "Enter" || e.key === " ") && setZoomed(true) : undefined}
     >
       {initial}
       {showImage ? (
@@ -59,5 +75,7 @@ export default function Avatar({ src, name, fallback, className = "", style, alt
         />
       ) : null}
     </span>
+    {zoomed && canZoom ? <ImageLightbox src={url} alt={alt || name || ""} onClose={() => setZoomed(false)} /> : null}
+    </>
   );
 }
