@@ -278,6 +278,16 @@ const updateMe = async (req, res) => {
   values.push(userId);
   try {
     await pool.query(`UPDATE users SET ${sets.join(", ")}, updated_at = NOW() WHERE user_id = $${values.length}`, values);
+    // users and applications must always agree on income / family size.
+    if (body.monthly_income !== undefined || body.family_size !== undefined) {
+      await pool.query(
+        `UPDATE applications a
+            SET monthly_income = u.monthly_income, family_size = u.family_size
+           FROM users u
+          WHERE u.user_id = a.tenant_id AND a.tenant_id = $1`,
+        [userId],
+      );
+    }
   } catch (err) {
     if (err.code === "23505") throw AppError.conflict("Contact number already in use.", [{ field: "contact_number", issue: "Already used by another account." }]);
     throw err;

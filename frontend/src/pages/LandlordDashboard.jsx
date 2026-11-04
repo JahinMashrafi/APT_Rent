@@ -726,6 +726,7 @@ export default function LandlordDashboard() {
         <Modal isOpen={showProfileModal} onClose={() => setShowProfileModal(false)} title="Applicant Profile" size="lg">
           <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center', marginBottom: '1.5rem' }}>
             <Avatar
+              zoomable
               className="landlord-avatar"
               style={{ width: '64px', height: '64px', background: 'var(--color-ink)', color: '#fff', border: '2px solid var(--color-brass)', fontSize: '1.8rem' }}
               src={selectedApplicant.profilePictureUrl}

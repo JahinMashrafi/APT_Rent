@@ -29,8 +29,9 @@ const createApplication = async (req, res) => {
       "SELECT occupation, monthly_income, family_size FROM users WHERE user_id = $1",
       [tenantId],
     )).rows[0] ?? {};
-    const monthlyIncome = monthly_income ?? profile.monthly_income ?? null;
-    const familySize = family_size ?? profile.family_size ?? null;
+    // Always copied from the tenant's profile so users and applications match.
+    const monthlyIncome = profile.monthly_income ?? null;
+    const familySize = profile.family_size ?? null;
     const applicantOccupation = occupation ?? profile.occupation ?? null;
     const coverMessage = typeof message === "string" && message.trim() ? message.trim().slice(0, 2000) : null;
 

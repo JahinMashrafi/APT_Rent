@@ -816,6 +816,10 @@
     }
   },
   "profileEdit": {
+    "notProvided": "দেওয়া হয়নি",
+    "myDocuments": "আমার যাচাইকরণ নথি",
+    "notUploaded": "আপলোড করা হয়নি",
+    "openPdf": "PDF খুলুন",
     "monthlyIncome": "মাসিক আয় (৳)",
     "familySize": "পরিবারের সদস্য সংখ্যা",
     "title": "আমার প্রোফাইল",
@@ -883,7 +887,7 @@
     "documentSizeError": "{document}: ফাইলের আকার সর্বোচ্চ ৫ MB হতে পারবে।",
     "onFile": "জমা আছে",
     "viewDocument": "দেখুন",
-    "notUploaded": "এখনো আপলোড করা হয়নি",
+    "notUploadedYet": "এখনো আপলোড করা হয়নি",
     "replace": "পরিবর্তন করুন",
     "chooseFile": "ফাইল নির্বাচন করুন",
     "uploading": "আপলোড হচ্ছে…",

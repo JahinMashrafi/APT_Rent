@@ -553,6 +553,7 @@ const formatConvTime = (iso) => {
                   </button>
                   <div className="contact-avatar small" style={{ marginRight: '12px', position: 'relative' }}>
                     <Avatar
+                      zoomable
                       src={activeConv.participant.profile_picture_url}
                       name={activeConv.participant.name}
                       fallback={activeConv.participant.initials}

@@ -333,6 +333,7 @@ export default function PropertyInfo({ property }) {
           >
             <Avatar
               className="landlord-avatar"
+              zoomable
               src={property?.landlord?.profilePictureUrl}
               name={property?.landlord?.name}
               style={{

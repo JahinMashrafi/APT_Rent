@@ -348,6 +348,7 @@ export default function AppNavbar() {
                     <div className="user-dropdown-header">
                       <Avatar
                         className="user-dropdown-avatar"
+        zoomable
                         src={currentUser?.profilePictureUrl}
                         name={currentUser?.name}
                         fallback={initials}

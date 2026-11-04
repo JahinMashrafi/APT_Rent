@@ -816,6 +816,10 @@
     }
   },
   "profileEdit": {
+    "notProvided": "Not provided",
+    "myDocuments": "My verification documents",
+    "notUploaded": "Not uploaded",
+    "openPdf": "Open PDF",
     "monthlyIncome": "Monthly income (৳)",
     "familySize": "Family size",
     "title": "My Profile",
@@ -883,7 +887,7 @@
     "documentSizeError": "{document}: the file must be 5 MB or smaller.",
     "onFile": "On file",
     "viewDocument": "View",
-    "notUploaded": "Not uploaded yet",
+    "notUploadedYet": "Not uploaded yet",
     "replace": "Replace",
     "chooseFile": "Choose file",
     "uploading": "Uploading…",
