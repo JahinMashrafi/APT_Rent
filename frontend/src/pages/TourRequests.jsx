@@ -38,14 +38,14 @@ export default function TourRequests() {
     () =>
       // requests
       //   .map((request) =>
-              appointments
+      appointments
         .map((request) =>
           typeof request.address === "string"
             ? request.address.trim()
             : ""
         )
         .filter(Boolean),
-    [requests]
+    [appointments]
   );
 
   // Translate addresses when Bangla is selected.
@@ -520,7 +520,7 @@ export default function TourRequests() {
                     gap: '0.75rem',
                   }}
                 >
-                  {sortedPastRequests.map((request) => (
+                  {sortedHistoryRows.map((request) => (
                     <div
                       key={request.appointment_id}
                       style={{
