@@ -17,10 +17,13 @@ export default function Register() {
   const [nidPhoto, setNidPhoto] = useState(null);
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [confirmAccurate, setConfirmAccurate] = useState(false);
+  const [agreeTerms, setAgreeTerms] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const navigate = useNavigate();
   const { applyAuthenticatedUser } = useApp();
+  
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -30,6 +33,13 @@ export default function Register() {
   const handleRegister = async (e) => {
     e.preventDefault();
     setError("");
+      // Both confirmation checkboxes are mandatory
+  if (!confirmAccurate || !agreeTerms) {
+    setError(
+      "Please confirm your details and accept the Terms of Service and Privacy Policy."
+    );
+    return;
+  }
 
     // Basic front-end validation similar to original HTML preview
     if (!formData.fullName || !formData.email || !formData.phone || !formData.password || !formData.confirmPassword || !occupation) {
@@ -306,15 +316,35 @@ export default function Register() {
                 </div>
               </div>
 
+             
               <label className="field-checkbox">
-                <input type="checkbox" id="confirmAccurate" name="confirmAccurate" />
+                <input
+                  type="checkbox"
+                  id="confirmAccurate"
+                  name="confirmAccurate"
+                  checked={confirmAccurate}
+                  onChange={(e) => setConfirmAccurate(e.target.checked)}
+                  required
+                />
                 {t("register.confirmAccurate")}
               </label>
 
               <label className="field-checkbox" id="agreeTermsWrap">
-                <input type="checkbox" id="agreeTerms" name="agreeTerms" />
-                {t("register.agreePrefix")} <a href="#">{t("register.terms")}</a> {t("register.and")} <a href="#">{t("register.privacy")}</a>{t("register.agreeSuffix")}
+                <input
+                  type="checkbox"
+                  id="agreeTerms"
+                  name="agreeTerms"
+                  checked={agreeTerms}
+                  onChange={(e) => setAgreeTerms(e.target.checked)}
+                  required
+                />
+                {t("register.agreePrefix")}{" "}
+                <a href="#">{t("register.terms")}</a>{" "}
+                {t("register.and")}{" "}
+                <a href="#">{t("register.privacy")}</a>
+                {t("register.agreeSuffix")}
               </label>
+
 
               <button type="submit" className="btn btn-primary btn-block" disabled={isSubmitting}>
                 {isSubmitting ? t("register.submitting") : t("register.submit")}
