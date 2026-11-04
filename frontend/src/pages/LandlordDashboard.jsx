@@ -2,8 +2,11 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import AppNavbar from '../components/AppNavbar.jsx';
 import UnitsPanel from '../components/UnitsPanel.jsx';
+import MaintenancePanel from '../components/cases/MaintenancePanel.jsx';
+import DisputesPanel from '../components/cases/DisputesPanel.jsx';
+import LeaseSummaryModal from '../components/lease/LeaseSummaryModal.jsx';
 import Modal from '../components/ui/Modal.jsx';
-import { TrendingUp, Users, Calendar, Edit3, Eye, EyeOff, Trash2, ChevronRight, Building2, DollarSign, AlertTriangle, User, FileText, MessageSquare, Wallet } from 'lucide-react';
+import { TrendingUp, Users, Calendar, Edit3, Eye, EyeOff, Trash2, ChevronRight, Building2, DollarSign, AlertTriangle, User, FileText, MessageSquare, Wallet, ArrowDown, ArrowUp } from 'lucide-react';
 import PropertyFormModal from '../components/property/PropertyFormModal.jsx';
 import { useToast } from '../components/ui/Toast.jsx';
 import api from '../services/api';
@@ -13,7 +16,7 @@ import '../css/global.css';
 import '../css/navbar.css';
 import '../css/newsfeed-home.css';
 import '../css/modules.css';
-
+import Avatar from '../components/ui/Avatar.jsx';
 // ---------------------------------------------------------------------------
 // helpers
 // ---------------------------------------------------------------------------
@@ -32,6 +35,21 @@ const emptySlots = () => [
   { appointment_date: '', appointment_time: '' },
   { appointment_date: '', appointment_time: '' },
 ];
+// Sorting helper for the Applications tab. Invalid or missing dates always go last.
+const toTime = (v) => {
+  const ms = v ? new Date(v).getTime() : NaN;
+  return Number.isNaN(ms) ? null : ms;
+};
+
+const sortByDate = (list, order) =>
+  [...list].sort((a, b) => {
+    const ta = toTime(a.appliedAt);
+    const tb = toTime(b.appliedAt);
+    if (ta === null && tb === null) return 0;
+    if (ta === null) return 1;
+    if (tb === null) return -1;
+    return order === 'oldest' ? ta - tb : tb - ta;
+  });
 
 export default function LandlordDashboard() {
   const navigate = useNavigate();
@@ -41,7 +59,7 @@ export default function LandlordDashboard() {
   const taka = (n) => formatCurrency(Number(n ?? 0));
 
   const [searchParams] = useSearchParams();
-  const TABS = ['overview', 'units', 'properties', 'applications', 'ledger'];
+  const TABS = ['overview', 'units', 'properties', 'applications', 'ledger', 'maintenance', 'disputes'];
   // ?tab=applications (from a notification) opens that tab, even if the dashboard is already open
   const tabParam = searchParams.get('tab');
   const [activeTab, setActiveTab] = useState(TABS.includes(tabParam) ? tabParam : 'overview');
@@ -63,6 +81,8 @@ export default function LandlordDashboard() {
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [selectedApplicant, setSelectedApplicant] = useState(null);
   const [decisionBusy, setDecisionBusy] = useState(false);
+  // Lease offer is its own step (separate from approving the application)
+  const [leaseTarget, setLeaseTarget] = useState(null);
 
   // POST /appointments — landlord proposes 3 tour slots
   const [tourTarget, setTourTarget] = useState(null);
@@ -85,6 +105,7 @@ export default function LandlordDashboard() {
   const [editPhotos, setEditPhotos] = useState([]);
 
   const [appFilter, setAppFilter] = useState('all');
+  const [appSort, setAppSort] = useState('newest'); // 'newest' | 'oldest'
 
   const loadStats = () => {
     api.landlord.stats().then(setStats).catch(() => setStats(null));
@@ -237,9 +258,6 @@ export default function LandlordDashboard() {
     setDecisionBusy(true);
 
     const applicationId = selectedApplicant.id;
-    const propertyId = selectedApplicant.propertyId;
-    const tenantId = selectedApplicant.tenant?.id;
-    const property = properties.find((p) => p.id === propertyId);
 
     try {
       await api.applications.updateStatus(applicationId, 'approved');
@@ -251,40 +269,10 @@ export default function LandlordDashboard() {
       return;
     }
 
-    try {
-      if (!tenantId || !property) {
-        throw new Error('Application approved, but a contract could not be created (missing tenant or property).');
-      }
-
-      const today = new Date();
-      const oneYearLater = new Date(today);
-      oneYearLater.setFullYear(oneYearLater.getFullYear() + 1);
-
-      const payload = {
-        property_id: propertyId,
-        tenant_id: tenantId,
-        rate: property.pricePerMonth,
-        start_date: toLocalISODate(today),
-        end_date: toLocalISODate(oneYearLater),
-      };
-      // Spec also takes deposit; send it when the listing has one.
-      if (property.deposit != null) payload.deposit = property.deposit;
-
-      await api.contracts.create(payload);
-      showToast({
-        message: 'Lease contract created — the tenant can review, sign, and pay the deposit from Contracts.',
-        type: 'success',
-      });
-      loadLedger();
-    } catch (error) {
-      showToast({
-        message: error.message || 'Application approved, but the lease contract could not be created.',
-        type: 'error',
-      });
-    } finally {
-      setDecisionBusy(false);
-      setShowProfileModal(false);
-    }
+    // Approving only records the decision. The lease is offered separately via "Offer Lease".
+    showToast({ message: 'Application approved. Use “Offer Lease” to prepare and send the lease.', type: 'success' });
+    setDecisionBusy(false);
+    setShowProfileModal(false);
   };
 
   const handleMessageApplicant = () => {
@@ -354,9 +342,13 @@ export default function LandlordDashboard() {
   // -------------------------------------------------------------------------
   // derived
   // -------------------------------------------------------------------------
-  const filteredApps = appFilter === 'all'
-    ? applications
-    : applications.filter((a) => (a.status || '').toLowerCase() === appFilter);
+    // 1) filter by status, 2) then sort by date
+  const filteredApps = sortByDate(
+    appFilter === 'all'
+      ? applications
+      : applications.filter((a) => (a.status || '').toLowerCase() === appFilter),
+    appSort,
+  );
 
   const pendingApps = stats?.pending_applications ?? 0;
   const upcomingTours = stats?.upcoming_tours ?? 0;
@@ -388,7 +380,7 @@ export default function LandlordDashboard() {
         <div className="pill-tabs" style={{ marginBottom: '2rem' }}>
           <button
             className={`pill-tab ${activeTab === 'overview' ? 'is-active' : ''}`}
-            onClick={() => setActiveTab('overview')}
+            onClick={() => { setActiveTab('overview'); loadStats(); }}
           >
             {t('landlord.tabOverview')}
           </button>
@@ -416,10 +408,24 @@ export default function LandlordDashboard() {
           >
             {t('landlord.tabLedger')}
           </button>
+          <button
+            className={`pill-tab ${activeTab === 'maintenance' ? 'is-active' : ''}`}
+            onClick={() => setActiveTab('maintenance')}
+          >
+            {t('landlord.tabMaintenance')}
+          </button>
+          <button
+            className={`pill-tab ${activeTab === 'disputes' ? 'is-active' : ''}`}
+            onClick={() => setActiveTab('disputes')}
+          >
+            {t('landlord.tabDisputes')}
+          </button>
         </div>
 
         {/* TAB: Overview */}
         {activeTab === 'units' && <UnitsPanel />}
+        {activeTab === 'maintenance' && <MaintenancePanel role="landlord" />}
+        {activeTab === 'disputes' && <DisputesPanel role="landlord" />}
 
         {activeTab === 'overview' && (
           <div>
@@ -600,30 +606,88 @@ export default function LandlordDashboard() {
         {activeTab === 'applications' && (
           <div>
             <h2 className="section-heading">{t('landlord.applicationsTitle')}</h2>
-            <div className="pill-tabs" style={{ marginBottom: '1rem' }}>
-              {['all', 'pending', 'reviewed', 'approved', 'rejected'].map(f => (
-                <button
-                  key={f}
-                  className={`pill-tab ${appFilter === f ? 'is-active' : ''}`}
-                  onClick={() => setAppFilter(f)}
+                        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '12px', marginBottom: '1rem' }}>
+              <div className="pill-tabs" style={{ marginBottom: 0 }}>
+                {['all', 'pending', 'reviewed', 'approved', 'rejected'].map(f => (
+                  <button
+                    key={f}
+                    className={`pill-tab ${appFilter === f ? 'is-active' : ''}`}
+                    onClick={() => setAppFilter(f)}
+                  >
+                    {f === 'all' ? t('landlord.filterAll') : tx('status', f)}
+                  </button>
+                ))}
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span style={{ fontSize: '0.88rem', fontWeight: 600, color: 'var(--color-blueprint)', letterSpacing: '0.01em' }}>
+                  {t('landlord.sortByDate')}:
+                </span>
+                <div
+                  role="group"
+                  aria-label={t('landlord.sortByDate')}
+                  style={{
+                    display: 'inline-flex',
+                    padding: '3px',
+                    gap: '2px',
+                    background: 'var(--color-paper-dim)',
+                    border: '1px solid var(--color-line)',
+                    borderRadius: 'var(--radius-md, 10px)',
+                  }}
                 >
-                  {f === 'all' ? t('landlord.filterAll') : tx('status', f)}
-                </button>
-              ))}
+                  {[
+                    { value: 'newest', label: t('landlord.sortNewest'), Icon: ArrowDown },
+                    { value: 'oldest', label: t('landlord.sortOldest'), Icon: ArrowUp },
+                  ].map(({ value, label, Icon }) => {
+                    const active = appSort === value;
+                    return (
+                      <button
+                        key={value}
+                        type="button"
+                        aria-pressed={active}
+                        onClick={() => setAppSort(value)}
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          padding: '6px 14px',
+                          fontSize: '0.85rem',
+                          fontWeight: 600,
+                          border: 'none',
+                          borderRadius: 'calc(var(--radius-md, 10px) - 3px)',
+                          cursor: 'pointer',
+                          transition: 'background 0.18s ease, color 0.18s ease, box-shadow 0.18s ease',
+                          background: active ? 'var(--color-blueprint)' : 'transparent',
+                          color: active ? 'var(--color-on-ink)' : 'var(--color-charcoal)',
+                          boxShadow: active ? '0 1px 3px rgba(47,93,138,0.35)' : 'none',
+                        }}
+                        onMouseEnter={(e) => { if (!active) e.currentTarget.style.background = 'rgba(47,93,138,0.08)'; }}
+                        onMouseLeave={(e) => { if (!active) e.currentTarget.style.background = 'transparent'; }}
+                      >
+                        <Icon size={14} />
+                        {label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
               {filteredApps.map(app => (
                 <div key={app.id} className="mod-card mod-card-pad" style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '1rem', justifyContent: 'space-between' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: '1 1 200px' }}>
-                    <div className="landlord-avatar" style={{ width: '44px', height: '44px', fontSize: '1.2rem' }}>
-                      {app.tenantName?.charAt(0) || '—'}
-                    </div>
-                    <div>
+                    <Avatar
+                      className="landlord-avatar"
+                      style={{ width: '44px', height: '44px', fontSize: '1.2rem' }}
+                      src={app.profilePictureUrl}
+                      name={app.tenantName}
+                    />
+                <div>
                       <div style={{ fontWeight: 600, color: 'var(--color-text-strong)' }}>{app.tenantName || '—'}</div>
                       <div style={{ fontSize: '0.85rem', color: 'var(--color-charcoal)' }}>{app.occupation || '—'}</div>
-                    </div>
-                  </div>
+                </div>
+            </div>
 
                   <div style={{ flex: '1 1 150px' }}>
                     <div style={{ fontSize: '0.9rem', color: 'var(--color-blueprint)' }}>{app.propertyTitle || app.propertyAddress || '—'}</div>
@@ -652,7 +716,7 @@ export default function LandlordDashboard() {
                     </button>
                     <button
                       className="icon-action-btn primary"
-                      onClick={() => navigate(`/lease/${app.propertyId}`)}
+                      onClick={() => setLeaseTarget({ propertyId: app.propertyId, tenantId: app.tenant?.id })}
                       style={app.status !== 'approved' ? { opacity: 0.4, pointerEvents: 'none' } : {}}
                     >
                       <FileText size={18} /> {t('landlord.offerLease')}
@@ -751,9 +815,12 @@ export default function LandlordDashboard() {
       {showProfileModal && selectedApplicant && (
         <Modal isOpen={showProfileModal} onClose={() => setShowProfileModal(false)} title="Applicant Profile" size="lg">
           <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center', marginBottom: '1.5rem' }}>
-            <div className="landlord-avatar" style={{ width: '64px', height: '64px', background: 'var(--color-ink)', color: '#fff', border: '2px solid var(--color-brass)', fontSize: '1.8rem' }}>
-              {selectedApplicant.tenantName?.charAt(0) || '—'}
-            </div>
+            <Avatar
+              className="landlord-avatar"
+              style={{ width: '64px', height: '64px', background: 'var(--color-ink)', color: '#fff', border: '2px solid var(--color-brass)', fontSize: '1.8rem' }}
+              src={selectedApplicant.profilePictureUrl}
+              name={selectedApplicant.tenantName}
+            />
             <div>
               <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.3rem', margin: '0 0 4px 0', color: 'var(--color-text-strong)' }}>
                 {selectedApplicant.tenantName || '—'}
@@ -848,6 +915,15 @@ export default function LandlordDashboard() {
             </button>
           </div>
         </Modal>
+      )}
+
+      {leaseTarget && (
+        <LeaseSummaryModal
+          propertyId={leaseTarget.propertyId}
+          tenantId={leaseTarget.tenantId}
+          onClose={() => setLeaseTarget(null)}
+          onSaved={() => { loadStats(); loadLedger(); }}
+        />
       )}
 
       {showAddModal && (

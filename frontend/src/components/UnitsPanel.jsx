@@ -4,6 +4,7 @@ import { Building2, DoorOpen, Calendar, Banknote } from "lucide-react";
 import api from "../services/api";
 import AvailabilityBadge from "./AvailabilityBadge.jsx";
 import { useLanguage } from "../i18n/LanguageContext.jsx";
+import Avatar from "./ui/Avatar.jsx";
 
 const PILL = { paid: "pill-done", due: "pill-open", overdue: "pill-danger", unknown: "pill-muted" };
 
@@ -43,7 +44,7 @@ export default function UnitsPanel() {
               </header>
               {floor(u) && <span className="fx-help">{floor(u)}</span>}
               <div className="unit-tenant">
-                <span className="unit-avatar" aria-hidden="true">{(u.tenant?.name?.[0] ?? "?").toUpperCase()}</span>
+                <Avatar className="unit-avatar" src={u.tenant?.profile_picture_url} name={u.tenant?.name} />
                 <span><strong>{u.tenant?.name ?? t("units.noTenant")}</strong>{u.tenant?.phone && <><br /><span className="fx-help">{u.tenant.phone}</span></>}</span>
               </div>
               <dl className="unit-facts">

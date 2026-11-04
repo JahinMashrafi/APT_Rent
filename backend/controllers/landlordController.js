@@ -20,7 +20,12 @@ const getLandlordProperties = async (req, res) => {
               ) AS photos
        FROM properties p
        JOIN users u ON u.user_id = p.owner_id
-       LEFT JOIN users tu ON tu.user_id = p.tenant_id
+       LEFT JOIN LATERAL (
+         SELECT c.tenant_id FROM contracts c
+          WHERE c.property_id = p.property_id AND c.status = 'active'
+          ORDER BY c.start_date DESC LIMIT 1
+       ) ac ON TRUE
+       LEFT JOIN users tu ON tu.user_id = ac.tenant_id
        LEFT JOIN (
          SELECT reviewed_user_id, AVG(rating) AS avg_rating
          FROM reviews
@@ -49,13 +54,14 @@ const getLandlordProperties = async (req, res) => {
       floor: row.floor,
       total_floors: row.total_floors,
       availability_date: row.availability_date,
-      availability_status: row.availability_status,
+      // Occupied == has an active lease (same rule as /landlord/stats, /units and the tenant dashboard).
+      availability_status: row.tenant_user_id ? "rented" : (row.availability_status === "rented" ? "available" : row.availability_status),
       is_hidden: row.is_hidden,
       furnish_type: row.furnish_type,
       nearest_transport: row.nearest_transport,
       created_at: row.created_at,
       photos: row.photos,
-      tenant_id: row.tenant_id,
+      tenant_id: row.tenant_user_id,
       active_tenant: row.tenant_user_id
         ? { user_id: row.tenant_user_id, name: row.tenant_name }
         : null,
@@ -143,9 +149,11 @@ const getLandlordStats = async (req, res) => {
     const unitsResult = await pool.query(
       `SELECT
          COUNT(*)::int AS total_units,
-         COUNT(*) FILTER (WHERE tenant_id IS NOT NULL)::int AS occupied_units
-       FROM properties
-       WHERE owner_id = $1 AND availability_status != 'archived'`,
+         COUNT(*) FILTER (WHERE EXISTS (
+           SELECT 1 FROM contracts c WHERE c.property_id = p.property_id AND c.status = 'active'
+         ))::int AS occupied_units
+       FROM properties p
+       WHERE p.owner_id = $1 AND p.availability_status != 'archived'`,
       [ownerId],
     );
     const { total_units, occupied_units } = unitsResult.rows[0];

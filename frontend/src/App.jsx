@@ -23,6 +23,8 @@ import Contracts from "./pages/Contracts.jsx";
 import SavedListings from "./pages/SavedListings.jsx";
 import TenantDashboard from "./pages/TenantDashboard.jsx";
 import Notifications from "./pages/Notifications.jsx";
+import DisputeDetail from "./pages/DisputeDetail.jsx";
+import MaintenanceDetail from "./pages/MaintenanceDetail.jsx";
 import BackToTop from "./components/BackToTop.jsx";
 
 // Simple placeholder for unlisted routes
@@ -102,6 +104,10 @@ function App() {
         <Route path="/landlord" element={<RequireAuth roles={["landlord"]}><LandlordDashboard /></RequireAuth>} />
         <Route path="/tenant" element={<RequireAuth roles={["tenant"]}><TenantDashboard /></RequireAuth>} />
         <Route path="/notifications" element={<RequireAuth><Notifications /></RequireAuth>} />
+        {/* Exact-record pages: notifications deep-link here. Any signed-in party
+            (or an admin) may open them; the API 404s everyone else. */}
+        <Route path="/disputes/:id" element={<RequireAuth><DisputeDetail /></RequireAuth>} />
+        <Route path="/maintenance/:id" element={<RequireAuth><MaintenanceDetail /></RequireAuth>} />
         <Route path="/saved" element={<RequireAuth roles={["tenant"]}><SavedListings /></RequireAuth>} />
 
         {/* Admin-only */}

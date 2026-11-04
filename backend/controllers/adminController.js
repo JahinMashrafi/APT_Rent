@@ -100,7 +100,7 @@ const approveVerification = async (req, res) => {
       type: "verification_approved",
       title: "Verification approved",
       message: "Your identity documents have been verified.",
-      linkUrl: "/users/me",
+      linkUrl: `/disputes/${dispute.dispute_id}`,
     });
 
     return res.status(200).json({
@@ -393,32 +393,6 @@ const getDisputes = async (req, res) => {
   }
 };
 
-// POST /admin/disputes  [auth required]
-const createDispute = async (req, res) => {
-  try {
-    const { reported_user_id, contract_id, reason, details } = req.body || {};
-
-    if (!reported_user_id || !reason || !details) {
-      return res.status(400).json({
-        success: false,
-        message: "reported_user_id, reason, and details are required",
-      });
-    }
-
-    const result = await pool.query(
-      `INSERT INTO disputes (complainant_id, reported_user_id, contract_id, reason, details, status)
-       VALUES ($1, $2, $3, $4, $5, 'open')
-       RETURNING dispute_id, status`,
-      [req.user.user_id, reported_user_id, contract_id || null, reason.trim(), details.trim()],
-    );
-
-    return res.status(201).json(result.rows[0]);
-  } catch (err) {
-    console.error("createDispute error: ", err);
-    return res.status(500).json({ success: false, message: "Failed to file dispute" });
-  }
-};
-
 // PATCH /admin/disputes/:id/resolve  [admin only]
 const resolveDispute = async (req, res) => {
   try {
@@ -455,14 +429,14 @@ const resolveDispute = async (req, res) => {
         type: "dispute_resolved",
         title: "Dispute resolved",
         message: resolution_notes.trim(),
-        linkUrl: "/users/me",
+        linkUrl: `/disputes/${dispute.dispute_id}`,
       }),
       notify({
         userId: dispute.reported_user_id,
         type: "dispute_resolved",
         title: "Dispute resolved",
         message: resolution_notes.trim(),
-        linkUrl: "/users/me",
+        linkUrl: `/disputes/${dispute.dispute_id}`,
       }),
     ]);
 
@@ -486,6 +460,5 @@ module.exports = {
   toggleAdminRole,
   toggleBanUser,
   getDisputes,
-  createDispute,
   resolveDispute,
 };

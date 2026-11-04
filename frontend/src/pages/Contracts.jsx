@@ -9,8 +9,10 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { FileText, ChevronDown, ChevronUp, Clock, PenLine, Download, Receipt } from "lucide-react";
 import AppNavbar from "../components/AppNavbar.jsx";
+import LeaseSummaryModal from "../components/lease/LeaseSummaryModal.jsx";
 import api from "../services/api";
 import { formatDateLong } from "../utils/tour.js";
+import { formatDuration, monthsBetween } from "../utils/leaseDuration.js";
 import { useApp } from "../context/AppContext.jsx";
 import "../css/global.css";
 import "../css/navbar.css";
@@ -53,6 +55,7 @@ export default function Contracts() {
     lang === "bn"
   );
   const [loadError, setLoadError] = useState("");
+  const [summaryEdit, setSummaryEdit] = useState(null); // contract whose lease summary the landlord is editing
   const [openId, setOpenId] = useState(null);
   const [details, setDetails] = useState({});
   const [negotiation, setNegotiation] = useState({});
@@ -251,7 +254,7 @@ export default function Contracts() {
               const detail = details[contract.contract_id];
               const other = counterparty(contract);
               const isOwner = String(contract.owner?.user_id) === String(currentUser?.id);
-
+              const otherUserId = isOwner ? contract.tenant?.user_id : contract.owner?.user_id;
               const transactionId = contract.transaction_id;
               const isPaid = contract.payment_status === "yes";
 
@@ -303,13 +306,25 @@ export default function Contracts() {
                     </span>
                     {isOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
                   </button>
-
+                  {/* Review entry point: ACTIVE contracts only, links to the other party's profile */}
+                  {contract.status === "active" && otherUserId ? (
+                    <div className="fx-actions" style={{ marginTop: 12 }}>
+                      <Link className="btn btn-primary btn-sm" to={`/users/${otherUserId}#reviews`}>
+                        {t("contracts.reviewUser", { name: other.name })}
+                      </Link>
+                    </div>
+                  ) : null}
                   {/* Landlord actions: make a fully signed lease active, or terminate any open contract */}
                   {isOwner && !["terminated", "completed"].includes(contract.status) && (
                     <div className="fx-actions" style={{ marginTop: 12 }}>
                       {contract.status === "fully_signed" && (
                         <button type="button" className="btn btn-primary btn-sm" onClick={() => runAction(contract, "activate")}>
                           {t("contracts.makeActive")}
+                        </button>
+                      )}
+                      {contract.status === "draft" && (
+                        <button type="button" className="btn btn-ghost btn-sm" onClick={() => setSummaryEdit(contract)}>
+                          Edit lease summary
                         </button>
                       )}
                       <button type="button" className="btn btn-ghost btn-sm" onClick={() => runAction(contract, "terminate")}>
@@ -334,6 +349,7 @@ export default function Contracts() {
                               { label: t("contracts.securityDeposit"), value: formatCurrency(contract.deposit ?? 0) },
                               { label: t("contracts.startDate"), value: formatDateLong(contract.start_date, lang) },
                               { label: t("contracts.endDate"), value: formatDateLong(contract.end_date, lang) },
+                              { label: "Lease duration", value: formatDuration(monthsBetween(contract.start_date, contract.end_date)) },
                             ].map((item) => (
                               <div key={item.label}>
                                 <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.72rem", color: "var(--color-blueprint)", display: "block" }}>{item.label}</span>
@@ -469,6 +485,17 @@ export default function Contracts() {
           </div>
         )}
       </main>
+
+      {summaryEdit && (
+        <LeaseSummaryModal
+          contractId={summaryEdit.contract_id}
+          onClose={() => setSummaryEdit(null)}
+          onSaved={() => {
+            setDetails({});
+            api.contracts.list().then((fresh) => setContracts(fresh?.data ?? [])).catch(() => {});
+          }}
+        />
+      )}
 
       <footer className="site-footer">
         <div className="container">

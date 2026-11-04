@@ -11,9 +11,9 @@ const {
   toggleAdminRole,
   toggleBanUser,
   getDisputes,
-  createDispute,
   resolveDispute,
 } = require("../controllers/adminController");
+const { createDispute } = require("../controllers/disputeController");
 
 // System Metrics & Verification Queue (Section 12, Page 18-19)
 router.get("/stats", requireAuth, requireAdmin, getAdminStats);

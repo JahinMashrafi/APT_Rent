@@ -185,6 +185,7 @@
     "untitledProperty": "Property address unavailable"
   },
   "contracts": {
+    "reviewUser": "Write a review for {name}",
     "eyebrow": "Lease Documents",
     "title": "My Contracts",
     "subtitle": "Every lease agreement you're part of — review terms, payment status, and signatures anytime.",
@@ -508,6 +509,9 @@
     "noProperties": "You haven't listed any properties yet.",
     "applicationsTitle": "Tenant Applications",
     "filterAll": "All",
+    "sortByDate": "Sort by date",
+    "sortNewest": "Newest",
+    "sortOldest": "Oldest",
     "reviewProfile": "Review Profile",
     "proposeTour": "Propose Tour",
     "offerLease": "Offer Lease",
@@ -518,7 +522,9 @@
     "collected": "Collected",
     "pendingAmount": "Pending",
     "dueBy": "Due by {date}",
-    "noContracts": "No active contracts yet."
+    "noContracts": "No active contracts yet.",
+    "tabMaintenance": "Maintenance notices",
+    "tabDisputes": "Disputes"
   },
   "propertyDetails": {
     "backToListings": "Back to listings",
@@ -651,7 +657,13 @@
     "disputeFiledBody": "Dispute #{id}: {reason}",
     "tourRescheduledTitle": "Tour rescheduled",
     "tourRescheduledBody": "A tour for property #{id} was moved to {date} at {time}. Please confirm the new time.",
-    "tourRescheduledReasonBody": "A tour for property #{id} was moved to {date} at {time}. Please confirm the new time. Reason: {reason}"
+    "tourRescheduledReasonBody": "A tour for property #{id} was moved to {date} at {time}. Please confirm the new time. Reason: {reason}",
+    "disputeAgainstTitle": "Dispute filed against you",
+    "maintRequestTitle": "New maintenance request",
+    "maintNoticeTitle": "New maintenance notice",
+    "maintUpdateTitle": "Maintenance update",
+    "maintBody": "Maintenance #{id}: {title}",
+    "maintUpdateBody": "Maintenance #{id} was marked “{status}”."
   },
   "crumb": {
     "label": "Breadcrumb",
@@ -774,6 +786,17 @@
     "squareFeet": "{count} sqft",
     "reviews": "Reviews",
     "noReviews": "No reviews yet.",
+    "writeReview": "Write a review",
+    "reviewFormTitle": "Review {name}",
+    "yourRating": "Your rating",
+    "yourComment": "Your comment (optional)",
+    "commentPlaceholder": "Share your experience…",
+    "submitReview": "Submit review",
+    "submitting": "Submitting…",
+    "cancelReview": "Cancel",
+    "ratingRequired": "Please choose a star rating.",
+    "reviewSubmitted": "Thanks! Your review has been posted.",
+    "reviewFailed": "Could not submit your review. Please try again.",
     "ratingOutOfFive": "{rating} out of 5",
     "occupations": {
       "student": "Student",
@@ -859,5 +882,113 @@
     "uploadFailed": "Upload failed. Please try again.",
     "documentsSubmitted": "Documents submitted. An administrator will review them.",
     "documentsSavedRemaining": "Documents saved. Upload the remaining documents to submit for review."
+  },
+  "cases": {
+    "filter": {
+      "all": "All",
+      "mine": "Created by me",
+      "against": "Against me",
+      "forMe": "Sent to me"
+    },
+    "byYou": "Created by you",
+    "againstYou": "Against you",
+    "toYou": "Sent to you",
+    "emptyFiltered": "Nothing matches this filter.",
+    "status": {
+      "open": "Open",
+      "resolved": "Resolved"
+    },
+    "disputes": {
+      "title": "Disputes",
+      "intro": "Disputes you filed and disputes filed against you. Only an admin can resolve a dispute.",
+      "new": "File a dispute",
+      "empty": "No disputes yet.",
+      "lease": "Lease",
+      "pickLease": "Select a lease",
+      "reason": "Reason",
+      "reasonPh": "e.g. Deposit not returned",
+      "details": "Details",
+      "detailsPh": "Describe what happened.",
+      "submit": "File dispute",
+      "filing": "Filing…",
+      "filed": "Dispute filed. The other party has been notified.",
+      "failed": "Could not file the dispute.",
+      "noLease": "You need an active lease before you can file a dispute.",
+      "against": "Against",
+      "filedBy": "Filed by"
+    },
+    "maint": {
+      "titleTenant": "Maintenance requests",
+      "titleLandlord": "Maintenance notices",
+      "introTenant": "Ask your landlord to fix something, and see the notices they send you.",
+      "introLandlord": "Send notices to your tenants, and see the requests they send you.",
+      "newTenant": "New request",
+      "newLandlord": "New notice",
+      "empty": "No maintenance records yet.",
+      "kindRequest": "Request",
+      "kindNotice": "Notice",
+      "titleField": "Title",
+      "titlePh": "e.g. Kitchen tap is leaking",
+      "description": "Description",
+      "priority": "Priority",
+      "scheduled": "Planned date (optional)",
+      "noLease": "You need an active lease to raise maintenance.",
+      "submitRequest": "Send request",
+      "submitNotice": "Send notice",
+      "sending": "Sending…",
+      "created": "Sent. The other party has been notified.",
+      "failed": "Could not send this.",
+      "from": "From",
+      "to": "To",
+      "priorityLevel": {
+        "low": "Low",
+        "medium": "Medium",
+        "high": "High",
+        "urgent": "Urgent"
+      },
+      "status": {
+        "open": "Open",
+        "in_progress": "In progress",
+        "resolved": "Resolved",
+        "cancelled": "Cancelled"
+      },
+      "scheduledLabel": "Planned date"
+    },
+    "detail": {
+      "back": "Back",
+      "notFound": "This record doesn’t exist, or you don’t have access to it.",
+      "disputeTitle": "Dispute #{id}",
+      "maintTitle": "{kind} #{id}",
+      "filedOn": "Filed on {date}",
+      "createdOn": "Created on {date}",
+      "parties": "Parties",
+      "complainant": "Filed by",
+      "reported": "Filed against",
+      "createdBy": "Created by",
+      "recipient": "Sent to",
+      "property": "Property",
+      "lease": "Lease",
+      "viewLease": "View lease",
+      "reasonLabel": "Reason",
+      "detailsLabel": "Details",
+      "resolution": "Resolution notes",
+      "adminResolve": "Resolve this dispute",
+      "adminNote": "Resolution notes",
+      "adminNoteReq": "Resolution notes are required.",
+      "resolveBtn": "Mark as resolved",
+      "resolvedToast": "Dispute resolved. Both parties were notified.",
+      "adminOnlyHint": "Only an administrator can resolve a dispute.",
+      "responseNotes": "Notes",
+      "noteLabel": "Add a note (optional)",
+      "actions": "Update status",
+      "act": {
+        "in_progress": "Mark in progress",
+        "resolved": "Mark resolved",
+        "cancelled": "Cancel"
+      },
+      "updated": "Status updated.",
+      "updateFailed": "Could not update this record.",
+      "priority": "Priority"
+    }
   }
 }

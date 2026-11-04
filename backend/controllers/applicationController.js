@@ -58,7 +58,7 @@ const listApplications = async (req, res) => {
     const query = isLandlord
       ? `SELECT a.application_id, a.property_id, p.address AS property_address, a.status,
                 a.monthly_income, a.occupation, a.family_size, a.message, a.created_at,
-                u.user_id, u.name, u.contact_number, u.is_verified
+                u.user_id, u.name, u.contact_number, u.is_verified, u.profile_picture_url
          FROM applications a
          JOIN properties p ON p.property_id = a.property_id
          JOIN users u ON u.user_id = a.tenant_id
@@ -66,7 +66,7 @@ const listApplications = async (req, res) => {
          ORDER BY a.created_at DESC`
       : `SELECT a.application_id, a.property_id, p.address AS property_address, a.status,
                 a.monthly_income, a.occupation, a.family_size, a.message, a.created_at,
-                u.user_id, u.name, u.contact_number, u.is_verified
+                u.user_id, u.name, u.contact_number, u.is_verified, u.profile_picture_url
          FROM applications a
          JOIN properties p ON p.property_id = a.property_id
          JOIN users u ON u.user_id = a.tenant_id
@@ -89,6 +89,7 @@ const listApplications = async (req, res) => {
         name: row.name,
         contact_number: row.contact_number,
         is_verified: row.is_verified,
+        profile_picture_url: row.profile_picture_url,
       },
       created_at: row.created_at,
     }));

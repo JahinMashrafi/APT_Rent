@@ -1,3 +1,4 @@
+import ReviewForm from "../components/profile/ReviewForm.jsx";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import AppNavbar from "../components/AppNavbar.jsx";
@@ -19,11 +20,13 @@ export default function ProfileView() {
   const [profile, setProfile] = useState(null);
   const [reviews, setReviews] = useState([]);
   const [error, setError] = useState("");
+  const [justReviewed, setJustReviewed] = useState(false);
 
   useEffect(() => {
     let alive = true;
     setProfile(null);
     setReviews([]);
+    setJustReviewed(false);
     setError("");
 
     api.users
@@ -64,7 +67,31 @@ export default function ProfileView() {
     addressesToTranslate,
     lang === "bn"
   );
+  // The server decides; the UI only reads the flag. Self-profile is hidden as a second guard.
+  const canReview = Boolean(profile?.review_eligibility?.can_review) && !profile?.is_self;
 
+  const lockReviewForm = () =>
+    setProfile((p) => (p ? { ...p, review_eligibility: { ...p.review_eligibility, can_review: false } } : p));
+
+  const handleReviewSubmitted = async () => {
+    lockReviewForm();
+    setJustReviewed(true);
+    try {
+      const data = await api.reviews.getForUser(id);
+      setReviews(data?.data ?? []);
+      setProfile((p) =>
+        p ? { ...p, average_rating: data.average_rating, total_reviews: data.total_reviews } : p,
+      );
+    } catch {
+      /* the review was saved; the list will refresh on next visit */
+    }
+  };
+    useEffect(() => {
+    if (profile && window.location.hash === "#reviews") {
+      document.getElementById("reviews")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [profile]);
+  
   const initial = (profile?.name?.trim()?.[0] || "U").toUpperCase();
   const memberSince = profile?.member_since
     ? formatDate(profile.member_since, "monthYear")
@@ -204,8 +231,17 @@ export default function ProfileView() {
                 </div>
               ) : null}
 
-              <div className="profile-card">
+                <div className="profile-card" id="reviews">
                 <h2>{t("profileView.reviews")}</h2>
+                {canReview ? (
+                  <ReviewForm
+                    userId={profile.user_id}
+                    revieweeName={profile.name}
+                    onSubmitted={handleReviewSubmitted}
+                    onIneligible={lockReviewForm}
+                  />
+                ) : null}
+                {justReviewed ? <p className="verification-note">{t("profileView.reviewSubmitted")}</p> : null}
                 {reviews.length === 0 ? (
                   <p className="verification-note">{t("profileView.noReviews")}</p>
                 ) : (

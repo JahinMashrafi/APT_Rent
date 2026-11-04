@@ -1,5 +1,6 @@
 const pool = require("../config/db.js");
 const { notify } = require("../utils/notify.js");
+const { getReviewEligibility, REASONS } = require("../utils/reviewEligibility.js");
 
 // GET /users/:id/reviews  [public]
 const getUserReviews = async (req, res) => {
@@ -41,15 +42,20 @@ const getUserReviews = async (req, res) => {
 // POST /users/:id/reviews  [auth required]
 const createReview = async (req, res) => {
   try {
-    const reviewerId = req.user.user_id;
+    const reviewerId = req.user.user_id; // from the JWT, never from the request body
     const reviewedUserId = Number(req.params.id);
     const { rating, comment } = req.body || {};
 
-    if (reviewerId === reviewedUserId) {
-      return res.status(422).json({ success: false, message: "You cannot review yourself" });
+    if (!Number.isInteger(reviewedUserId) || reviewedUserId < 1) {
+      return res.status(400).json({ success: false, message: "Invalid user id" });
     }
-    if (!rating || !Number.isInteger(rating) || rating < 1 || rating > 5) {
+    if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
       return res.status(422).json({ success: false, message: "rating is required and must be an integer between 1 and 5" });
+    }
+
+    const cleanComment = typeof comment === "string" ? comment.trim() : "";
+    if (cleanComment.length > 1000) {
+      return res.status(422).json({ success: false, message: "comment must be 1000 characters or fewer" });
     }
 
     const userCheck = await pool.query("SELECT user_id FROM users WHERE user_id = $1", [reviewedUserId]);
@@ -57,39 +63,27 @@ const createReview = async (req, res) => {
       return res.status(404).json({ success: false, message: `User with id ${reviewedUserId} not found` });
     }
 
-    // Prerequisite: the two users must share contract history (as owner/tenant,
-    // in either direction) — a review isn't tied to one specific contract
-    // since `reviews` has no contract_id column, so this just checks the
-    // relationship exists at all, not a specific completed lease.
-    const sharedContract = await pool.query(
-      `SELECT contract_id FROM contracts
-       WHERE status != 'draft'
-         AND ((owner_id = $1 AND tenant_id = $2) OR (owner_id = $2 AND tenant_id = $1))
-       LIMIT 1`,
-      [reviewerId, reviewedUserId],
-    );
-    if (sharedContract.rows.length === 0) {
-      return res.status(403).json({
-        success: false,
-        message: "You can only review someone you have shared a signed lease with",
-      });
-    }
-
-    // One review per reviewer→reviewed_user pair (no contract_id on this table
-    // to scope it more tightly than that).
-    const existing = await pool.query(
-      `SELECT review_id FROM reviews WHERE reviewer_id = $1 AND reviewed_user_id = $2`,
-      [reviewerId, reviewedUserId],
-    );
-    if (existing.rows.length > 0) {
-      return res.status(409).json({ success: false, message: "You have already reviewed this user" });
+    // Same check the profile page used to decide whether to show the form.
+    const elig = await getReviewEligibility(reviewerId, reviewedUserId);
+    if (!elig.canReview) {
+      switch (elig.reason) {
+        case REASONS.SELF:
+          return res.status(422).json({ success: false, message: "You cannot review yourself" });
+        case REASONS.DUPLICATE:
+          return res.status(409).json({ success: false, message: "You have already reviewed this user" });
+        default:
+          return res.status(403).json({
+            success: false,
+            message: "You can only review a landlord or tenant you have an active lease with",
+          });
+      }
     }
 
     const result = await pool.query(
       `INSERT INTO reviews (reviewer_id, reviewed_user_id, rating, comment)
        VALUES ($1, $2, $3, $4)
-       RETURNING review_id, reviewer_id, reviewed_user_id, rating, created_at`,
-      [reviewerId, reviewedUserId, rating, comment || null],
+       RETURNING review_id, reviewer_id, reviewed_user_id, rating, comment, created_at`,
+      [reviewerId, reviewedUserId, rating, cleanComment || null],
     );
 
     await notify({
@@ -97,12 +91,13 @@ const createReview = async (req, res) => {
       type: "review_received",
       title: "New review",
       message: `You received a ${rating}-star review.`,
-      linkUrl: `/users/${reviewedUserId}/reviews`,
+      linkUrl: `/users/${reviewedUserId}`,
     });
 
     return res.status(201).json(result.rows[0]);
   } catch (err) {
     console.error("createReview error: ", err);
+    // Two simultaneous submits: the unique index rejects the second.
     if (err.code === "23505") {
       return res.status(409).json({ success: false, message: "You have already reviewed this user" });
     }
