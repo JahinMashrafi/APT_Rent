@@ -80,11 +80,25 @@ export default function useTourNegotiation({ propertyId = null, poll = true } = 
 
   // One live negotiation per property, so each row only shows the slots
   // belonging to the request currently being negotiated.
-  const openRequest = requests.find((row) => row.status === 'pending') ?? null;
+    const openRequest = requests.find((row) => row.status === 'pending') ?? null;
   const latestBatchId = openRequest?.appointment_batch_id ?? null;
-  const currentProposals = latestBatchId
+
+  // Proposals answering the tenant's own request.
+  const requestProposals = latestBatchId
     ? openProposals.filter((row) => row.appointment_batch_id === latestBatchId)
     : [];
+
+  // Landlord-initiated offers (e.g. "Propose Tour" on an application) have no request row.
+  // Fall back to the newest open batch so the tenant still sees the slots.
+  const newestOpen = openProposals.reduce(
+    (latest, row) => (!latest || row.appointment_id > latest.appointment_id ? row : latest),
+    null,
+  );
+  const standaloneProposals = newestOpen
+    ? openProposals.filter((row) => row.appointment_batch_id === newestOpen.appointment_batch_id)
+    : [];
+
+  const currentProposals = requestProposals.length > 0 ? requestProposals : standaloneProposals;
 
   return {
     appointments: scoped,

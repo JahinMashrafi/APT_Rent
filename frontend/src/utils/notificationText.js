@@ -157,6 +157,15 @@ const RULES = [
     }),
   },
   {
+    re: /^(.+?) confirmed a tour for (.+) at (.+)\.$/,
+    key: "notifText.tourConfirmedNamedBody",
+    params: (m, c) => ({
+      name: m[1],
+      date: niceDate(m[2], c.lang),
+      time: /^\d{1,2}:\d{2}/.test(m[3]) ? formatTime(m[3], c.lang) : m[3],
+    }),
+  },
+  {
     re: /^The tenant asked for different times: ([\s\S]+)$/,
     key: "notifText.tourRejectedReason",
     params: (m) => ({ reason: m[1] }),

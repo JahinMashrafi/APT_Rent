@@ -257,14 +257,16 @@ const createAppointmentBatch = async (req, res) => {
       seen.add(key);
     }
 
-    // Re-proposing after a rejection: the previous round is already
-    // cancelled, but proposing again before the tenant responds should
-    // replace it rather than stack two competing sets.
-    await pool.query(
-      `UPDATE appointments SET status = 'cancelled', cancellation_reason = 'Superseded by a new set of times'
-       WHERE appointment_batch_id = $1 AND status = 'pending' AND proposed_by = $2`,
-      [batchId, ownerId],
-    );
+      // A landlord-initiated offer has a brand new batch id, so the query above can't see an
+    // earlier one. Retire any older open offer to the same tenant for this property.
+    if (!request_id) {
+      await pool.query(
+        `UPDATE appointments SET status = 'cancelled', cancellation_reason = 'Superseded by a new set of times'
+         WHERE owner_id = $1 AND tenant_id = $2 AND property_id = $3
+           AND status = 'pending' AND proposed_by = $1 AND appointment_batch_id <> $4`,
+        [ownerId, targetTenantId, property_id, batchId],
+      );
+    }
 
     const proposedSlots = [];
     for (const slot of slots) {
@@ -283,7 +285,7 @@ const createAppointmentBatch = async (req, res) => {
       type: "tour_proposed",
       title: "Tour slots proposed",
       message: `The landlord proposed 3 tour times for ${property.address}. Please pick one or reject them.`,
-      linkUrl: request_id ? `/tour/${property_id}` : `/appointments?batch=${batchId}`,
+            linkUrl: `/tour/${property_id}`,
     }).catch((err) => console.error("notify error: ", err.message));
 
     return res.status(201).json({
@@ -353,11 +355,19 @@ const confirmAppointment = async (req, res) => {
       );
     }
 
+       let tenantName = "Tenant";
+    try {
+      const who = await pool.query("SELECT name FROM users WHERE user_id = $1", [tenantId]);
+      tenantName = who.rows[0]?.name || tenantName;
+    } catch (err) {
+      console.error("tenant name lookup error: ", err.message);
+    }
+
     await notify({
       userId: appointment.owner_id,
       type: "tour_confirmed",
       title: "Tour confirmed",
-      message: `Tenant confirmed a tour for ${toDateOnly(appointment.appointment_date)} at ${toTimeOnly(appointment.appointment_time)}.`,
+      message: `${tenantName} confirmed a tour for ${toDateOnly(appointment.appointment_date)} at ${toTimeOnly(appointment.appointment_time)}.`,
       linkUrl: `/appointments/${targetId}`,
     });
 

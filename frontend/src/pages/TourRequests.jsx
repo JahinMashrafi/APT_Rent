@@ -35,7 +35,9 @@ export default function TourRequests() {
   // Collect property addresses from tour requests.
   const addressesToTranslate = useMemo(
     () =>
-      requests
+      // requests
+      //   .map((request) =>
+              appointments
         .map((request) =>
           typeof request.address === "string"
             ? request.address.trim()
@@ -85,7 +87,20 @@ export default function TourRequests() {
       .filter((row) => row.status === 'confirmed' && !row.is_request)
       .map((row) => [row.appointment_batch_id, row]),
   );
-
+  // Tours the landlord offered on their own ("Propose Tour" on an application) have no
+  // tenant request row, so they never showed up in history. Add the confirmed ones here.
+  const requestBatchIds = new Set(requests.map((row) => row.appointment_batch_id));
+  const standaloneTours = appointments
+    .filter(
+      (row) =>
+        row.is_proposal &&
+        row.status === 'confirmed' &&
+        !requestBatchIds.has(row.appointment_batch_id),
+    )
+    .sort((a, b) =>
+      `${b.appointment_date}T${b.appointment_time}`.localeCompare(`${a.appointment_date}T${a.appointment_time}`),
+    );
+  const historyRows = [...standaloneTours, ...pastRequests];
   const handlePropose = async (slots) => {
     if (!activeRequest || isSubmitting) return;
 
@@ -431,7 +446,8 @@ export default function TourRequests() {
               )}
             </section>
 
-            {(pastRequests.length > 0 || confirmed) && (
+            {/* {(pastRequests.length > 0 || confirmed) && ( */}
+                          {(historyRows.length > 0 || confirmed) && (
               <section style={{ marginTop: '3rem' }}>
                 <h2
                   className="section-heading"
@@ -452,7 +468,8 @@ export default function TourRequests() {
                     gap: '0.75rem',
                   }}
                 >
-                  {pastRequests.map((request) => (
+                  {/* {pastRequests.map((request) => ( */}
+                                    {historyRows.map((request) => (
                     <div
                       key={request.appointment_id}
                       style={{
