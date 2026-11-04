@@ -766,6 +766,9 @@
     "leaseNotActive": "Lease not active"
   },
   "profileView": {
+    "monthlyIncome": "Monthly income",
+    "familySize": "Family members",
+    "notProvided": "Not provided",
     "loading": "Loading profile…",
     "notFound": "This profile doesn't exist.",
     "loadFailed": "Could not load this profile.",

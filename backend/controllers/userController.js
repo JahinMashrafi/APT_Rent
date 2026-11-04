@@ -427,6 +427,7 @@ const getProfileDetail = async (req, res) => {
 
   const found = await pool.query(
     `SELECT user_id, name, email, contact_number, address, occupation, institution_name, workplace_name,
+            monthly_income, family_size,
             profile_picture_url, is_verified, is_landlord, is_tenant, created_at
        FROM users WHERE user_id = $1`,
     [id],
@@ -485,7 +486,13 @@ const getProfileDetail = async (req, res) => {
       : null;
   const background =
     seesAll || viewerIsTheirLandlord
-      ? { occupation: user.occupation, institution_name: user.institution_name, workplace_name: user.workplace_name }
+      ? {
+          occupation: user.occupation,
+          institution_name: user.institution_name,
+          workplace_name: user.workplace_name,
+          monthly_income: user.monthly_income,
+          family_size: user.family_size,
+        }
       : null;
 
   return res.status(200).json({

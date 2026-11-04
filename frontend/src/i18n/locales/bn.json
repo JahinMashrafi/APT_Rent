@@ -766,6 +766,9 @@
     "leaseNotActive": "চুক্তি সক্রিয় নয়"
   },
   "profileView": {
+    "monthlyIncome": "মাসিক আয়",
+    "familySize": "পরিবারের সদস্য",
+    "notProvided": "দেওয়া হয়নি",
     "loading": "প্রোফাইল লোড হচ্ছে…",
     "notFound": "এই প্রোফাইলটি পাওয়া যায়নি।",
     "loadFailed": "প্রোফাইল লোড করা যায়নি।",
