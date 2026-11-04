@@ -44,7 +44,7 @@ export default function UnitsPanel() {
               </header>
               {floor(u) && <span className="fx-help">{floor(u)}</span>}
               <div className="unit-tenant">
-                             <Avatar className="unit-avatar" src={u.tenant?.profile_picture_url} name={u.tenant?.name} />
+                <Avatar className="unit-avatar" src={u.tenant?.profile_picture_url} name={u.tenant?.name} />
                 <span><strong>{u.tenant?.name ?? t("units.noTenant")}</strong>{u.tenant?.phone && <><br /><span className="fx-help">{u.tenant.phone}</span></>}</span>
               </div>
               <dl className="unit-facts">

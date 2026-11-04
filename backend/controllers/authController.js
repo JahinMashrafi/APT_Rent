@@ -166,7 +166,7 @@ const loginUser = async (req, res) => {
 
     res.status(200).json({
       success: true,
-        user: {
+      user: {
         id: user.user_id,
         name: user.name,
         email: user.email,
