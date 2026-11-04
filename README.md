@@ -44,9 +44,28 @@ system connecting **Tenants, Owners, and Administrators**.
 | 🔐 Authentication | JWT |
 | 💳 Payments | Stripe Test / Mock |
 | 🗺️ Maps | Map Service API |
-| 🧪 Testing | Postman |
+| 🧪 Testing | Vitest + Postman |
 | 🚀 Frontend Hosting | Vercel |
 | 🚀 Backend Hosting | Render |
+
+---
+
+## 🧪 Running unit tests
+
+Frontend and backend tests are configured independently:
+
+```bash
+cd frontend && npm test
+cd ../backend && npm test
+```
+
+Use `npm run test:watch` in either package for watch mode.
+
+Backend tests include controller export coverage, route registration checks,
+middleware authorization branches, appointment lifecycle behavior, and utility
+functions. The address translation route requires Supabase credentials during
+module initialization, so it is exercised only in an environment with the
+backend Supabase variables configured.
 
 ---
 
