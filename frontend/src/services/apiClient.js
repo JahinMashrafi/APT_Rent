@@ -6,7 +6,10 @@ import axios from "axios";
  * it's built — e.g. http://localhost:5000/api for local dev, or
  * https://api.aptrent.app/api in production.
  */
-const baseURL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api";
+// Tolerate a trailing slash or a missing "/api" in VITE_API_BASE_URL so a typo in
+// the hosting dashboard can't produce URLs like "https://host//api/...".
+const rawBase = (import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api").trim().replace(/\/+$/, "");
+const baseURL = /\/api$/.test(rawBase) ? rawBase : `${rawBase}/api`;
 
 /**
  * Auth model: httpOnly cookie, not a token kept in JS.
