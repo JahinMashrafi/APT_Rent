@@ -4,8 +4,10 @@ const bcrypt = require("bcrypt");
 
 const getCookieOptions = () => ({
   httpOnly: true,
+  // Frontend (Netlify) and API (Render) are on different sites, so the cookie
+  // must be SameSite=None; Secure in production or the browser drops it.
   secure: process.env.NODE_ENV === "production",
-  sameSite: "strict",
+  sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
   maxAge: 7 * 24 * 60 * 60 * 1000,
 });
 
