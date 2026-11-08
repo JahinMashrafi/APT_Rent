@@ -31,11 +31,14 @@ const maintenanceRoutes = require("./routes/maintenanceRoutes");
 const { envelopeLegacyResponses, notFoundHandler, errorHandler } = require("./middleware/errorEnvelope.js");
 
 const app = express();
+app.set("trust proxy", 1); // behind Render's proxy, so secure cookies and rate limits see the real client
 const httpServer = http.createServer(app); // Express app wrapped so Socket.IO can share the same port
 initSocket(httpServer);
 
 app.use(cors({
-  origin: process.env.CORS_ORIGIN ?? ["http://localhost:5173", "http://localhost:4173"],
+  origin: process.env.CORS_ORIGIN
+    ? process.env.CORS_ORIGIN.split(",").map((o) => o.trim())
+    : ["http://localhost:5173", "http://localhost:4173"],
   credentials: true,
 }));
 app.use(express.json());
